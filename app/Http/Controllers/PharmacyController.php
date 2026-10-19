@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Item;
+use App\Models\PrescriptionItem;
+use App\Services\DispensingService;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\View\View;
+
+class PharmacyController extends Controller
+{
+    public function index(): View
+    {
+        return view('pharmacy.index', [
+            'items' => PrescriptionItem::query()
+                ->with(['item', 'prescription.visit.patient', 'dispensations'])
+                ->where('status', 'pending')
+                ->latest()
+                ->get(),
+            'substitutes' => Item::query()->where('billing_type', 'billable_medicine')->where('is_active', true)->orderBy('name')->get(),
+        ]);
+    }
+
+    public function dispense(Request $request, PrescriptionItem $prescriptionItem, DispensingService $dispensing): RedirectResponse
+    {
+        $data = $request->validate([
+            'quantity' => ['required', 'integer', 'min:1'],
+            'substitute_item_id' => ['nullable', Rule::exists('items', 'id')->where('facility_id', $request->user()->facility_id)],
+        ]);
+
+        $dispensing->dispense(
+            $prescriptionItem,
+            $request->user(),
+            (int) $data['quantity'],
+            $data['substitute_item_id'] ?? null,
+        );
+
+        return back()->with('status', 'Dispensed and charged to the visit.');
+    }
+
+    public function cancel(PrescriptionItem $prescriptionItem, DispensingService $dispensing): RedirectResponse
+    {
+        $dispensing->cancel($prescriptionItem);
+
+        return back()->with('status', 'Prescription line cancelled.');
+    }
+}

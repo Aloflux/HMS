@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+        <meta name="idle-timeout" content="{{ config('hms.idle_timeout_minutes') }}">
+
+        <title>{{ config('app.name', 'AfyaDesk') }}</title>
+
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
+
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="font-sans antialiased bg-slate-100 text-slate-900">
+        <div x-data="{ sidebar: false }" class="min-h-screen">
+            @include('layouts.navigation')
+
+            <div class="lg:ps-64">
+                <header class="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95">
+                    <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
+                        <div class="flex items-center gap-3">
+                            <button type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm lg:hidden" @click="sidebar = !sidebar">
+                                <x-icon name="bx-menu" class="text-lg" />
+                                Menu
+                            </button>
+                            <div>
+                                <p class="text-sm font-semibold text-brand-800">{{ config('app.name') }}</p>
+                                <p class="text-xs text-slate-500">{{ $currentFacility->name ?? 'Platform' }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm">
+                            <span class="hidden sm:inline text-slate-600">{{ auth()->user()->name }}</span>
+                            <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-1 text-brand-700 hover:text-brand-900">
+                                <x-icon name="bx-user-circle" class="text-lg" />
+                                Profile
+                            </a>
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button type="submit" class="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900">
+                                    <x-icon name="bx-log-out" class="text-lg" />
+                                    Sign out
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </header>
+
+                @isset($header)
+                    <div class="border-b border-slate-200 bg-white">
+                        <div class="px-4 py-5 sm:px-6">
+                            {{ $header }}
+                        </div>
+                    </div>
+                @endisset
+
+                <main class="px-4 py-6 sm:px-6 lg:px-8">
+                    @if (session('status'))
+                        <div class="mb-4 flex items-start gap-2 rounded-md bg-brand-50 px-4 py-3 text-sm text-brand-900">
+                            <x-icon name="bx-check-circle" class="mt-0.5 text-lg" />
+                            <span>{{ session('status') }}</span>
+                        </div>
+                    @endif
+                    @if (session('error'))
+                        <div class="mb-4 flex items-start gap-2 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
+                            <x-icon name="bx-error-circle" class="mt-0.5 text-lg" />
+                            <span>{{ session('error') }}</span>
+                        </div>
+                    @endif
+                    @if ($errors->any())
+                        <div class="mb-4 flex items-start gap-2 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
+                            <x-icon name="bx-error-circle" class="mt-0.5 text-lg" />
+                            <div>
+                            <ul class="list-disc ps-5">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{ $slot }}
+                </main>
+            </div>
+        </div>
+
+        <form id="idle-logout" method="POST" action="{{ route('logout') }}" class="hidden">
+            @csrf
+        </form>
+    </body>
+</html>
