@@ -30,20 +30,33 @@
                                 <p class="text-xs text-slate-500">{{ $currentFacility->name ?? 'Platform' }}</p>
                             </div>
                         </div>
-                        <div class="flex items-center gap-4 text-sm">
-                            <span class="hidden sm:inline text-slate-600">{{ auth()->user()->name }}</span>
-                            <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-1 text-brand-700 hover:text-brand-900">
-                                <x-icon name="bx-user-circle" class="text-lg" />
-                                Profile
-                            </a>
-                            <form method="POST" action="{{ route('logout') }}">
-                                @csrf
-                                <button type="submit" class="inline-flex items-center gap-1 text-slate-600 hover:text-slate-900">
-                                    <x-icon name="bx-log-out" class="text-lg" />
-                                    Sign out
+                        <x-dropdown align="right" width="w-56" contentClasses="bg-white py-1">
+                            <x-slot name="trigger">
+                                <button type="button" class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
+                                    <x-icon name="bx-user-circle" class="text-2xl text-brand-700" />
+                                    <span class="hidden max-w-40 truncate sm:inline">{{ auth()->user()->name }}</span>
+                                    <x-icon name="bx-chevron-down" class="text-lg text-slate-400" />
                                 </button>
-                            </form>
-                        </div>
+                            </x-slot>
+
+                            <x-slot name="content">
+                                <div class="border-b border-slate-100 px-4 py-3">
+                                    <p class="truncate text-sm font-medium text-slate-900">{{ auth()->user()->name }}</p>
+                                    <p class="truncate text-xs text-slate-500">{{ auth()->user()->role->label() }}</p>
+                                </div>
+                                <x-dropdown-link :href="route('profile.edit')">
+                                    <x-icon name="bx-user" class="text-lg text-brand-700" />
+                                    Profile
+                                </x-dropdown-link>
+                                <form method="POST" action="{{ route('logout') }}">
+                                    @csrf
+                                    <button type="submit" class="flex w-full items-center gap-2 px-4 py-2 text-start text-sm text-slate-700 hover:bg-slate-50">
+                                        <x-icon name="bx-log-out" class="text-lg text-slate-500" />
+                                        Sign out
+                                    </button>
+                                </form>
+                            </x-slot>
+                        </x-dropdown>
                     </div>
                 </header>
 

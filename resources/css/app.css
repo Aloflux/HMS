@@ -20,6 +20,10 @@
     --color-brand-900: #134e4a;
 }
 
+[x-cloak] {
+    display: none !important;
+}
+
 @media print {
     .no-print {
         display: none !important;
