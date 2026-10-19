@@ -8,7 +8,7 @@
 
     <div>
         <h2 class="font-semibold">Account</h2>
-        <p class="mt-1 text-sm text-slate-500">{{ $user->role->label() }}. The name and email shown at this station.</p>
+        <p class="mt-1 text-sm text-slate-500">{{ $user->role->label() }}: {{ $user->role->covers() }}. The name and email shown at this station.</p>
     </div>
 
     <div>

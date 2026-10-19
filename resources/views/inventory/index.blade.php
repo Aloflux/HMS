@@ -4,13 +4,35 @@
         @foreach ($locations as $location)
             <section class="rounded-lg bg-white p-4 shadow-sm">
                 <h2 class="font-semibold">{{ $location->name }}</h2>
-                <ul class="mt-2 text-sm">
-                    @forelse ($location->batches as $batch)
-                        <li>{{ $batch->item->name }} · {{ $batch->batch_number }} · {{ $batch->quantity }} · exp {{ $batch->expiry_date?->format('d M Y') ?? 'none' }}</li>
-                    @empty
-                        <li class="text-slate-500">Empty</li>
-                    @endforelse
-                </ul>
+                @php
+                    $stocked = $location->batches->where('quantity', '>', 0)->sortBy(fn ($batch) => $batch->item->name);
+                @endphp
+                <div class="mt-3 overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="text-xs uppercase tracking-wide text-slate-500">
+                            <tr>
+                                <th class="py-2 pe-3 font-medium">Item</th>
+                                <th class="py-2 pe-3 font-medium">Batch</th>
+                                <th class="py-2 pe-3 font-medium">Expiry</th>
+                                <th class="py-2 font-medium">On hand</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($stocked as $batch)
+                                <tr class="border-t border-slate-100">
+                                    <td class="py-2 pe-3 font-medium">{{ $batch->item->name }}</td>
+                                    <td class="py-2 pe-3">{{ $batch->batch_number }}</td>
+                                    <td class="py-2 pe-3">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
+                                    <td class="py-2">{{ $batch->quantity }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-2 text-slate-500">Nothing in this store.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </section>
         @endforeach
     </div>
@@ -34,15 +56,31 @@
             <section class="mt-4 rounded-lg bg-white p-4 text-sm shadow-sm">
                 <p class="font-medium">{{ $order->number }} · {{ $order->supplier->name }} · {{ $order->status }}</p>
                 @foreach ($order->lines as $line)
-                    <form method="POST" action="{{ route('inventory.receive', $order) }}" class="mt-2 grid gap-2 md:grid-cols-5">
-                        @csrf
-                        <input type="hidden" name="purchase_order_line_id" value="{{ $line->id }}">
-                        <span>{{ $line->item->name }} {{ $line->received_quantity }}/{{ $line->quantity }}</span>
-                        <input name="batch_number" placeholder="Batch" class="rounded-md border-slate-300 text-sm">
-                        <input type="date" name="expiry_date" class="rounded-md border-slate-300 text-sm">
-                        <input name="quantity" type="number" min="1" placeholder="Qty" class="rounded-md border-slate-300 text-sm">
-                        <button class="text-brand-700">Receive</button>
-                    </form>
+                    <div class="mt-3 border-t border-slate-100 pt-3">
+                        <p>{{ $line->item->name }}</p>
+                        <p class="text-slate-500">Received {{ $line->received_quantity }} of {{ $line->quantity }} {{ \Illuminate\Support\Str::plural($line->item->unit, $line->quantity) }}</p>
+                        @if ($line->received_quantity < $line->quantity)
+                            <form method="POST" action="{{ route('inventory.receive', $order) }}" class="mt-2 grid gap-2 md:grid-cols-4">
+                                @csrf
+                                <input type="hidden" name="purchase_order_line_id" value="{{ $line->id }}">
+                                <div>
+                                    <x-input-label value="Batch" />
+                                    <x-text-input name="batch_number" class="mt-1 block w-full" />
+                                </div>
+                                <div>
+                                    <x-input-label value="Expiry" />
+                                    <x-text-input type="date" name="expiry_date" class="mt-1 block w-full" />
+                                </div>
+                                <div>
+                                    <x-input-label value="Quantity received" />
+                                    <x-text-input name="quantity" type="number" min="1" class="mt-1 block w-full" />
+                                </div>
+                                <div class="flex items-end">
+                                    <x-primary-button>Receive</x-primary-button>
+                                </div>
+                            </form>
+                        @endif
+                    </div>
                 @endforeach
             </section>
         @endforeach

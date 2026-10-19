@@ -12,21 +12,18 @@ The product makes three promises: every service rendered is billed, every patien
 
 ## Users and roles
 
-Eleven roles, each seeing only the screens and records their job needs (role based access, every action logged).
+Six roles. Each person sees only the screens their role allows, and every action is logged. A small hospital does not need a separate login for every job: the clinical duties are grouped, and several people can share one role.
 
-| Role | Main work in the system |
+| Role | What it covers |
 | --- | --- |
-| Receptionist / records clerk | Register patients, issue patient numbers, book appointments, route to triage |
-| Triage nurse | Record vitals, set priority, assign to a clinician queue |
-| Doctor / clinical officer | Consult, write notes and diagnoses (ICD 10), order lab and imaging, prescribe, admit or discharge |
-| Ward nurse | Bed management, nursing notes, medication administration chart, vitals rounds |
-| Lab technician | Receive samples, enter and verify results |
-| Radiographer | Receive imaging orders, attach reports and images |
-| Pharmacist | Dispense against prescriptions, manage stock, batches and expiry |
-| Cashier | Collect payments (cash, mobile money, card), issue receipts, close shifts |
-| Insurance / claims officer | Verify cover, track preauthorisation, compile and submit claims |
-| Store keeper | Requisitions, purchase orders, goods received, inventory across stores |
-| Administrator / management | User setup, price lists, dashboards, Ministry of Health reports |
+| Front office | Reception and cashier: registration, appointments, queues, payments, and receipts |
+| Clinical team | Triage, consultation, wards, maternity, and theatre |
+| Diagnostics | Laboratory and imaging |
+| Pharmacy and stores | Dispensing, requisitions, purchase orders, goods received, batches, and expiry |
+| Administrator | Users, prices, insurance and claims, waivers, stock approvals, and reports |
+| Platform administrator | Opens and closes facilities, and does not see clinical records |
+
+Stock approval stays with the administrator, separate from the person who counts or requests stock. Waivers stay with the administrator, separate from the person who takes cash.
 
 ## Core modules in scope for version 1
 

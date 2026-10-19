@@ -86,18 +86,33 @@
                     </select>
                     <x-primary-button>Order imaging</x-primary-button>
                 </form>
-                <form method="POST" action="{{ route('visits.prescriptions', $visit) }}" class="mt-4 grid gap-2">
+                <form method="POST" action="{{ route('visits.prescriptions', $visit) }}" class="mt-4 grid gap-3">
                     @csrf
-                    <select name="lines[0][item_id]" class="rounded-md border-slate-300 text-sm">
-                        @foreach ($medicines as $medicine)
-                            <option value="{{ $medicine->id }}">{{ $medicine->name }} · {{ \App\Support\Money::format($medicine->cash_price) }}</option>
-                        @endforeach
-                    </select>
-                    <div class="grid grid-cols-2 gap-2">
-                        <input name="lines[0][dose]" placeholder="Dose" required class="rounded-md border-slate-300 text-sm">
-                        <input name="lines[0][frequency]" placeholder="Frequency" required class="rounded-md border-slate-300 text-sm">
-                        <input name="lines[0][duration_days]" type="number" min="1" value="3" required class="rounded-md border-slate-300 text-sm">
-                        <input name="lines[0][quantity]" type="number" min="1" value="1" required class="rounded-md border-slate-300 text-sm">
+                    <div>
+                        <x-input-label for="prescription-item" value="Medicine" />
+                        <select id="prescription-item" name="lines[0][item_id]" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
+                            @foreach ($medicines as $medicine)
+                                <option value="{{ $medicine->id }}">{{ $medicine->name }} · {{ $medicine->unit }} · {{ \App\Support\Money::format($medicine->cash_price) }} each</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <div>
+                            <x-input-label for="prescription-dose" value="Dose" />
+                            <x-text-input id="prescription-dose" name="lines[0][dose]" class="mt-1 block w-full" placeholder="1 g" required />
+                        </div>
+                        <div>
+                            <x-input-label for="prescription-frequency" value="Frequency" />
+                            <x-text-input id="prescription-frequency" name="lines[0][frequency]" class="mt-1 block w-full" placeholder="Three times a day" required />
+                        </div>
+                        <div>
+                            <x-input-label for="prescription-duration" value="Duration (days)" />
+                            <x-text-input id="prescription-duration" name="lines[0][duration_days]" type="number" min="1" value="3" class="mt-1 block w-full" required />
+                        </div>
+                        <div>
+                            <x-input-label for="prescription-quantity" value="Quantity to dispense" />
+                            <x-text-input id="prescription-quantity" name="lines[0][quantity]" type="number" min="1" value="1" class="mt-1 block w-full" required />
+                        </div>
                     </div>
                     <p class="text-xs text-slate-500">Writing a prescription checks the price and does not move stock.</p>
                     <x-primary-button>Prescribe</x-primary-button>

@@ -10,24 +10,20 @@ class RolePermissions
      * @var array<string, list<string>>
      */
     private const MAP = [
-        'receptionist' => [
+        'front_office' => [
             'dashboard.view',
             'patients.view',
             'patients.manage',
             'appointments.manage',
             'queue.view',
             'billing.view',
+            'cashier.manage',
         ],
-        'triage_nurse' => [
+        'clinical' => [
             'dashboard.view',
             'patients.view',
             'queue.view',
             'triage.manage',
-        ],
-        'clinician' => [
-            'dashboard.view',
-            'patients.view',
-            'queue.view',
             'consultations.manage',
             'lab.view',
             'radiology.view',
@@ -37,48 +33,19 @@ class RolePermissions
             'maternity.manage',
             'theatre.manage',
         ],
-        'ward_nurse' => [
-            'dashboard.view',
-            'patients.view',
-            'wards.view',
-            'wards.manage',
-            'pharmacy.view',
-        ],
-        'lab_technician' => [
+        'diagnostics' => [
             'dashboard.view',
             'patients.view',
             'lab.view',
             'lab.manage',
-        ],
-        'radiographer' => [
-            'dashboard.view',
-            'patients.view',
             'radiology.view',
             'radiology.manage',
         ],
-        'pharmacist' => [
+        'pharmacy_stores' => [
             'dashboard.view',
             'patients.view',
             'pharmacy.view',
             'pharmacy.manage',
-            'inventory.view',
-            'inventory.requisition',
-        ],
-        'cashier' => [
-            'dashboard.view',
-            'patients.view',
-            'billing.view',
-            'cashier.manage',
-            'queue.view',
-        ],
-        'claims_officer' => [
-            'dashboard.view',
-            'patients.view',
-            'billing.view',
-            'insurance.manage',
-        ],
-        'store_keeper' => [
-            'dashboard.view',
             'inventory.view',
             'inventory.requisition',
             'inventory.purchase',

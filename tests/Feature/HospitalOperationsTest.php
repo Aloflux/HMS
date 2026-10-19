@@ -57,11 +57,11 @@ test('sample accounts stay hidden when the demo flag is off', function () {
         ->assertDontSee('data-demo-email', false);
 });
 
-test('a cashier cannot open a consultation', function () {
+test('front office cannot open a consultation', function () {
     [$facility] = provisionHospital();
-    $cashier = User::factory()->create([
+    $clerk = User::factory()->create([
         'facility_id' => $facility->id,
-        'role' => Role::Cashier,
+        'role' => Role::FrontOffice,
     ]);
     $patient = Patient::query()->create([
         'facility_id' => $facility->id,
@@ -78,14 +78,14 @@ test('a cashier cannot open a consultation', function () {
         'consent_at' => now(),
     ]);
     FacilityContext::set($facility->id);
-    $visit = app(EncounterService::class)->openVisit($patient, $cashier, [
+    $visit = app(EncounterService::class)->openVisit($patient, $clerk, [
         'visit_type' => VisitType::Outpatient,
         'priority' => Priority::Routine,
         'payer' => Payer::Cash,
     ]);
     FacilityContext::forget();
 
-    $this->actingAs($cashier)
+    $this->actingAs($clerk)
         ->post(route('visits.consult', $visit), [
             'icd10_codes' => ['J06.9'],
         ])
@@ -175,7 +175,7 @@ test('prescribing does not move stock and dispensing posts a charge', function (
 
     $pharmacist = User::factory()->create([
         'facility_id' => $facility->id,
-        'role' => Role::Pharmacist,
+        'role' => Role::PharmacyStores,
     ]);
 
     $this->actingAs($pharmacist)
