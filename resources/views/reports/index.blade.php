@@ -11,7 +11,7 @@
     <form method="GET" class="mb-6 flex flex-wrap gap-2">
         <input type="date" name="start" value="{{ $start }}" class="rounded-md border-slate-300 text-sm">
         <input type="date" name="end" value="{{ $end }}" class="rounded-md border-slate-300 text-sm">
-        <button class="rounded-md bg-slate-800 px-4 py-2 text-sm text-white">Update</button>
+        <button class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">Update</button>
     </form>
     <div class="grid gap-4 md:grid-cols-3">
         <section class="rounded-lg bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Cash collected</p><p class="mt-2 text-2xl font-semibold">{{ \App\Support\Money::format($revenue) }}</p></section>

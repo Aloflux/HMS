@@ -3,7 +3,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
             <x-page-title icon="bx-user">Patients</x-page-title>
             @if (auth()->user()->permits('patients.manage'))
-                <a href="{{ route('patients.create') }}" class="inline-flex items-center gap-2 rounded-md bg-brand-700 px-4 py-2 text-sm font-semibold text-white">
+                <a href="{{ route('patients.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-brand-700 px-4 py-2 text-sm font-semibold text-white">
                     <x-icon name="bx-user-plus" class="text-lg" />
                     Register patient
                 </a>
@@ -12,8 +12,8 @@
     </x-slot>
 
     <form method="GET" class="mb-4 flex gap-2">
-        <input type="search" name="q" value="{{ $search }}" placeholder="Name, phone, patient number or national ID" class="w-full rounded-md border-slate-300 shadow-sm focus:border-brand-600 focus:ring-brand-600">
-        <button class="inline-flex items-center gap-2 rounded-md bg-slate-800 px-4 py-2 text-sm font-semibold text-white">
+        <input type="search" name="q" value="{{ $search }}" placeholder="Name, phone, patient number or national ID" class="w-full rounded-md border-slate-300 focus:border-brand-600 focus:ring-brand-600">
+        <button class="inline-flex items-center gap-2 rounded-xl bg-slate-800 px-4 py-2 text-sm font-semibold text-white">
             <x-icon name="bx-search" class="text-lg" />
             Search
         </button>

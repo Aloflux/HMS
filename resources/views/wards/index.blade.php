@@ -6,7 +6,7 @@
                 <h2 class="font-semibold">{{ $ward->name }}</h2>
                 <div class="mt-3 flex flex-wrap gap-2">
                     @foreach ($ward->beds as $bed)
-                        <span class="rounded-md px-2 py-1 text-xs {{ $bed->status === 'available' ? 'bg-brand-50 text-brand-800' : 'bg-slate-100' }}">{{ $bed->code }} {{ $bed->status }}</span>
+                        <span class="rounded-xl px-2 py-1 text-xs {{ $bed->status === 'available' ? 'bg-brand-50 text-brand-800' : 'bg-slate-100' }}">{{ $bed->code }} {{ $bed->status }}</span>
                         @if ($bed->status === 'cleaning' && auth()->user()->permits('wards.manage'))
                             <form method="POST" action="{{ route('wards.beds.clean', $bed) }}">@csrf<button class="text-xs text-brand-700">Mark clean</button></form>
                         @endif

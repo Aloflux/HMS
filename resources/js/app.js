@@ -17,6 +17,10 @@ document.addEventListener('click', (event) => {
         return;
     }
 
+    document.querySelectorAll('[data-demo-email]').forEach((other) => {
+        other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
+    });
+
     const email = document.getElementById('email');
     const password = document.getElementById('password');
 

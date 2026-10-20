@@ -9,7 +9,7 @@
     <div class="grid gap-6 lg:grid-cols-3">
         <section class="rounded-lg bg-white p-5 shadow-sm lg:col-span-1">
             @if ($patient->photo_path)
-                <img src="{{ route('patients.photo', $patient) }}" alt="Photo of {{ $patient->fullName() }}" class="mb-4 h-40 w-40 rounded-md object-cover">
+                <img src="{{ route('patients.photo', $patient) }}" alt="Photo of {{ $patient->fullName() }}" class="mb-4 h-40 w-40 rounded-xl object-cover">
             @endif
             <dl class="grid gap-2 text-sm">
                 <div><dt class="text-slate-500">District</dt><dd>{{ $patient->district }} {{ $patient->village }}</dd></div>

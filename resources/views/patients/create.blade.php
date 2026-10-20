@@ -19,7 +19,7 @@
         </div>
         <div>
             <x-input-label for="sex" value="Sex" />
-            <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-600 focus:ring-brand-600" required>
+            <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-600 focus:ring-brand-600" required>
                 <option value="female" @selected(old('sex') === 'female')>Female</option>
                 <option value="male" @selected(old('sex') === 'male')>Male</option>
             </select>
@@ -62,7 +62,7 @@
         </div>
         <div class="sm:col-span-2">
             <x-input-label for="allergies" value="Known allergies" />
-            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-brand-600 focus:ring-brand-600">{{ old('allergies') }}</textarea>
+            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-600 focus:ring-brand-600">{{ old('allergies') }}</textarea>
         </div>
         <div>
             <x-input-label for="photo" value="Photo" />

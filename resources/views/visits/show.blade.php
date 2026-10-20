@@ -90,7 +90,7 @@
                     @csrf
                     <div>
                         <x-input-label for="prescription-item" value="Medicine" />
-                        <select id="prescription-item" name="lines[0][item_id]" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
+                        <select id="prescription-item" name="lines[0][item_id]" class="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-brand-600 focus:ring-brand-600">
                             @foreach ($medicines as $medicine)
                                 <option value="{{ $medicine->id }}">{{ $medicine->name }} · {{ $medicine->unit }} · {{ \App\Support\Money::format($medicine->cash_price) }} each</option>
                             @endforeach

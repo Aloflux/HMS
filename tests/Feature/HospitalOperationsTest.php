@@ -267,6 +267,106 @@ test('non billable ward stock is a department cost and not a patient charge', fu
     expect(BillLine::query()->count())->toBe($linesBefore);
 });
 
+test('front office can register a patient while booking the appointment', function () {
+    [$facility] = provisionHospital();
+    $clerk = User::factory()->create([
+        'facility_id' => $facility->id,
+        'role' => Role::FrontOffice,
+    ]);
+    $departmentId = $facility->departments()->value('id');
+
+    $this->actingAs($clerk)
+        ->post(route('appointments.store'), [
+            'booking_for' => 'new',
+            'surname' => 'Nambi',
+            'given_name' => 'Grace',
+            'sex' => 'female',
+            'date_of_birth' => '1996-03-14',
+            'phone' => '0772555666',
+            'district' => 'Kampala',
+            'next_of_kin_name' => 'Sara',
+            'next_of_kin_relationship' => 'Sister',
+            'next_of_kin_phone' => '0772555667',
+            'consent' => '1',
+            'department_id' => $departmentId,
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'reason' => 'Antenatal review',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('status');
+
+    $patient = Patient::query()->where('phone', '0772555666')->first();
+
+    expect($patient)->not->toBeNull()
+        ->and($patient->patient_number)->not->toBeEmpty();
+
+    $this->assertDatabaseHas('appointments', [
+        'patient_id' => $patient->id,
+        'department_id' => $departmentId,
+        'status' => 'booked',
+        'reason' => 'Antenatal review',
+    ]);
+});
+
+test('front office can book an appointment for a patient already on the register', function () {
+    [$facility] = provisionHospital();
+    $clerk = User::factory()->create([
+        'facility_id' => $facility->id,
+        'role' => Role::FrontOffice,
+    ]);
+    $patient = Patient::query()->create([
+        'facility_id' => $facility->id,
+        'patient_number' => 'TST-2',
+        'surname' => 'Okello',
+        'given_name' => 'John',
+        'sex' => 'male',
+        'date_of_birth' => '1988-11-02',
+        'phone' => '0703000002',
+        'district' => 'Wakiso',
+        'next_of_kin_name' => 'Kin',
+        'next_of_kin_relationship' => 'Brother',
+        'next_of_kin_phone' => '0703000003',
+        'consent_at' => now(),
+    ]);
+
+    $this->actingAs($clerk)
+        ->post(route('appointments.store'), [
+            'booking_for' => 'existing',
+            'patient_id' => $patient->id,
+            'department_id' => $facility->departments()->value('id'),
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'reason' => 'Review',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('status', 'Appointment booked and reminder queued.');
+
+    expect(Patient::query()->where('facility_id', $facility->id)->count())->toBe(1);
+    $this->assertDatabaseHas('appointments', [
+        'patient_id' => $patient->id,
+        'status' => 'booked',
+    ]);
+});
+
+test('booking a new patient asks for the registration details', function () {
+    [$facility] = provisionHospital();
+    $clerk = User::factory()->create([
+        'facility_id' => $facility->id,
+        'role' => Role::FrontOffice,
+    ]);
+
+    $this->actingAs($clerk)
+        ->from(route('appointments.index'))
+        ->post(route('appointments.store'), [
+            'booking_for' => 'new',
+            'department_id' => $facility->departments()->value('id'),
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+        ])
+        ->assertRedirect(route('appointments.index'))
+        ->assertSessionHasErrors(['surname', 'phone', 'consent']);
+
+    expect(Patient::query()->where('facility_id', $facility->id)->count())->toBe(0);
+});
+
 test('an inactive account cannot sign in', function () {
     $user = User::factory()->create(['is_active' => false]);
 

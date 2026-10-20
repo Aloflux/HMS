@@ -21,7 +21,7 @@
                 <header class="no-print sticky top-0 z-20 border-b border-slate-200 bg-white/95">
                     <div class="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
                         <div class="flex items-center gap-3">
-                            <button type="button" class="inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm lg:hidden" @click="sidebar = !sidebar">
+                            <button type="button" class="inline-flex items-center gap-2 rounded-xl border border-slate-300 px-3 py-2 text-sm lg:hidden" @click="sidebar = !sidebar">
                                 <x-icon name="bx-menu" class="text-lg" />
                                 Menu
                             </button>
@@ -32,7 +32,7 @@
                         </div>
                         <x-dropdown align="right" width="w-56" contentClasses="bg-white py-1">
                             <x-slot name="trigger">
-                                <button type="button" class="inline-flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
+                                <button type="button" class="inline-flex items-center gap-2 rounded-xl px-2 py-1.5 text-sm text-slate-700 hover:bg-slate-100">
                                     <x-icon name="bx-user-circle" class="text-2xl text-brand-700" />
                                     <span class="hidden max-w-40 truncate sm:inline">{{ auth()->user()->name }}</span>
                                     <x-icon name="bx-chevron-down" class="text-lg text-slate-400" />
@@ -70,19 +70,19 @@
 
                 <main class="px-4 py-6 sm:px-6 lg:px-8">
                     @if (session('status'))
-                        <div class="mb-4 flex items-start gap-2 rounded-md bg-brand-50 px-4 py-3 text-sm text-brand-900">
+                        <div class="mb-4 flex items-start gap-2 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
                             <x-icon name="bx-check-circle" class="mt-0.5 text-lg" />
                             <span>{{ session('status') }}</span>
                         </div>
                     @endif
                     @if (session('error'))
-                        <div class="mb-4 flex items-start gap-2 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
+                        <div class="mb-4 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
                             <x-icon name="bx-error-circle" class="mt-0.5 text-lg" />
                             <span>{{ session('error') }}</span>
                         </div>
                     @endif
                     @if ($errors->any())
-                        <div class="mb-4 flex items-start gap-2 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">
+                        <div class="mb-4 flex items-start gap-2 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-800">
                             <x-icon name="bx-error-circle" class="mt-0.5 text-lg" />
                             <div>
                             <ul class="list-disc ps-5">

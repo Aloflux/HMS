@@ -108,7 +108,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
-                            <select id="substitute-{{ $line->id }}" name="substitute_item_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-sm focus:border-brand-600 focus:ring-brand-600">
+                            <select id="substitute-{{ $line->id }}" name="substitute_item_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm focus:border-brand-600 focus:ring-brand-600">
                                 <option value="">Dispense {{ $line->item->name }}</option>
                                 @foreach ($substitutes as $substitute)
                                     @continue($substitute->id === $line->item_id)

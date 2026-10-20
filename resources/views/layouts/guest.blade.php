@@ -15,6 +15,9 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-slate-100 font-sans text-slate-900 antialiased">
+        @if ($plain)
+            {{ $slot }}
+        @else
         <div class="flex min-h-screen flex-col items-center pt-6 sm:justify-center sm:pt-0">
             <div>
                 <a href="/" class="inline-flex items-center gap-2 text-brand-800">
@@ -27,5 +30,6 @@
                 {{ $slot }}
             </div>
         </div>
+        @endif
     </body>
 </html>
