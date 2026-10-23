@@ -26,7 +26,9 @@ use App\Services\FacilityProvisioner;
 use App\Services\PatientRegistrar;
 use App\Services\WardStockService;
 use App\Support\FacilityContext;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Icd10Seeder;
+use Illuminate\Support\Facades\Hash;
 
 function provisionHospital(): array
 {
@@ -82,7 +84,7 @@ test('sample accounts can be clicked into the login form when the demo flag is o
 
     $this->get(route('login'))
         ->assertOk()
-        ->assertSee('data-demo-email="doctor@stmarys.afyadesk.test"', false)
+        ->assertSee('data-demo-email="admin@stmarys.afyadesk.test"', false)
         ->assertSee('data-demo-password="password"', false);
 });
 
@@ -619,4 +621,98 @@ test('a closed visit cannot take new orders', function () {
 
     expect(BillLine::query()->where('source_type', 'consultation')->exists())->toBeFalse();
     expect($bill->fresh()->status)->toBe('paid');
+});
+
+test('the seeder creates only a platform administrator and one facility administrator', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    expect(User::query()->orderBy('email')->pluck('role', 'email')->map->value->all())->toBe([
+        'admin@stmarys.afyadesk.test' => 'administrator',
+        'platform@afyadesk.test' => 'platform_admin',
+    ]);
+    expect(Patient::query()->count())->toBeGreaterThan(0);
+});
+
+test('administrators reach users and departments from the sidebar', function () {
+    [, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->get(route('admin.departments.index'))
+        ->assertOk()
+        ->assertSee(route('admin.users.index'), false)
+        ->assertSee('Outpatient');
+});
+
+test('the platform administrator can add another administrator to a facility', function () {
+    [$facility] = provisionHospital();
+    $operator = User::factory()->create(['role' => Role::PlatformAdmin, 'facility_id' => null]);
+
+    $this->actingAs($operator)
+        ->get(route('platform.facilities.admins.index', $facility))
+        ->assertOk();
+
+    $this->actingAs($operator)
+        ->post(route('platform.facilities.admins.store', $facility), [
+            'name' => 'Second Admin',
+            'email' => 'second@example.test',
+            'password' => 'a-strong-password',
+        ])
+        ->assertRedirect();
+
+    $added = User::query()->where('email', 'second@example.test')->first();
+    expect($added->facility_id)->toBe($facility->id);
+    expect($added->role)->toBe(Role::Administrator);
+});
+
+test('the platform administrator can reset an administrator password and turn them off', function () {
+    [$facility, $admin] = provisionHospital();
+    $operator = User::factory()->create(['role' => Role::PlatformAdmin, 'facility_id' => null]);
+    User::factory()->create(['facility_id' => $facility->id, 'role' => Role::Administrator]);
+
+    $this->actingAs($operator)
+        ->patch(route('platform.facilities.admins.update', [$facility, $admin]), [
+            'is_active' => '0',
+            'password' => 'a-new-strong-password',
+        ])
+        ->assertSessionHas('status');
+
+    $admin->refresh();
+    expect($admin->is_active)->toBeFalse();
+    expect(Hash::check('a-new-strong-password', $admin->password))->toBeTrue();
+});
+
+test('a facility always keeps one active administrator', function () {
+    [$facility, $admin] = provisionHospital();
+    $operator = User::factory()->create(['role' => Role::PlatformAdmin, 'facility_id' => null]);
+
+    $this->actingAs($operator)
+        ->patch(route('platform.facilities.admins.update', [$facility, $admin]), ['is_active' => '0'])
+        ->assertSessionHas('error');
+
+    expect($admin->fresh()->is_active)->toBeTrue();
+});
+
+test('the platform administrator cannot change facility staff or another facility admin', function () {
+    [$facility] = provisionHospital();
+    [, $otherAdmin] = provisionHospital();
+    $operator = User::factory()->create(['role' => Role::PlatformAdmin, 'facility_id' => null]);
+    $staff = User::factory()->create(['facility_id' => $facility->id, 'role' => Role::Staff, 'permissions' => ['lab.view']]);
+
+    $this->actingAs($operator)
+        ->patch(route('platform.facilities.admins.update', [$facility, $staff]), ['is_active' => '0'])
+        ->assertNotFound();
+    $this->actingAs($operator)
+        ->patch(route('platform.facilities.admins.update', [$facility, $otherAdmin]), ['is_active' => '0'])
+        ->assertNotFound();
+
+    expect($staff->fresh()->is_active)->toBeTrue();
+    expect($otherAdmin->fresh()->is_active)->toBeTrue();
+});
+
+test('a facility administrator cannot manage other facilities administrators', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->get(route('platform.facilities.admins.index', $facility))
+        ->assertForbidden();
 });

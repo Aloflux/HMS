@@ -79,14 +79,7 @@
                                     @foreach ($accounts as $account)
                                         @php
                                             [$station, $duty] = array_pad(explode(' · ', $account['role'], 2), 2, null);
-                                            $icon = match ($account['email']) {
-                                                'front@stmarys.afyadesk.test' => 'bx-id-card',
-                                                'doctor@stmarys.afyadesk.test' => 'bx-plus-medical',
-                                                'diagnostics@stmarys.afyadesk.test' => 'bx-test-tube',
-                                                'pharmacy@stmarys.afyadesk.test' => 'bx-capsule',
-                                                'platform@afyadesk.test' => 'bx-buildings',
-                                                default => 'bx-cog',
-                                            };
+                                            $icon = $account['email'] === 'platform@afyadesk.test' ? 'bx-buildings' : 'bx-cog';
                                         @endphp
                                         <button
                                             type="button"

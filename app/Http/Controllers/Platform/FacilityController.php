@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Services\FacilityProvisioner;
@@ -18,7 +19,10 @@ class FacilityController extends Controller
     {
         return view('platform.facilities.index', [
             'facilities' => Facility::query()
-                ->withCount(['patients' => fn ($query) => $query->withoutGlobalScope('facility')])
+                ->withCount([
+                    'patients' => fn ($query) => $query->withoutGlobalScope('facility'),
+                    'users as admins_count' => fn ($query) => $query->where('role', Role::Administrator),
+                ])
                 ->orderBy('name')
                 ->get(),
         ]);

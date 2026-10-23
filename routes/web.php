@@ -13,6 +13,7 @@ use App\Http\Controllers\LabController;
 use App\Http\Controllers\MaternityController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PharmacyController;
+use App\Http\Controllers\Platform\FacilityAdminController;
 use App\Http\Controllers\Platform\FacilityController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\QueueController;
@@ -182,6 +183,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::post('/users', [AdminUserController::class, 'store'])->name('admin.users.store');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+        Route::get('/departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
         Route::get('/catalogue', [CatalogueController::class, 'index'])->name('admin.catalogue.index');
         Route::post('/catalogue/services', [CatalogueController::class, 'storeService'])->name('admin.services.store');
@@ -195,6 +197,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/facilities', [FacilityController::class, 'index'])->name('platform.facilities.index');
         Route::post('/facilities', [FacilityController::class, 'store'])->name('platform.facilities.store');
         Route::patch('/facilities/{facility}', [FacilityController::class, 'update'])->name('platform.facilities.update');
+        Route::get('/facilities/{facility}/admins', [FacilityAdminController::class, 'index'])->name('platform.facilities.admins.index');
+        Route::post('/facilities/{facility}/admins', [FacilityAdminController::class, 'store'])->name('platform.facilities.admins.store');
+        Route::patch('/facilities/{facility}/admins/{user}', [FacilityAdminController::class, 'update'])->name('platform.facilities.admins.update');
     });
 });
 

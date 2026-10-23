@@ -28,6 +28,11 @@ class Department extends Model
         ];
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
+    }
+
     public function stockLocations(): HasMany
     {
         return $this->hasMany(StockLocation::class);

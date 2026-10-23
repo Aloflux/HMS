@@ -22,6 +22,9 @@
                 <tr class="border-t border-slate-100">
                     <td class="px-4 py-3">{{ $facility->name }}<br><span class="text-slate-500">{{ $facility->code }} · {{ $facility->district }} · {{ $facility->patients_count }} patients</span></td>
                     <td class="px-4 py-3">
+                        <a href="{{ route('platform.facilities.admins.index', $facility) }}" class="font-semibold text-brand-700">{{ $facility->admins_count }} {{ Str::plural('administrator', $facility->admins_count) }}</a>
+                    </td>
+                    <td class="px-4 py-3">
                         <form method="POST" action="{{ route('platform.facilities.update', $facility) }}" class="flex gap-2">
                             @csrf
                             @method('PATCH')

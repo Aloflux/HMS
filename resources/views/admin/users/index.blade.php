@@ -129,27 +129,4 @@
             </tbody>
         </table>
     </div>
-
-    <form method="POST" action="{{ route('admin.departments.store') }}" class="mt-4 grid gap-3 rounded-lg bg-white p-5 shadow-sm sm:grid-cols-4">
-        @csrf
-        <div>
-            <x-input-label for="department_name" value="Department" />
-            <x-text-input id="department_name" name="name" class="mt-1 block w-full" required />
-        </div>
-        <div>
-            <x-input-label for="department_code" value="Code" />
-            <x-text-input id="department_code" name="code" class="mt-1 block w-full" required />
-        </div>
-        <div>
-            <x-input-label for="department_kind" value="Kind" />
-            <select id="department_kind" name="kind" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none" required>
-                @foreach (['opd' => 'Outpatient', 'emergency' => 'Emergency', 'laboratory' => 'Laboratory', 'radiology' => 'Imaging', 'pharmacy' => 'Pharmacy', 'ward' => 'Ward', 'maternity' => 'Maternity', 'theatre' => 'Theatre', 'stores' => 'Stores', 'cashier' => 'Cashier', 'administration' => 'Administration'] as $kind => $label)
-                    <option value="{{ $kind }}">{{ $label }}</option>
-                @endforeach
-            </select>
-        </div>
-        <div class="self-end"><x-primary-button>Add department</x-primary-button></div>
-    </form>
-
-    <p class="mt-4 text-sm"><a class="text-brand-700" href="{{ route('admin.catalogue.index') }}">Price list and catalogues</a> · <a class="text-brand-700" href="{{ route('admin.audit.index') }}">Audit trail</a></p>
 </x-app-layout>

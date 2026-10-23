@@ -26,7 +26,10 @@ class Navigation
             ['label' => 'Insurance', 'route' => 'insurance.index', 'permission' => 'insurance.manage', 'pattern' => 'insurance.*', 'icon' => 'bx-shield-quarter', 'group' => 'Operations'],
             ['label' => 'Inventory', 'route' => 'inventory.index', 'permission' => 'inventory.view', 'pattern' => 'inventory.*', 'icon' => 'bx-package', 'group' => 'Operations'],
             ['label' => 'Reports', 'route' => 'reports.index', 'permission' => 'reports.view', 'pattern' => 'reports.*', 'icon' => 'bx-bar-chart-alt-2', 'group' => 'Operations'],
-            ['label' => 'Administration', 'route' => 'admin.users.index', 'permission' => 'admin.manage', 'pattern' => 'admin.*', 'icon' => 'bx-cog', 'group' => 'Account'],
+            ['label' => 'Users', 'route' => 'admin.users.index', 'permission' => 'admin.manage', 'pattern' => 'admin.users.*', 'icon' => 'bx-group', 'group' => 'Administration'],
+            ['label' => 'Departments', 'route' => 'admin.departments.index', 'permission' => 'admin.manage', 'pattern' => 'admin.departments.*', 'icon' => 'bx-sitemap', 'group' => 'Administration'],
+            ['label' => 'Price list', 'route' => 'admin.catalogue.index', 'permission' => 'admin.manage', 'pattern' => 'admin.catalogue.*', 'icon' => 'bx-purchase-tag', 'group' => 'Administration'],
+            ['label' => 'Audit trail', 'route' => 'admin.audit.index', 'permission' => 'admin.manage', 'pattern' => 'admin.audit.*', 'icon' => 'bx-history', 'group' => 'Administration'],
         ];
     }
 
