@@ -165,12 +165,6 @@ class PatientController extends Controller
                 ->latest()
                 ->limit(4)
                 ->get(),
-            'recentPatients' => Patient::query()
-                ->whereKeyNot($patient->id)
-                ->with('latestVisit')
-                ->latest()
-                ->limit(5)
-                ->get(),
         ]);
     }
 

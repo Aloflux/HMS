@@ -196,9 +196,9 @@ class EncounterService
         });
     }
 
-    public function verifyLabResult(LabRequestItem $item, User $actor, string $value): LabRequestItem
+    public function verifyLabResult(LabRequestItem $item, User $actor, string $value, string $flag = 'normal'): LabRequestItem
     {
-        return DB::transaction(function () use ($item, $actor, $value): LabRequestItem {
+        return DB::transaction(function () use ($item, $actor, $value, $flag): LabRequestItem {
             $item = LabRequestItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
 
             if (! in_array($item->status, ['ordered', 'resulted'], true)) {
@@ -235,7 +235,7 @@ class EncounterService
 
             $item->update([
                 'result_value' => $value,
-                'result_flag' => 'recorded',
+                'result_flag' => $flag,
                 'status' => 'verified',
                 'resulted_by' => $actor->id,
                 'verified_by' => $actor->id,
@@ -314,6 +314,12 @@ class EncounterService
      */
     public function reportImaging(ImagingOrder $order, User $actor, array $data): ImagingOrder
     {
+        if ($order->status !== 'ordered') {
+            throw ValidationException::withMessages([
+                'report' => 'This study is '.$order->status.' and already has its report.',
+            ]);
+        }
+
         $order->update([
             'report' => $data['report'],
             'image_path' => $data['image_path'] ?? $order->image_path,
@@ -414,6 +420,9 @@ class EncounterService
     public function discharge(Admission $admission, User $actor, string $summary, string $outcome): Admission
     {
         return DB::transaction(function () use ($admission, $summary, $outcome): Admission {
+            $admission = Admission::query()->whereKey($admission->id)->lockForUpdate()->firstOrFail();
+            $admission->ensureOpen();
+
             $visit = $admission->visit()->with(['bill.lines', 'bill.payments', 'prescriptions.items'])->first();
 
             $this->assertReadyToLeave($visit);

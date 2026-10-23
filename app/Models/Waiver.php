@@ -18,6 +18,16 @@ class Waiver extends Model
         'facility_id', 'bill_id', 'amount', 'reason', 'status', 'requested_by', 'approved_by',
     ];
 
+    public function requester(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by');
+    }
+
+    public function decider(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
     public function bill(): BelongsTo
     {
         return $this->belongsTo(Bill::class);

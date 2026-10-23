@@ -1,5 +1,16 @@
 <?php
 
+use App\Enums\Payer;
+use App\Enums\Priority;
+use App\Enums\Role;
+use App\Enums\VisitType;
+use App\Models\Facility;
+use App\Models\Patient;
+use App\Models\User;
+use App\Models\Visit;
+use App\Services\EncounterService;
+use App\Services\FacilityProvisioner;
+use App\Support\FacilityContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,7 +55,51 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+function provisionHospital(): array
 {
-    // ..
+    $facility = app(FacilityProvisioner::class)->provision([
+        'name' => 'Test Hospital',
+        'code' => 'TST'.fake()->unique()->numerify('###'),
+        'kind' => 'hospital',
+        'district' => 'Kampala',
+        'bed_capacity' => 20,
+    ], [
+        'name' => 'Admin',
+        'email' => fake()->unique()->safeEmail(),
+        'password' => 'password',
+    ]);
+
+    FacilityContext::forget();
+
+    $admin = User::query()->where('facility_id', $facility->id)->where('role', Role::Administrator)->first();
+
+    return [$facility, $admin];
+}
+
+function openCashVisit(Facility $facility, User $actor): Visit
+{
+    $patient = Patient::query()->create([
+        'facility_id' => $facility->id,
+        'patient_number' => 'TST-'.fake()->unique()->numerify('####'),
+        'surname' => 'Okello',
+        'given_name' => 'Peter',
+        'sex' => 'male',
+        'date_of_birth' => '1985-06-01',
+        'phone' => fake()->unique()->numerify('0772######'),
+        'district' => 'Kampala',
+        'next_of_kin_name' => 'Kin',
+        'next_of_kin_relationship' => 'Brother',
+        'next_of_kin_phone' => '0772000011',
+        'consent_at' => now(),
+    ]);
+
+    FacilityContext::set($facility->id);
+    $visit = app(EncounterService::class)->openVisit($patient, $actor, [
+        'visit_type' => VisitType::Outpatient,
+        'priority' => Priority::Routine,
+        'payer' => Payer::Cash,
+    ]);
+    FacilityContext::forget();
+
+    return $visit;
 }

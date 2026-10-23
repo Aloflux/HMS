@@ -18,7 +18,7 @@ enum VisitStatus: string
         }
 
         return match ($this) {
-            self::Registered => in_array($status, [self::Triaged, self::Consulting, self::Admitted, self::Closed], true),
+            self::Registered => in_array($status, [self::Triaged, self::Consulting, self::Admitted, self::Discharged, self::Closed], true),
             self::Triaged => in_array($status, [self::Consulting, self::Admitted, self::Discharged, self::Closed], true),
             self::Consulting => in_array($status, [self::Admitted, self::Discharged, self::Closed], true),
             self::Admitted => $status === self::Discharged,

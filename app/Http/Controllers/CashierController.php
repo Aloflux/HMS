@@ -32,7 +32,12 @@ class CashierController extends Controller
                 ->latest()
                 ->limit(30)
                 ->get(),
-            'waivers' => Waiver::query()->with('bill.patient')->where('status', 'pending')->latest()->get(),
+            'waivers' => Waiver::query()
+                ->with(['bill.patient', 'bill.visit', 'requester', 'decider'])
+                ->where(fn ($query) => $query->where('status', 'pending')->orWhere('updated_at', '>=', now()->subDay()))
+                ->orderByRaw("CASE WHEN status = 'pending' THEN 0 ELSE 1 END")
+                ->latest()
+                ->get(),
             'methods' => PaymentMethod::cases(),
         ]);
     }
@@ -97,5 +102,12 @@ class CashierController extends Controller
         $this->cashier->approveWaiver($waiver, $request->user());
 
         return back()->with('status', 'Waiver approved.');
+    }
+
+    public function rejectWaiver(Request $request, Waiver $waiver): RedirectResponse
+    {
+        $this->cashier->rejectWaiver($waiver, $request->user());
+
+        return back()->with('status', 'Waiver rejected.');
     }
 }

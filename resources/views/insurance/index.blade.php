@@ -1,79 +1,157 @@
 <x-app-layout>
-    <x-slot name="header"><x-page-title icon="bx-shield-quarter">Insurance and corporate accounts</x-page-title></x-slot>
+    <x-slot name="header"><x-page-title>Insurance and corporate accounts</x-page-title></x-slot>
+
     <div class="grid gap-6 lg:grid-cols-2">
-        <form method="POST" action="{{ route('insurance.schemes.store') }}" class="grid gap-2 rounded-lg bg-white p-5 shadow-sm">
-            @csrf
-            <h2 class="font-semibold">Scheme</h2>
-            <input name="name" required placeholder="Scheme name" class="rounded-md border-slate-300 text-sm">
-            <select name="kind" class="rounded-md border-slate-300 text-sm">
-                <option value="private">Private insurer</option>
-                <option value="corporate">Corporate account</option>
-            </select>
-            <input name="cover_limit" type="number" min="0" placeholder="Cover limit, blank if none" class="rounded-md border-slate-300 text-sm">
-            <label class="text-sm"><input type="checkbox" name="requires_preauthorisation" value="1"> Requires preauthorisation</label>
-            <x-primary-button>Save scheme</x-primary-button>
-            <ul class="mt-2 text-sm">
-                @foreach ($schemes as $scheme)
-                    <li>{{ $scheme->name }} · {{ $scheme->kind }} {{ $scheme->requires_preauthorisation ? '· preauth' : '' }}</li>
-                @endforeach
+        <section class="rounded-lg bg-white p-5 shadow-sm">
+            <h2 class="font-semibold">Schemes</h2>
+            <ul class="mt-3 divide-y divide-slate-100 text-sm">
+                @forelse ($schemes as $scheme)
+                    <li class="flex flex-wrap justify-between gap-2 py-2">
+                        <span class="font-medium">{{ $scheme->name }}</span>
+                        <span class="text-slate-500">
+                            {{ $scheme->kind === 'corporate' ? 'Corporate' : 'Private insurer' }}
+                            · {{ $scheme->cover_limit !== null ? 'limit '.\App\Support\Money::format($scheme->cover_limit) : 'no limit' }}
+                            {{ $scheme->requires_preauthorisation ? '· needs preauthorisation' : '' }}
+                        </span>
+                    </li>
+                @empty
+                    <li class="py-2 text-slate-500">No schemes yet.</li>
+                @endforelse
             </ul>
-        </form>
-        <form method="POST" action="{{ route('insurance.preauthorisations.store') }}" class="grid gap-2 rounded-lg bg-white p-5 shadow-sm">
-            @csrf
-            <h2 class="font-semibold">Preauthorisation</h2>
-            <select name="visit_id" class="rounded-md border-slate-300 text-sm">
-                @foreach ($visits as $visit)
-                    <option value="{{ $visit->id }}">{{ $visit->visit_number }} · {{ $visit->patient->fullName() }}</option>
-                @endforeach
-            </select>
-            <input name="description" required placeholder="Service" class="rounded-md border-slate-300 text-sm">
-            <input name="amount" type="number" min="1" required class="rounded-md border-slate-300 text-sm">
-            <x-primary-button>Request</x-primary-button>
-        </form>
-    </div>
-    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-        <h2 class="font-semibold">Decisions</h2>
-        @foreach ($preauthorisations as $preauthorisation)
-            <form method="POST" action="{{ route('insurance.preauthorisations.decide', $preauthorisation) }}" class="mt-3 grid gap-2 border-t border-slate-100 pt-3 text-sm md:grid-cols-4">
+            <form method="POST" action="{{ route('insurance.schemes.store') }}" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-2">
                 @csrf
-                <span>{{ $preauthorisation->visit->patient->fullName() }} · {{ $preauthorisation->description }} · {{ $preauthorisation->status }}</span>
-                <input name="reference" placeholder="Reference" class="rounded-md border-slate-300 text-sm">
-                <select name="decision" class="rounded-md border-slate-300 text-sm">
-                    <option value="approved">Approve</option>
-                    <option value="rejected">Reject</option>
-                </select>
-                <x-primary-button>Save</x-primary-button>
+                <div class="sm:col-span-2">
+                    <x-input-label for="scheme-name" value="Scheme name" />
+                    <x-text-input id="scheme-name" name="name" class="mt-1 block w-full" :value="old('name')" required />
+                </div>
+                <div>
+                    <x-input-label for="scheme-kind" value="Kind" />
+                    <select id="scheme-kind" name="kind" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                        <option value="private">Private insurer</option>
+                        <option value="corporate" @selected(old('kind') === 'corporate')>Corporate account</option>
+                    </select>
+                </div>
+                <div>
+                    <x-input-label for="scheme-limit" value="Cover limit per visit (UGX)" />
+                    <x-text-input id="scheme-limit" name="cover_limit" type="number" min="0" class="mt-1 block w-full" :value="old('cover_limit')" placeholder="Leave blank for no limit" />
+                </div>
+                <label class="flex items-center gap-2 text-sm sm:col-span-2">
+                    <input type="checkbox" name="requires_preauthorisation" value="1" class="rounded border-slate-300 text-brand-700" @checked(old('requires_preauthorisation'))>
+                    Charges need an approved preauthorisation first
+                </label>
+                <div class="sm:col-span-2"><x-primary-button>Add scheme</x-primary-button></div>
             </form>
-        @endforeach
+        </section>
+
+        <section class="rounded-lg bg-white p-5 shadow-sm">
+            <h2 class="font-semibold">Request a preauthorisation</h2>
+            @if ($visits->isEmpty())
+                <p class="mt-3 text-sm text-slate-500">No insured visits yet. Preauthorisations are for visits paid by a scheme.</p>
+            @else
+                <form method="POST" action="{{ route('insurance.preauthorisations.store') }}" class="mt-3 grid gap-3">
+                    @csrf
+                    <div>
+                        <x-input-label for="preauth-visit" value="Visit" />
+                        <select id="preauth-visit" name="visit_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                            @foreach ($visits as $visit)
+                                <option value="{{ $visit->id }}">{{ $visit->visit_number }} · {{ $visit->patient->fullName() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="preauth-service" value="Service" />
+                        <x-text-input id="preauth-service" name="description" class="mt-1 block w-full" required />
+                    </div>
+                    <div>
+                        <x-input-label for="preauth-amount" value="Amount (UGX)" />
+                        <x-text-input id="preauth-amount" name="amount" type="number" min="1" class="mt-1 block w-full" required />
+                    </div>
+                    <div><x-primary-button>Request</x-primary-button></div>
+                </form>
+            @endif
+        </section>
+    </div>
+
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
+        <h2 class="font-semibold">Preauthorisations</h2>
+        <ul class="mt-3 divide-y divide-slate-100 text-sm">
+            @forelse ($preauthorisations as $preauthorisation)
+                <li class="grid gap-3 py-3 md:grid-cols-2 md:items-center">
+                    <span>
+                        <span class="block font-medium">{{ $preauthorisation->visit->patient->fullName() }} · {{ $preauthorisation->description }}</span>
+                        <span class="block text-xs text-slate-500">{{ $preauthorisation->scheme?->name }} · {{ \App\Support\Money::format((int) $preauthorisation->amount) }}{{ $preauthorisation->reference ? ' · ref '.$preauthorisation->reference : '' }}</span>
+                    </span>
+                    @if ($preauthorisation->status === 'pending')
+                        <form method="POST" action="{{ route('insurance.preauthorisations.decide', $preauthorisation) }}" class="flex flex-wrap items-center gap-2 md:justify-end">
+                            @csrf
+                            <x-text-input name="reference" class="block w-40" placeholder="Insurer reference" aria-label="Insurer reference" />
+                            <button name="decision" value="rejected" class="text-sm text-red-700">Reject</button>
+                            <x-primary-button name="decision" value="approved">Approve</x-primary-button>
+                        </form>
+                    @else
+                        <span class="md:text-end"><x-status :value="$preauthorisation->status" /></span>
+                    @endif
+                </li>
+            @empty
+                <li class="py-2 text-slate-500">No preauthorisations yet.</li>
+            @endforelse
+        </ul>
     </section>
+
     <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
         <h2 class="font-semibold">Claims</h2>
-        <form method="POST" action="{{ route('insurance.claims.store') }}" class="mt-3 grid gap-2 md:grid-cols-4">
-            @csrf
-            <select name="insurance_scheme_id" class="rounded-md border-slate-300 text-sm">
-                @foreach ($schemes as $scheme)
-                    <option value="{{ $scheme->id }}">{{ $scheme->name }}</option>
-                @endforeach
-            </select>
-            <input type="date" name="period_start" required class="rounded-md border-slate-300 text-sm">
-            <input type="date" name="period_end" required class="rounded-md border-slate-300 text-sm">
-            <x-primary-button>Compile claim</x-primary-button>
-        </form>
-        @foreach ($claims as $claim)
-            <div class="mt-4 border-t border-slate-100 pt-3 text-sm">
-                <p>{{ $claim->number }} · {{ $claim->scheme->name }} · {{ \App\Support\Money::format($claim->total_amount) }} · {{ $claim->status }}</p>
-                @if ($claim->status === 'draft')
-                    <form method="POST" action="{{ route('insurance.claims.submit', $claim) }}" class="mt-2">@csrf<x-primary-button>Submit</x-primary-button></form>
-                @endif
-                @if (in_array($claim->status, ['submitted', 'remitted'], true))
-                    <form method="POST" action="{{ route('insurance.claims.remit', $claim) }}" class="mt-2 grid gap-2 md:grid-cols-3">
-                        @csrf
-                        <input name="amount" type="number" min="1" required class="rounded-md border-slate-300 text-sm">
-                        <input name="reference" required placeholder="Remittance reference" class="rounded-md border-slate-300 text-sm">
-                        <x-primary-button>Record remittance</x-primary-button>
-                    </form>
-                @endif
-            </div>
-        @endforeach
+        @if ($schemes->isNotEmpty())
+            <form method="POST" action="{{ route('insurance.claims.store') }}" class="mt-3 grid gap-3 md:grid-cols-4">
+                @csrf
+                <div>
+                    <x-input-label for="claim-scheme" value="Scheme" />
+                    <select id="claim-scheme" name="insurance_scheme_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                        @foreach ($schemes as $scheme)
+                            <option value="{{ $scheme->id }}">{{ $scheme->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <x-input-label for="claim-start" value="From" />
+                    <x-text-input id="claim-start" type="date" name="period_start" class="mt-1 block w-full" :value="now()->startOfMonth()->toDateString()" required />
+                </div>
+                <div>
+                    <x-input-label for="claim-end" value="To" />
+                    <x-text-input id="claim-end" type="date" name="period_end" class="mt-1 block w-full" :value="now()->toDateString()" required />
+                </div>
+                <div class="flex items-end"><x-primary-button>Compile claim</x-primary-button></div>
+            </form>
+        @endif
+        <ul class="mt-4 divide-y divide-slate-100 text-sm">
+            @forelse ($claims as $claim)
+                <li class="py-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <span class="font-medium">{{ $claim->number }} · {{ $claim->scheme->name }} · {{ \App\Support\Money::format($claim->total_amount) }}</span>
+                        <span class="flex items-center gap-3">
+                            <x-status :value="$claim->status" />
+                            @if ($claim->status === 'draft')
+                                <form method="POST" action="{{ route('insurance.claims.submit', $claim) }}">@csrf<x-primary-button>Submit to insurer</x-primary-button></form>
+                            @endif
+                        </span>
+                    </div>
+                    @if (in_array($claim->status, ['submitted', 'remitted'], true))
+                        <form method="POST" action="{{ route('insurance.claims.remit', $claim) }}" class="mt-3 grid gap-3 md:grid-cols-3">
+                            @csrf
+                            <div>
+                                <x-input-label :for="'remit-amount-'.$claim->id" value="Amount received (UGX)" />
+                                <x-text-input :id="'remit-amount-'.$claim->id" name="amount" type="number" min="1" class="mt-1 block w-full" required />
+                            </div>
+                            <div>
+                                <x-input-label :for="'remit-ref-'.$claim->id" value="Remittance reference" />
+                                <x-text-input :id="'remit-ref-'.$claim->id" name="reference" class="mt-1 block w-full" required />
+                            </div>
+                            <div class="flex items-end"><x-secondary-button type="submit">Record remittance</x-secondary-button></div>
+                        </form>
+                    @endif
+                </li>
+            @empty
+                <li class="py-2 text-slate-500">No claims yet.</li>
+            @endforelse
+        </ul>
     </section>
 </x-app-layout>

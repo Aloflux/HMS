@@ -73,6 +73,7 @@ class CatalogueController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'service_id' => ['required', Rule::exists('services', 'id')->where('facility_id', $facilityId)],
             'specimen' => ['nullable', 'string', 'max:40'],
+            'unit' => ['nullable', 'string', 'max:30'],
             'reference_text' => ['nullable', 'string', 'max:255'],
             'reagent_item_id' => ['nullable', Rule::exists('items', 'id')->where('facility_id', $facilityId)],
             'reagent_quantity' => ['nullable', 'integer', 'min:1'],

@@ -45,6 +45,7 @@ class WardController extends Controller
 
     public function note(Request $request, Admission $admission): RedirectResponse
     {
+        $admission->ensureOpen();
         $data = $request->validate(['note' => ['required', 'string', 'max:5000']]);
 
         $admission->nursingNotes()->create([
@@ -58,6 +59,7 @@ class WardController extends Controller
 
     public function medication(Request $request, Admission $admission): RedirectResponse
     {
+        $admission->ensureOpen();
         $data = $request->validate([
             'item_id' => ['required', Rule::exists('items', 'id')->where('facility_id', $request->user()->facility_id)],
             'dose' => ['required', 'string', 'max:60'],

@@ -85,6 +85,16 @@ class User extends Authenticatable
 
     public function accessSummary(): string
     {
+        $access = $this->accessAreas();
+
+        return $this->department?->name ? $this->department->name.' · '.$access : $access;
+    }
+
+    /**
+     * The work areas this account can open, without its department.
+     */
+    public function accessAreas(): string
+    {
         if ($this->role === Role::Administrator) {
             return 'Full access';
         }
@@ -93,20 +103,13 @@ class User extends Authenticatable
             return $this->role->covers();
         }
 
-        $permissions = is_array($this->permissions)
-            ? $this->permissions
-            : RolePermissions::for($this->role);
-        $areas = [];
+        $keys = $this->selectedAreaKeys();
+        $labels = array_column(array_filter(
+            RolePermissions::areas(),
+            fn (array $area): bool => in_array($area['key'], $keys, true),
+        ), 'label');
 
-        foreach (RolePermissions::areas() as $area) {
-            if (array_diff($area['permissions'], $permissions) === []) {
-                $areas[] = $area['label'];
-            }
-        }
-
-        $access = $areas === [] ? 'No areas assigned' : implode(', ', $areas);
-
-        return $this->department?->name ? $this->department->name.' · '.$access : $access;
+        return $labels === [] ? 'No areas assigned' : implode(', ', $labels);
     }
 
     /**

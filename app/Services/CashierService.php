@@ -144,6 +144,24 @@ class CashierService
         ]);
     }
 
+    public function rejectWaiver(Waiver $waiver, User $decider): void
+    {
+        DB::transaction(function () use ($waiver, $decider): void {
+            $waiver = Waiver::query()->whereKey($waiver->id)->lockForUpdate()->firstOrFail();
+
+            if ($waiver->status !== 'pending') {
+                throw ValidationException::withMessages([
+                    'waiver' => 'This waiver is no longer pending.',
+                ]);
+            }
+
+            $waiver->update([
+                'status' => 'rejected',
+                'approved_by' => $decider->id,
+            ]);
+        });
+    }
+
     public function approveWaiver(Waiver $waiver, User $approver): void
     {
         DB::transaction(function () use ($waiver, $approver): void {

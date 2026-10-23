@@ -13,12 +13,13 @@ class QueueController extends Controller
 {
     public function index(Request $request): View
     {
-        $stage = $request->string('stage')->toString();
+        $stage = QueueStage::tryFrom($request->string('stage')->toString());
 
         $entries = QueueEntry::query()
             ->with(['visit.patient', 'department'])
             ->whereIn('status', ['waiting', 'serving'])
-            ->when($stage !== '', fn ($query) => $query->where('stage', $stage))
+            ->when($stage, fn ($query) => $query->where('stage', $stage))
+            ->orderByRaw("CASE status WHEN 'serving' THEN 0 ELSE 1 END")
             ->orderByRaw("CASE priority WHEN 'emergency' THEN 0 WHEN 'urgent' THEN 1 ELSE 2 END")
             ->orderBy('queued_at')
             ->get();
@@ -37,16 +38,8 @@ class QueueController extends Controller
         ]);
 
         $stage = QueueStage::from($data['stage']);
-        $permission = match ($stage) {
-            QueueStage::Triage => 'triage.manage',
-            QueueStage::Consultation => 'consultations.manage',
-            QueueStage::Laboratory => 'lab.manage',
-            QueueStage::Radiology => 'radiology.manage',
-            QueueStage::Pharmacy => 'pharmacy.manage',
-            QueueStage::Cashier => 'cashier.manage',
-        };
 
-        abort_unless($request->user()->permits($permission), 403);
+        abort_unless($request->user()->permits($stage->permission()), 403);
 
         $entry = QueueEntry::query()
             ->where('stage', $stage)
@@ -62,5 +55,18 @@ class QueueController extends Controller
         $entry->update(['status' => 'serving', 'called_at' => now()]);
 
         return redirect()->route('visits.show', $entry->visit_id)->with('status', 'Patient called.');
+    }
+
+    public function complete(Request $request, QueueEntry $entry): RedirectResponse
+    {
+        abort_unless($request->user()->permits($entry->stage->permission()), 403);
+
+        if (! in_array($entry->status, ['waiting', 'serving'], true)) {
+            return back()->with('error', 'That patient has already left this queue.');
+        }
+
+        $entry->update(['status' => 'completed', 'completed_at' => now()]);
+
+        return back()->with('status', 'Marked as done.');
     }
 }

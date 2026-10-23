@@ -1,25 +1,67 @@
 <x-app-layout>
-    <x-slot name="header"><x-page-title icon="bx-plus-medical">Theatre</x-page-title></x-slot>
-    <form method="POST" action="{{ route('theatre.store') }}" class="mb-6 grid gap-2 rounded-lg bg-white p-5 shadow-sm md:grid-cols-4">
+    <x-slot name="header"><x-page-title>Theatre</x-page-title></x-slot>
+
+    <datalist id="theatre-patients">
+        @foreach ($patients as $patient)
+            <option value="{{ $patient->patient_number }}">{{ $patient->fullName() }}</option>
+        @endforeach
+    </datalist>
+
+    <form method="POST" action="{{ route('theatre.store') }}" class="mb-6 rounded-lg bg-white p-5 shadow-sm">
         @csrf
-        <select name="patient_id" class="rounded-md border-slate-300 text-sm">@foreach ($patients as $patient)<option value="{{ $patient->id }}">{{ $patient->fullName() }}</option>@endforeach</select>
-        <input name="procedure" required placeholder="Procedure" class="rounded-md border-slate-300 text-sm">
-        <input type="datetime-local" name="scheduled_at" required class="rounded-md border-slate-300 text-sm">
-        <x-primary-button>Book</x-primary-button>
+        <h2 class="font-semibold">Book theatre</h2>
+        <div class="mt-4 grid gap-3 md:grid-cols-4">
+            <div>
+                <x-input-label for="theatre-patient" value="Patient number" />
+                <x-text-input id="theatre-patient" name="patient_number" list="theatre-patients" class="mt-1 block w-full" :value="old('patient_number')" placeholder="Type a number or name" required />
+            </div>
+            <div class="md:col-span-2">
+                <x-input-label for="procedure" value="Procedure" />
+                <x-text-input id="procedure" name="procedure" class="mt-1 block w-full" :value="old('procedure')" required />
+            </div>
+            <div>
+                <x-input-label for="scheduled-at" value="When" />
+                <x-text-input id="scheduled-at" name="scheduled_at" type="datetime-local" class="mt-1 block w-full" :value="old('scheduled_at')" required />
+            </div>
+        </div>
+        <div class="mt-4"><x-primary-button>Book</x-primary-button></div>
     </form>
-    @foreach ($bookings as $booking)
-        <section class="mb-4 rounded-lg bg-white p-4 shadow-sm">
-            <p class="font-medium">{{ $booking->procedure }} · {{ $booking->patient->fullName() }} · {{ $booking->scheduled_at->format('d M Y H:i') }} · {{ $booking->status }}</p>
-            @if ($booking->note)
-                <p class="mt-2 text-sm">{{ $booking->note->procedure_notes }}</p>
-            @else
-                <form method="POST" action="{{ route('theatre.notes', $booking) }}" class="mt-3 grid gap-2">
-                    @csrf
-                    <textarea name="findings" placeholder="Findings" class="rounded-md border-slate-300 text-sm"></textarea>
-                    <textarea name="procedure_notes" required placeholder="Operation notes" class="rounded-md border-slate-300 text-sm"></textarea>
-                    <x-primary-button>Save operation note</x-primary-button>
-                </form>
-            @endif
-        </section>
-    @endforeach
+
+    <div class="grid gap-4">
+        @forelse ($bookings as $booking)
+            <section class="rounded-lg bg-white p-5 shadow-sm">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <p class="font-medium">{{ $booking->procedure }}</p>
+                        <p class="text-sm text-slate-500">
+                            <a href="{{ route('patients.show', $booking->patient) }}" class="text-brand-700">{{ $booking->patient->fullName() }}</a>
+                            · {{ $booking->scheduled_at->format('D d M Y H:i') }} · {{ $booking->surgeon?->name }}
+                        </p>
+                    </div>
+                    <x-status :value="$booking->status" />
+                </div>
+                @if ($booking->note)
+                    @if ($booking->note->findings)
+                        <p class="mt-3 text-sm"><span class="font-medium">Findings:</span> {{ $booking->note->findings }}</p>
+                    @endif
+                    <p class="mt-2 whitespace-pre-line text-sm">{{ $booking->note->procedure_notes }}</p>
+                @else
+                    <form method="POST" action="{{ route('theatre.notes', $booking) }}" class="mt-4 grid gap-3 border-t border-slate-100 pt-4">
+                        @csrf
+                        <div>
+                            <x-input-label :for="'findings-'.$booking->id" value="Findings" />
+                            <textarea id="findings-{{ $booking->id }}" name="findings" rows="2" class="mt-1 block w-full rounded-md border-slate-300 text-sm"></textarea>
+                        </div>
+                        <div>
+                            <x-input-label :for="'notes-'.$booking->id" value="Operation notes" />
+                            <textarea id="notes-{{ $booking->id }}" name="procedure_notes" rows="3" required class="mt-1 block w-full rounded-md border-slate-300 text-sm"></textarea>
+                        </div>
+                        <div><x-primary-button>Save operation note</x-primary-button></div>
+                    </form>
+                @endif
+            </section>
+        @empty
+            <p class="text-sm text-slate-500">No theatre bookings yet.</p>
+        @endforelse
+    </div>
 </x-app-layout>

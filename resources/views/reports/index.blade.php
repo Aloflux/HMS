@@ -8,10 +8,16 @@
             </a>
         </div>
     </x-slot>
-    <form method="GET" class="mb-6 flex flex-wrap gap-2">
-        <input type="date" name="start" value="{{ $start }}" class="rounded-md border-slate-300 text-sm">
-        <input type="date" name="end" value="{{ $end }}" class="rounded-md border-slate-300 text-sm">
-        <button class="rounded-xl bg-slate-800 px-4 py-2 text-sm text-white">Update</button>
+    <form method="GET" class="mb-6 flex flex-wrap items-end gap-3">
+        <div>
+            <x-input-label for="report-start" value="From" />
+            <x-text-input id="report-start" type="date" name="start" :value="$start" class="mt-1 block" />
+        </div>
+        <div>
+            <x-input-label for="report-end" value="To" />
+            <x-text-input id="report-end" type="date" name="end" :value="$end" class="mt-1 block" />
+        </div>
+        <x-primary-button>Update</x-primary-button>
     </form>
     <div class="grid gap-4 md:grid-cols-3">
         <section class="rounded-lg bg-white p-5 shadow-sm"><p class="text-sm text-slate-500">Cash collected</p><p class="mt-2 text-2xl font-semibold">{{ \App\Support\Money::format($revenue) }}</p></section>
@@ -21,7 +27,7 @@
     <section class="mt-6 overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
         <h2 class="font-semibold">HMIS 105 outpatient attendance</h2>
         <table class="mt-3 min-w-full text-sm">
-            <thead><tr class="text-left text-slate-500"><th class="py-2">Sex</th><th>Age</th><th>New</th><th>Reattendance</th></tr></thead>
+            <thead><tr class="text-left text-xs uppercase tracking-wide text-slate-400"><th class="py-2 font-medium">Sex</th><th class="font-medium">Age</th><th class="font-medium">New</th><th class="font-medium">Reattendance</th></tr></thead>
             <tbody>
                 @foreach ($outpatient['attendance'] as $row)
                     <tr><td class="py-1">{{ $row['sex'] }}</td><td>{{ $row['band'] }}</td><td>{{ $row['new'] }}</td><td>{{ $row['reattendance'] }}</td></tr>

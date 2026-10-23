@@ -8,7 +8,6 @@ use App\Enums\VisitType;
 use App\Models\Bed;
 use App\Models\Bill;
 use App\Models\BillLine;
-use App\Models\Facility;
 use App\Models\Item;
 use App\Models\LabRequestItem;
 use App\Models\LabTest;
@@ -22,62 +21,12 @@ use App\Models\Visit;
 use App\Models\Waiver;
 use App\Services\CashierService;
 use App\Services\EncounterService;
-use App\Services\FacilityProvisioner;
 use App\Services\PatientRegistrar;
 use App\Services\WardStockService;
 use App\Support\FacilityContext;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Icd10Seeder;
 use Illuminate\Support\Facades\Hash;
-
-function provisionHospital(): array
-{
-    $facility = app(FacilityProvisioner::class)->provision([
-        'name' => 'Test Hospital',
-        'code' => 'TST'.fake()->unique()->numerify('###'),
-        'kind' => 'hospital',
-        'district' => 'Kampala',
-        'bed_capacity' => 20,
-    ], [
-        'name' => 'Admin',
-        'email' => fake()->unique()->safeEmail(),
-        'password' => 'password',
-    ]);
-
-    FacilityContext::forget();
-
-    $admin = User::query()->where('facility_id', $facility->id)->where('role', Role::Administrator)->first();
-
-    return [$facility, $admin];
-}
-
-function openCashVisit(Facility $facility, User $actor): Visit
-{
-    $patient = Patient::query()->create([
-        'facility_id' => $facility->id,
-        'patient_number' => 'TST-'.fake()->unique()->numerify('####'),
-        'surname' => 'Okello',
-        'given_name' => 'Peter',
-        'sex' => 'male',
-        'date_of_birth' => '1985-06-01',
-        'phone' => fake()->unique()->numerify('0772######'),
-        'district' => 'Kampala',
-        'next_of_kin_name' => 'Kin',
-        'next_of_kin_relationship' => 'Brother',
-        'next_of_kin_phone' => '0772000011',
-        'consent_at' => now(),
-    ]);
-
-    FacilityContext::set($facility->id);
-    $visit = app(EncounterService::class)->openVisit($patient, $actor, [
-        'visit_type' => VisitType::Outpatient,
-        'priority' => Priority::Routine,
-        'payer' => Payer::Cash,
-    ]);
-    FacilityContext::forget();
-
-    return $visit;
-}
 
 test('sample accounts can be clicked into the login form when the demo flag is on', function () {
     config(['hms.show_demo_login' => true, 'hms.demo_password' => 'password']);
@@ -505,6 +454,8 @@ test('an administrator cannot remove their own full access', function () {
 
     $this->actingAs($admin)
         ->patch(route('admin.users.update', $admin), [
+            'name' => $admin->name,
+            'email' => $admin->email,
             'account' => 'staff',
             'areas' => ['reports'],
             'is_active' => '1',
@@ -715,4 +666,86 @@ test('a facility administrator cannot manage other facilities administrators', f
     $this->actingAs($admin)
         ->get(route('platform.facilities.admins.index', $facility))
         ->assertForbidden();
+});
+
+test('administrators see users as a list and edit each one on its own page', function () {
+    [$facility, $admin] = provisionHospital();
+    $nurse = User::factory()->create([
+        'facility_id' => $facility->id,
+        'name' => 'Grace Nurse',
+        'role' => Role::Staff,
+        'permissions' => [],
+    ]);
+    [, $otherAdmin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.index'))
+        ->assertOk()
+        ->assertSee('Grace Nurse')
+        ->assertSee(route('admin.users.edit', $nurse), false)
+        ->assertDontSee('name="areas[]"', false)
+        ->assertDontSee($otherAdmin->email);
+
+    $this->actingAs($admin)->get(route('admin.users.edit', $nurse))->assertOk()->assertSee('name="areas[]"', false);
+    $this->actingAs($admin)->get(route('admin.users.edit', $otherAdmin))->assertNotFound();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $nurse), [
+            'name' => 'Grace Achan',
+            'email' => $nurse->email,
+            'phone' => '0772555666',
+            'account' => 'staff',
+            'areas' => ['clinical'],
+            'is_active' => '1',
+        ])
+        ->assertRedirect(route('admin.users.index'));
+
+    $nurse->refresh();
+    expect($nurse->name)->toBe('Grace Achan')
+        ->and($nurse->phone)->toBe('0772555666')
+        ->and($nurse->permits('consultations.manage'))->toBeTrue()
+        ->and($nurse->permits('lab.manage'))->toBeFalse();
+});
+
+test('an administrator cannot turn off their own account', function () {
+    [, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $admin), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'account' => 'administrator',
+            'is_active' => '0',
+        ])
+        ->assertSessionHas('error');
+
+    expect($admin->fresh()->is_active)->toBeTrue();
+});
+
+test('the visit page explains empty catalogues instead of showing empty order forms', function () {
+    [$facility, $admin] = provisionHospital();
+    $visit = openCashVisit($facility, $admin);
+
+    $this->actingAs($admin)
+        ->get(route('visits.show', $visit))
+        ->assertOk()
+        ->assertSee(route('visits.triage', $visit), false)
+        ->assertSee(route('visits.consult', $visit), false)
+        ->assertSee('No lab tests are on the price list yet')
+        ->assertSee('No medicines are on the price list yet')
+        ->assertDontSee(route('visits.prescribe', $visit), false);
+});
+
+test('the seeded visit page shows every order form and the full record', function () {
+    $this->seed(DatabaseSeeder::class);
+    $admin = User::query()->where('email', 'admin@stmarys.afyadesk.test')->first();
+    $visit = Visit::query()->whereHas('prescriptions')->first();
+
+    $this->actingAs($admin)
+        ->get(route('visits.show', $visit))
+        ->assertOk()
+        ->assertSee(route('visits.prescribe', $visit), false)
+        ->assertSee(route('visits.labs', $visit), false)
+        ->assertSee('Prescriptions')
+        ->assertSee('dispensed');
 });

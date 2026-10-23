@@ -23,6 +23,11 @@ class LabRequest extends Model
         return $this->belongsTo(Visit::class);
     }
 
+    public function requester(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ordered_by');
+    }
+
     public function items(): HasMany
     {
         return $this->hasMany(LabRequestItem::class);

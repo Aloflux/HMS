@@ -90,7 +90,7 @@
     </section>
 
     @if (auth()->user()->permits('patients.manage'))
-        <section class="mt-4 rounded-lg bg-white p-5 shadow-sm">
+        <section id="open-visit" class="mt-4 scroll-mt-24 rounded-lg bg-white p-5 shadow-sm">
             <h2 class="font-semibold">Open a visit</h2>
             <form method="POST" action="{{ route('visits.store', $patient) }}" class="mt-4 grid gap-4 sm:grid-cols-2">
                 @csrf
@@ -147,50 +147,4 @@
             </form>
         </section>
     @endif
-
-    <section class="mt-4 rounded-lg bg-white shadow-sm">
-        <div class="px-5 pt-5">
-            <h2 class="font-semibold">Recently registered</h2>
-        </div>
-        <div class="mt-4 overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="text-left text-xs uppercase tracking-wide text-slate-400">
-                    <tr>
-                        <th class="px-5 py-3 font-medium">Patient</th>
-                        <th class="px-5 py-3 font-medium">Phone</th>
-                        <th class="px-5 py-3 font-medium">Residence</th>
-                        <th class="px-5 py-3 font-medium">Status</th>
-                        <th class="px-5 py-3 font-medium"><span class="sr-only">Open</span></th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    @forelse ($recentPatients as $recent)
-                        <tr>
-                            <td class="px-5 py-3">
-                                <a href="{{ route('patients.show', $recent) }}" class="flex items-center gap-3">
-                                    <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-50 text-xs font-semibold text-brand-800">{{ $recent->initials() }}</span>
-                                    <span>
-                                        <span class="block font-medium text-slate-900">{{ $recent->fullName() }}</span>
-                                        <span class="block text-xs text-slate-400">{{ $recent->patient_number }}</span>
-                                    </span>
-                                </a>
-                            </td>
-                            <td class="px-5 py-3 text-slate-600">{{ $recent->phone }}</td>
-                            <td class="px-5 py-3 text-slate-600">{{ $recent->district }}</td>
-                            <td class="px-5 py-3">
-                                <span class="rounded-full bg-brand-50 px-2 py-1 text-xs font-medium uppercase tracking-wide text-brand-800">{{ $recent->latestVisit?->visit_type->label() ?? 'Registered' }}</span>
-                            </td>
-                            <td class="px-5 py-3 text-end">
-                                <a href="{{ route('patients.show', $recent) }}" class="text-slate-400 hover:text-brand-700" aria-label="Open {{ $recent->fullName() }}">
-                                    <x-icon name="bx-chevron-right" class="text-xl" />
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr><td colspan="5" class="px-5 py-8 text-slate-500">No other patients are on this register.</td></tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-    </section>
 </x-app-layout>

@@ -83,11 +83,13 @@ Route::middleware('auth')->group(function () {
         Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
         Route::post('/appointments/{appointment}/check-in', [AppointmentController::class, 'checkIn'])->name('appointments.check-in');
+        Route::post('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.status');
     });
 
     Route::middleware('permission:queue.view')->group(function () {
         Route::get('/queues', [QueueController::class, 'index'])->name('queues.index');
         Route::post('/queues/call', [QueueController::class, 'call'])->name('queues.call');
+        Route::post('/queues/{entry}/complete', [QueueController::class, 'complete'])->name('queues.complete');
     });
 
     Route::middleware('permission:lab.view')->group(function () {
@@ -102,6 +104,7 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:radiology.view')->group(function () {
         Route::get('/radiology', [RadiologyController::class, 'index'])->name('radiology.index');
+        Route::get('/radiology/{order}/image', [RadiologyController::class, 'image'])->name('radiology.image');
     });
     Route::post('/radiology/{order}/report', [RadiologyController::class, 'report'])
         ->middleware('permission:radiology.manage')
@@ -129,6 +132,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/waivers/{waiver}/approve', [CashierController::class, 'approveWaiver'])
         ->middleware('permission:waivers.approve')
         ->name('waivers.approve');
+    Route::post('/waivers/{waiver}/reject', [CashierController::class, 'rejectWaiver'])
+        ->middleware('permission:waivers.approve')
+        ->name('waivers.reject');
 
     Route::middleware('permission:insurance.manage')->group(function () {
         Route::get('/insurance', [InsuranceController::class, 'index'])->name('insurance.index');
@@ -181,7 +187,9 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware('permission:admin.manage')->prefix('admin')->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
+        Route::get('/users/create', [AdminUserController::class, 'create'])->name('admin.users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('admin.users.store');
+        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
         Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
         Route::get('/departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');

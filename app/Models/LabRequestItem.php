@@ -30,6 +30,11 @@ class LabRequestItem extends Model
         return $this->belongsTo(LabRequest::class, 'lab_request_id');
     }
 
+    public function verifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'verified_by');
+    }
+
     public function test(): BelongsTo
     {
         return $this->belongsTo(LabTest::class, 'lab_test_id');

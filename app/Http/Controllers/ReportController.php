@@ -66,6 +66,11 @@ class ReportController extends Controller
      */
     private function range(Request $request): array
     {
+        $request->validate([
+            'start' => ['nullable', 'date'],
+            'end' => ['nullable', 'date', 'after_or_equal:start'],
+        ]);
+
         $start = $request->filled('start') ? Carbon::parse($request->string('start')->toString()) : now()->startOfMonth();
         $end = $request->filled('end') ? Carbon::parse($request->string('end')->toString()) : now()->endOfMonth();
 

@@ -27,6 +27,11 @@ class ImagingOrder extends Model
         return $this->belongsTo(Visit::class);
     }
 
+    public function reporter(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reported_by');
+    }
+
     public function study(): BelongsTo
     {
         return $this->belongsTo(ImagingStudy::class, 'imaging_study_id');

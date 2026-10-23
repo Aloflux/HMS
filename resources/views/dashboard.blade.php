@@ -39,13 +39,15 @@
             <p class="mt-4 text-xs font-medium uppercase tracking-wide text-slate-400">Bed occupancy</p>
             <p class="mt-1 text-3xl font-semibold tracking-tight">{{ $occupancy }}%</p>
         </div>
-        <div class="rounded-lg bg-white p-5 shadow-sm">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
-                <x-icon name="bx-wallet" class="text-xl" />
-            </span>
-            <p class="mt-4 text-xs font-medium uppercase tracking-wide text-slate-400">Collected today</p>
-            <p class="mt-1 text-3xl font-semibold tracking-tight">{{ \App\Support\Money::format($revenueToday) }}</p>
-        </div>
+        @if (auth()->user()->permits('cashier.manage') || auth()->user()->permits('reports.view'))
+            <div class="rounded-lg bg-white p-5 shadow-sm">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
+                    <x-icon name="bx-wallet" class="text-xl" />
+                </span>
+                <p class="mt-4 text-xs font-medium uppercase tracking-wide text-slate-400">Collected today</p>
+                <p class="mt-1 text-3xl font-semibold tracking-tight">{{ \App\Support\Money::format($revenueToday) }}</p>
+            </div>
+        @endif
     </div>
 
     <div class="mt-4 grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">

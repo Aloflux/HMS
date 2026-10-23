@@ -22,6 +22,9 @@ class WardStockService
     public function issue(Admission $admission, Item $item, StockLocation $location, int $quantity, User $actor, ?string $notes = null): WardConsumption
     {
         return DB::transaction(function () use ($admission, $item, $location, $quantity, $actor, $notes): WardConsumption {
+            $admission = Admission::query()->whereKey($admission->id)->lockForUpdate()->firstOrFail();
+            $admission->ensureOpen();
+
             if ($location->kind !== 'ward' || $location->facility_id !== $admission->facility_id) {
                 throw ValidationException::withMessages([
                     'stock_location_id' => 'Ward issues must come from a ward store at this facility.',

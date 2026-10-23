@@ -9,24 +9,37 @@ use App\Models\Department;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
 class UserController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $departments = Department::query()->orderBy('name')->get();
+        $search = $request->string('q')->trim()->toString();
 
         return view('admin.users.index', [
-            'users' => User::query()->where('facility_id', auth()->user()->facility_id)->with('department')->orderBy('name')->get(),
-            'departments' => $departments,
-            'areas' => RolePermissions::areas(),
-            'departmentAreas' => $departments->mapWithKeys(fn (Department $department): array => [
-                $department->id => RolePermissions::areaKeysForDepartmentKind($department->kind),
-            ]),
+            'users' => User::query()
+                ->where('facility_id', $request->user()->facility_id)
+                ->when($search !== '', function ($query) use ($search): void {
+                    $query->where(function ($inner) use ($search): void {
+                        $inner->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+                })
+                ->with('department')
+                ->orderBy('name')
+                ->paginate(25)
+                ->withQueryString(),
+            'search' => $search,
         ]);
+    }
+
+    public function create(): View
+    {
+        return view('admin.users.create', $this->accessOptions());
     }
 
     public function store(Request $request): RedirectResponse
@@ -38,7 +51,7 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
         ]);
 
-        User::query()->create([
+        $user = User::query()->create([
             'name' => $identity['name'],
             'email' => $identity['email'],
             'password' => $identity['password'],
@@ -49,7 +62,17 @@ class UserController extends Controller
             ...$this->assignment($request),
         ]);
 
-        return back()->with('status', 'User created.');
+        return redirect()->route('admin.users.index')->with('status', "{$user->name} added.");
+    }
+
+    public function edit(Request $request, User $user): View
+    {
+        abort_unless($user->facility_id === $request->user()->facility_id, 404);
+
+        return view('admin.users.edit', [
+            'user' => $user,
+            ...$this->accessOptions(),
+        ]);
     }
 
     public function update(Request $request, User $user): RedirectResponse
@@ -57,20 +80,39 @@ class UserController extends Controller
         abort_unless($user->facility_id === $request->user()->facility_id, 404);
 
         $assignment = $this->assignment($request);
-        $active = $request->validate([
+        $details = $request->validate([
+            'name' => ['required', 'string', 'max:150'],
+            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user)],
+            'phone' => ['nullable', 'string', 'max:30'],
             'is_active' => ['required', 'boolean'],
         ]);
 
-        if ($user->is($request->user()) && $assignment['role'] !== Role::Administrator) {
-            return back()->with('error', 'You cannot remove your own full access.');
+        if ($user->is($request->user()) && ($assignment['role'] !== Role::Administrator || ! $details['is_active'])) {
+            return back()->with('error', 'You cannot remove your own full access or turn off your own account.');
         }
 
         $user->update([
+            ...$details,
             ...$assignment,
-            'is_active' => $active['is_active'],
         ]);
 
-        return back()->with('status', 'Access updated.');
+        return redirect()->route('admin.users.index')->with('status', "{$user->name} updated.");
+    }
+
+    /**
+     * @return array{departments: \Illuminate\Database\Eloquent\Collection<int, Department>, areas: list<array{key: string, label: string, detail: string, permissions: list<string>}>, departmentAreas: Collection<int, list<string>>}
+     */
+    private function accessOptions(): array
+    {
+        $departments = Department::query()->orderBy('name')->get();
+
+        return [
+            'departments' => $departments,
+            'areas' => RolePermissions::areas(),
+            'departmentAreas' => $departments->mapWithKeys(fn (Department $department): array => [
+                $department->id => RolePermissions::areaKeysForDepartmentKind($department->kind),
+            ]),
+        ];
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class Navigation
 {
@@ -31,6 +32,31 @@ class Navigation
             ['label' => 'Price list', 'route' => 'admin.catalogue.index', 'permission' => 'admin.manage', 'pattern' => 'admin.catalogue.*', 'icon' => 'bx-purchase-tag', 'group' => 'Administration'],
             ['label' => 'Audit trail', 'route' => 'admin.audit.index', 'permission' => 'admin.manage', 'pattern' => 'admin.audit.*', 'icon' => 'bx-history', 'group' => 'Administration'],
         ];
+    }
+
+    /**
+     * The browser tab title for a route, taken from the sidebar label that owns it.
+     */
+    public static function titleFor(?string $routeName): ?string
+    {
+        if ($routeName === null) {
+            return null;
+        }
+
+        $extra = [
+            ['pattern' => 'visits.*', 'label' => 'Visit'],
+            ['pattern' => 'receipts.*', 'label' => 'Receipt'],
+            ['pattern' => 'platform.*', 'label' => 'Facilities'],
+            ['pattern' => 'profile.*', 'label' => 'Profile'],
+        ];
+
+        foreach ([...self::items(), ...$extra] as $item) {
+            if (Str::is($item['pattern'], $routeName)) {
+                return $item['label'];
+            }
+        }
+
+        return null;
     }
 
     /**

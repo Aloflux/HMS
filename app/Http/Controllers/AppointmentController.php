@@ -8,6 +8,7 @@ use App\Enums\VisitType;
 use App\Http\Requests\StoreAppointmentRequest;
 use App\Models\Appointment;
 use App\Models\Department;
+use App\Models\InsuranceScheme;
 use App\Models\Patient;
 use App\Services\EncounterService;
 use App\Services\PatientRegistrar;
@@ -15,17 +16,47 @@ use App\Services\SmsNotifier;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class AppointmentController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $when = $request->string('when')->toString() === 'past' ? 'past' : 'upcoming';
+        $today = now()->startOfDay();
+
         return view('appointments.index', [
-            'appointments' => Appointment::query()->with(['patient', 'department'])->orderBy('scheduled_at')->paginate(20),
+            'appointments' => Appointment::query()
+                ->with(['patient.latestVisit', 'department'])
+                ->when(
+                    $when === 'past',
+                    fn ($query) => $query->where('scheduled_at', '<', $today)->orderByDesc('scheduled_at'),
+                    fn ($query) => $query->where('scheduled_at', '>=', $today)->orderBy('scheduled_at'),
+                )
+                ->paginate(20)
+                ->withQueryString(),
+            'when' => $when,
             'patientChoices' => $this->patientChoices(),
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(),
+            'schemes' => InsuranceScheme::query()->where('is_active', true)->orderBy('name')->get(),
+            'payers' => Payer::cases(),
         ]);
+    }
+
+    public function updateStatus(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', Rule::in(['cancelled', 'no_show'])],
+        ]);
+
+        if ($appointment->status !== 'booked') {
+            return back()->with('error', 'Only a booked appointment can be cancelled or marked as a no-show.');
+        }
+
+        $appointment->update(['status' => $data['status']]);
+
+        return back()->with('status', $data['status'] === 'cancelled' ? 'Appointment cancelled.' : 'Marked as a no-show.');
     }
 
     public function store(StoreAppointmentRequest $request, SmsNotifier $sms, PatientRegistrar $registrar): RedirectResponse
@@ -86,10 +117,20 @@ class AppointmentController extends Controller
             return back()->with('error', 'Only a booked appointment can be checked in.');
         }
 
+        $facilityId = $request->user()->facility_id;
+        $payment = $request->validate([
+            'payer' => ['required', Rule::enum(Payer::class)],
+            'insurance_scheme_id' => ['nullable', 'required_unless:payer,cash', Rule::exists('insurance_schemes', 'id')->where('facility_id', $facilityId)],
+            'member_number' => ['nullable', 'required_unless:payer,cash', 'string', 'max:60'],
+        ]);
+        $insured = $payment['payer'] !== Payer::Cash->value;
+
         $visit = $encounters->openVisit($appointment->patient, $request->user(), [
             'visit_type' => VisitType::Outpatient,
             'priority' => Priority::Routine,
-            'payer' => Payer::Cash,
+            'payer' => $payment['payer'],
+            'insurance_scheme_id' => $insured ? $payment['insurance_scheme_id'] : null,
+            'member_number' => $insured ? $payment['member_number'] : null,
             'department_id' => $appointment->department_id,
             'chief_complaint' => $appointment->reason,
         ]);

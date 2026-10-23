@@ -165,32 +165,88 @@
         </div>
     </form>
 
+    <div class="mb-3 flex flex-wrap gap-2">
+        @foreach (['upcoming' => 'Today and upcoming', 'past' => 'Past'] as $value => $label)
+            <a href="{{ route('appointments.index', ['when' => $value]) }}" class="rounded-full px-3 py-1 text-sm {{ $when === $value ? 'bg-brand-700 text-white' : 'bg-white text-slate-700' }}">{{ $label }}</a>
+        @endforeach
+    </div>
+
     <div class="overflow-x-auto rounded-lg bg-white shadow-sm">
         <table class="min-w-full text-sm">
-            <thead class="bg-slate-50 text-left text-slate-500">
+            <thead class="text-left text-xs uppercase tracking-wide text-slate-400">
                 <tr>
-                    <th class="px-4 py-3">When</th>
-                    <th class="px-4 py-3">Patient</th>
-                    <th class="px-4 py-3">Department</th>
-                    <th class="px-4 py-3">Status</th>
-                    <th class="px-4 py-3"></th>
+                    <th class="px-4 py-3 font-medium">When</th>
+                    <th class="px-4 py-3 font-medium">Patient</th>
+                    <th class="px-4 py-3 font-medium">Department</th>
+                    <th class="px-4 py-3 font-medium">Status</th>
+                    <th class="px-4 py-3"><span class="sr-only">Actions</span></th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
                 @forelse ($appointments as $appointment)
-                    <tr>
-                        <td class="px-4 py-3">{{ $appointment->scheduled_at->format('d M Y H:i') }}</td>
-                        <td class="px-4 py-3">{{ $appointment->patient->fullName() }}</td>
+                    @php
+                        $lastVisit = $appointment->patient->latestVisit;
+                    @endphp
+                    <tr class="align-top">
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <span class="block font-medium">{{ $appointment->scheduled_at->isToday() ? 'Today' : $appointment->scheduled_at->format('D d M Y') }}</span>
+                            <span class="block text-xs text-slate-500">{{ $appointment->scheduled_at->format('H:i') }}</span>
+                        </td>
+                        <td class="px-4 py-3">
+                            <a href="{{ route('patients.show', $appointment->patient) }}" class="font-medium text-slate-900">{{ $appointment->patient->fullName() }}</a>
+                            @if ($appointment->reason)
+                                <span class="block text-xs text-slate-500">{{ $appointment->reason }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-3">{{ $appointment->department->name }}</td>
-                        <td class="px-4 py-3">{{ $appointment->status }}</td>
+                        <td class="px-4 py-3"><x-status :value="$appointment->status" /></td>
                         <td class="px-4 py-3">
                             @if ($appointment->status === 'booked')
-                                <form method="POST" action="{{ route('appointments.check-in', $appointment) }}">@csrf<button class="text-brand-700">Check in</button></form>
+                                <details class="group">
+                                    <summary class="cursor-pointer list-none text-sm font-semibold text-brand-700">Check in</summary>
+                                    <form
+                                        method="POST"
+                                        action="{{ route('appointments.check-in', $appointment) }}"
+                                        class="mt-2 grid w-64 gap-2"
+                                        x-data="{ payer: @js($lastVisit?->payer->value ?? 'cash') }"
+                                    >
+                                        @csrf
+                                        <label class="text-xs text-slate-500" for="payer-{{ $appointment->id }}">Who pays</label>
+                                        <select id="payer-{{ $appointment->id }}" name="payer" x-model="payer" class="rounded-md border-slate-300 text-sm">
+                                            @foreach ($payers as $payer)
+                                                <option value="{{ $payer->value }}">{{ $payer->label() }}</option>
+                                            @endforeach
+                                        </select>
+                                        <template x-if="payer !== 'cash'">
+                                            <div class="grid gap-2">
+                                                <select name="insurance_scheme_id" class="rounded-md border-slate-300 text-sm" aria-label="Scheme">
+                                                    @foreach ($schemes as $scheme)
+                                                        <option value="{{ $scheme->id }}" @selected($lastVisit?->insurance_scheme_id === $scheme->id)>{{ $scheme->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input name="member_number" value="{{ $lastVisit?->member_number }}" placeholder="Member number" aria-label="Member number" class="rounded-md border-slate-300 text-sm">
+                                            </div>
+                                        </template>
+                                        <x-primary-button>Open visit</x-primary-button>
+                                    </form>
+                                </details>
+                                <div class="mt-2 flex gap-3 text-xs">
+                                    <form method="POST" action="{{ route('appointments.status', $appointment) }}">
+                                        @csrf
+                                        <input type="hidden" name="status" value="no_show">
+                                        <button class="text-slate-600 hover:text-slate-900">No-show</button>
+                                    </form>
+                                    <form method="POST" action="{{ route('appointments.status', $appointment) }}">
+                                        @csrf
+                                        <input type="hidden" name="status" value="cancelled">
+                                        <button class="text-red-700">Cancel</button>
+                                    </form>
+                                </div>
                             @endif
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5" class="px-4 py-8 text-slate-500">No appointments booked yet.</td></tr>
+                    <tr><td colspan="5" class="px-4 py-8 text-slate-500">{{ $when === 'past' ? 'No past appointments.' : 'Nothing booked from today on.' }}</td></tr>
                 @endforelse
             </tbody>
         </table>

@@ -14,21 +14,30 @@ class TheatreController extends Controller
     public function index(): View
     {
         return view('theatre.index', [
-            'bookings' => TheatreBooking::query()->with(['patient', 'surgeon', 'note'])->orderBy('scheduled_at')->limit(40)->get(),
-            'patients' => Patient::query()->orderBy('surname')->limit(200)->get(),
+            'bookings' => TheatreBooking::query()
+                ->with(['patient', 'surgeon', 'note'])
+                ->orderByRaw("CASE WHEN status = 'booked' THEN 0 ELSE 1 END")
+                ->orderBy('scheduled_at')
+                ->limit(40)
+                ->get(),
+            'patients' => Patient::query()->latest()->limit(200)->get(['patient_number', 'surname', 'given_name', 'other_name']),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'patient_id' => ['required', Rule::exists('patients', 'id')->where('facility_id', $request->user()->facility_id)],
+            'patient_number' => ['required', 'string', Rule::exists('patients', 'patient_number')->where('facility_id', $request->user()->facility_id)],
             'procedure' => ['required', 'string', 'max:255'],
-            'scheduled_at' => ['required', 'date'],
+            'scheduled_at' => ['required', 'date', 'after_or_equal:today'],
+        ], [
+            'patient_number.exists' => 'No patient at this facility has that number.',
         ]);
 
         TheatreBooking::query()->create([
-            ...$data,
+            'patient_id' => Patient::query()->where('patient_number', $data['patient_number'])->value('id'),
+            'procedure' => $data['procedure'],
+            'scheduled_at' => $data['scheduled_at'],
             'facility_id' => $request->user()->facility_id,
             'surgeon_id' => $request->user()->id,
             'status' => 'booked',

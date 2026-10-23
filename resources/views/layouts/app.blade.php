@@ -6,7 +6,8 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="idle-timeout" content="{{ config('hms.idle_timeout_minutes') }}">
 
-        <title>{{ config('app.name', 'AfyaDesk') }}</title>
+        @php($pageTitle = \App\Support\Navigation::titleFor(request()->route()?->getName()))
+        <title>{{ $pageTitle ? $pageTitle.' · ' : '' }}{{ config('app.name', 'AfyaDesk') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
@@ -26,11 +27,11 @@
                             <span class="sr-only">Menu</span>
                         </button>
                         @if (auth()->user()->permits('patients.view'))
-                            <form method="GET" action="{{ route('patients.index') }}" class="hidden min-w-0 flex-1 md:block md:max-w-md">
+                            <form method="GET" action="{{ route('patients.index') }}" class="min-w-0 flex-1 md:max-w-md">
                                 <label class="relative block">
                                     <span class="sr-only">Search patients</span>
                                     <x-icon name="bx-search" class="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
-                                    <input type="search" name="q" value="{{ request()->routeIs('patients.index') ? request('q') : '' }}" placeholder="Search patient name, number, or phone" class="w-full rounded-full border-slate-200 bg-white py-2 ps-10 pe-4 text-sm shadow-sm focus:border-brand-600 focus:ring-0 focus:outline-none">
+                                    <input type="search" name="q" value="{{ request()->routeIs('patients.index') ? request('q') : '' }}" placeholder="Search patients" class="w-full rounded-full border-slate-200 bg-white py-2 ps-10 pe-4 text-sm shadow-sm focus:border-brand-600 focus:ring-0 focus:outline-none">
                                 </label>
                             </form>
                         @endif
@@ -40,7 +41,7 @@
                                     <button type="button" class="inline-flex items-center gap-3 rounded-xl border border-slate-200 bg-white py-1.5 ps-3 pe-1.5 text-sm shadow-sm">
                                         <span class="hidden text-end sm:block">
                                             <span class="block max-w-40 truncate font-semibold leading-tight text-slate-900">{{ auth()->user()->name }}</span>
-                                            <span class="block truncate text-xs text-slate-500">{{ auth()->user()->role->label() }}</span>
+                                            <span class="block max-w-40 truncate text-xs text-slate-500">{{ auth()->user()->role === \App\Enums\Role::Staff ? auth()->user()->accessAreas() : auth()->user()->role->label() }}</span>
                                         </span>
                                         <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-brand-100 text-sm font-semibold text-brand-800">
                                             {{ collect(preg_split('/\s+/', trim(auth()->user()->name)))->filter()->take(2)->map(fn ($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('') }}
@@ -51,7 +52,7 @@
                                 <x-slot name="content">
                                     <div class="border-b border-slate-100 px-4 py-3">
                                         <p class="truncate text-sm font-medium text-slate-900">{{ auth()->user()->name }}</p>
-                                        <p class="truncate text-xs text-slate-500">{{ auth()->user()->role->label() }}</p>
+                                        <p class="truncate text-xs text-slate-500">{{ auth()->user()->role === \App\Enums\Role::Staff ? auth()->user()->accessAreas() : auth()->user()->role->label() }}</p>
                                     </div>
                                     <x-dropdown-link :href="route('profile.edit')">
                                         <x-icon name="bx-user" class="text-lg text-brand-700" />

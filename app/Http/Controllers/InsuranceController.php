@@ -79,6 +79,10 @@ class InsuranceController extends Controller
             'reference' => ['nullable', 'string', 'max:80'],
         ]);
 
+        if ($preauthorisation->status !== 'pending') {
+            return back()->with('error', 'This preauthorisation was already '.$preauthorisation->status.'.');
+        }
+
         $preauthorisation->update([
             'status' => $data['decision'],
             'reference' => $data['reference'] ?? null,

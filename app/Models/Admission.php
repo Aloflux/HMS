@@ -7,6 +7,7 @@ use App\Models\Concerns\RecordsAudit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class Admission extends Model
 {
@@ -25,6 +26,23 @@ class Admission extends Model
             'admitted_at' => 'datetime',
             'discharged_at' => 'datetime',
         ];
+    }
+
+    public function isOpen(): bool
+    {
+        return $this->status === 'admitted';
+    }
+
+    /**
+     * Ward entries on a discharged patient would chart care, or charge a bill, after they left.
+     */
+    public function ensureOpen(): void
+    {
+        if (! $this->isOpen()) {
+            throw ValidationException::withMessages([
+                'admission' => 'This patient was discharged '.($this->discharged_at?->format('d M Y H:i') ?? '').'. The ward record is closed.',
+            ]);
+        }
     }
 
     public function visit(): BelongsTo
