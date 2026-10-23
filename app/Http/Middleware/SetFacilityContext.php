@@ -42,7 +42,7 @@ class SetFacilityContext
         );
 
         view()->share('currentFacility', $user?->facility);
-        view()->share('navigation', Navigation::forUser($user));
+        view()->share('navigation', Navigation::sections($user));
 
         return $next($request);
     }

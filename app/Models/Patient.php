@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Patient extends Model
 {
@@ -55,6 +56,11 @@ class Patient extends Model
         return $this->hasMany(Visit::class);
     }
 
+    public function latestVisit(): HasOne
+    {
+        return $this->hasOne(Visit::class)->latestOfMany('opened_at');
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
@@ -77,5 +83,14 @@ class Patient extends Model
     public function ageInYears(): int
     {
         return $this->date_of_birth->age;
+    }
+
+    public function initials(): string
+    {
+        return collect(preg_split('/\s+/', $this->fullName()))
+            ->filter()
+            ->take(2)
+            ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+            ->implode('');
     }
 }

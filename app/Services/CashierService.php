@@ -66,6 +66,22 @@ class CashierService
                 ]);
             }
 
+            $bill = Bill::query()->whereKey($bill->id)->lockForUpdate()->firstOrFail();
+            $bill->load(['lines', 'payments']);
+            $balance = $bill->cashBalance();
+
+            if ($balance === 0) {
+                throw ValidationException::withMessages([
+                    'amount' => 'This bill has nothing left to pay in cash.',
+                ]);
+            }
+
+            if ($amount > $balance) {
+                throw ValidationException::withMessages([
+                    'amount' => 'The amount is more than the UGX '.number_format($balance).' still owed.',
+                ]);
+            }
+
             $payment = Payment::query()->create([
                 'facility_id' => $bill->facility_id,
                 'bill_id' => $bill->id,
@@ -131,13 +147,24 @@ class CashierService
     public function approveWaiver(Waiver $waiver, User $approver): void
     {
         DB::transaction(function () use ($waiver, $approver): void {
+            $waiver = Waiver::query()->whereKey($waiver->id)->lockForUpdate()->firstOrFail();
+
             if ($waiver->status !== 'pending') {
                 throw ValidationException::withMessages([
                     'waiver' => 'This waiver is no longer pending.',
                 ]);
             }
 
-            $bill = $waiver->bill()->with(['lines', 'payments'])->first();
+            $bill = Bill::query()->whereKey($waiver->bill_id)->lockForUpdate()->firstOrFail();
+            $bill->load(['lines', 'payments']);
+            $balance = $bill->cashBalance();
+
+            if ($waiver->amount > $balance) {
+                throw ValidationException::withMessages([
+                    'waiver' => 'The bill now owes only UGX '.number_format($balance).', less than this waiver. Request a new waiver for the current balance.',
+                ]);
+            }
+
             $bill->increment('waived_amount', $waiver->amount);
             $waiver->update([
                 'status' => 'approved',

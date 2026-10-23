@@ -27,6 +27,7 @@ class DispensingService
     public function dispense(PrescriptionItem $line, User $actor, int $quantity, ?int $substituteItemId = null): void
     {
         DB::transaction(function () use ($line, $actor, $quantity, $substituteItemId): void {
+            $line = PrescriptionItem::query()->whereKey($line->id)->lockForUpdate()->firstOrFail();
             $line->load('item', 'prescription.visit');
 
             if ($line->status === 'cancelled') {

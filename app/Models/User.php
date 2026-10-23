@@ -25,6 +25,7 @@ class User extends Authenticatable
         'password',
         'facility_id',
         'role',
+        'permissions',
         'phone',
         'department_id',
         'is_active',
@@ -45,6 +46,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'role' => Role::class,
+            'permissions' => 'array',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];
@@ -70,9 +72,57 @@ class User extends Authenticatable
             return false;
         }
 
-        $allowed = RolePermissions::for($this->role);
+        if ($this->role === Role::Administrator) {
+            return true;
+        }
+
+        $allowed = is_array($this->permissions)
+            ? $this->permissions
+            : RolePermissions::for($this->role);
 
         return in_array('*', $allowed, true) || in_array($permission, $allowed, true);
+    }
+
+    public function accessSummary(): string
+    {
+        if ($this->role === Role::Administrator) {
+            return 'Full access';
+        }
+
+        if ($this->role === Role::PlatformAdmin) {
+            return $this->role->covers();
+        }
+
+        $permissions = is_array($this->permissions)
+            ? $this->permissions
+            : RolePermissions::for($this->role);
+        $areas = [];
+
+        foreach (RolePermissions::areas() as $area) {
+            if (array_diff($area['permissions'], $permissions) === []) {
+                $areas[] = $area['label'];
+            }
+        }
+
+        $access = $areas === [] ? 'No areas assigned' : implode(', ', $areas);
+
+        return $this->department?->name ? $this->department->name.' · '.$access : $access;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function selectedAreaKeys(): array
+    {
+        if ($this->role === Role::Administrator || $this->role === Role::PlatformAdmin) {
+            return [];
+        }
+
+        $permissions = is_array($this->permissions)
+            ? $this->permissions
+            : RolePermissions::for($this->role);
+
+        return RolePermissions::areasMatching($permissions);
     }
 
     public function homeRoute(): string

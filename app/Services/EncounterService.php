@@ -74,6 +74,8 @@ class EncounterService
     public function recordTriage(Visit $visit, User $actor, array $data): Visit
     {
         return DB::transaction(function () use ($visit, $actor, $data): Visit {
+            $this->assertAcceptsOrders($visit);
+
             $visit->triageRecords()->create([
                 'facility_id' => $visit->facility_id,
                 'temperature' => $data['temperature'] ?? null,
@@ -112,6 +114,8 @@ class EncounterService
     public function recordConsultation(Visit $visit, User $actor, array $data): Consultation
     {
         return DB::transaction(function () use ($visit, $actor, $data): Consultation {
+            $this->assertAcceptsOrders($visit);
+
             $consultation = $visit->consultations()->create([
                 'facility_id' => $visit->facility_id,
                 'clinician_id' => $actor->id,
@@ -155,6 +159,8 @@ class EncounterService
     public function orderLabs(Visit $visit, User $actor, array $testIds, ?string $notes = null): LabRequest
     {
         return DB::transaction(function () use ($visit, $actor, $testIds, $notes): LabRequest {
+            $this->assertAcceptsOrders($visit);
+
             $request = LabRequest::query()->create([
                 'facility_id' => $visit->facility_id,
                 'visit_id' => $visit->id,
@@ -193,9 +199,11 @@ class EncounterService
     public function verifyLabResult(LabRequestItem $item, User $actor, string $value): LabRequestItem
     {
         return DB::transaction(function () use ($item, $actor, $value): LabRequestItem {
-            if ($item->status === 'verified') {
+            $item = LabRequestItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($item->status, ['ordered', 'resulted'], true)) {
                 throw ValidationException::withMessages([
-                    'result_value' => 'This result is already verified.',
+                    'result_value' => "This test is {$item->status} and cannot take a result.",
                 ]);
             }
 
@@ -253,13 +261,15 @@ class EncounterService
 
     public function cancelLabItem(LabRequestItem $item): void
     {
-        if ($item->status !== 'ordered') {
-            throw ValidationException::withMessages([
-                'laboratory' => 'Only an unordered result can be cancelled.',
-            ]);
-        }
-
         DB::transaction(function () use ($item): void {
+            $item = LabRequestItem::query()->whereKey($item->id)->lockForUpdate()->firstOrFail();
+
+            if ($item->status !== 'ordered') {
+                throw ValidationException::withMessages([
+                    'laboratory' => 'Only a test that has no result yet can be cancelled.',
+                ]);
+            }
+
             if ($item->bill_line_id) {
                 $line = $item->billLine()->with('bill.payments')->first();
 
@@ -279,6 +289,8 @@ class EncounterService
     public function orderImaging(Visit $visit, User $actor, ImagingStudy $study, ?string $notes = null): ImagingOrder
     {
         return DB::transaction(function () use ($visit, $actor, $study, $notes): ImagingOrder {
+            $this->assertAcceptsOrders($visit);
+
             $order = ImagingOrder::query()->create([
                 'facility_id' => $visit->facility_id,
                 'visit_id' => $visit->id,
@@ -329,6 +341,8 @@ class EncounterService
     public function prescribe(Visit $visit, User $actor, array $lines, ?string $notes = null): Prescription
     {
         return DB::transaction(function () use ($visit, $actor, $lines, $notes): Prescription {
+            $this->assertAcceptsOrders($visit);
+
             $prescription = Prescription::query()->create([
                 'facility_id' => $visit->facility_id,
                 'visit_id' => $visit->id,
@@ -359,6 +373,9 @@ class EncounterService
     public function admit(Visit $visit, User $actor, Bed $bed, string $diagnosis): Admission
     {
         return DB::transaction(function () use ($visit, $actor, $bed, $diagnosis): Admission {
+            $this->assertAcceptsOrders($visit);
+            $bed = Bed::query()->whereKey($bed->id)->lockForUpdate()->firstOrFail();
+
             if ($bed->status !== 'available') {
                 throw ValidationException::withMessages([
                     'bed_id' => 'That bed is not available.',
@@ -455,6 +472,20 @@ class EncounterService
             'status' => VisitStatus::Closed,
             'closed_at' => now(),
         ]);
+    }
+
+    /**
+     * Orders on a visit the patient has already left would reopen a settled bill.
+     */
+    private function assertAcceptsOrders(Visit $visit): void
+    {
+        $status = Visit::query()->whereKey($visit->id)->lockForUpdate()->value('status');
+
+        if (in_array($status, [VisitStatus::Discharged, VisitStatus::Closed], true)) {
+            throw ValidationException::withMessages([
+                'visit' => "Visit {$visit->visit_number} is {$status->label()} and cannot take new orders. Open a new visit.",
+            ]);
+        }
     }
 
     private function assertReadyToLeave(Visit $visit): void

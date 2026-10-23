@@ -6,12 +6,21 @@ use App\Enums\Priority;
 use App\Enums\Role;
 use App\Enums\VisitType;
 use App\Models\Bed;
+use App\Models\Bill;
 use App\Models\BillLine;
+use App\Models\Facility;
 use App\Models\Item;
+use App\Models\LabRequestItem;
+use App\Models\LabTest;
 use App\Models\Patient;
+use App\Models\Payment;
+use App\Models\Service;
 use App\Models\StockBatch;
 use App\Models\StockLocation;
 use App\Models\User;
+use App\Models\Visit;
+use App\Models\Waiver;
+use App\Services\CashierService;
 use App\Services\EncounterService;
 use App\Services\FacilityProvisioner;
 use App\Services\PatientRegistrar;
@@ -38,6 +47,34 @@ function provisionHospital(): array
     $admin = User::query()->where('facility_id', $facility->id)->where('role', Role::Administrator)->first();
 
     return [$facility, $admin];
+}
+
+function openCashVisit(Facility $facility, User $actor): Visit
+{
+    $patient = Patient::query()->create([
+        'facility_id' => $facility->id,
+        'patient_number' => 'TST-'.fake()->unique()->numerify('####'),
+        'surname' => 'Okello',
+        'given_name' => 'Peter',
+        'sex' => 'male',
+        'date_of_birth' => '1985-06-01',
+        'phone' => fake()->unique()->numerify('0772######'),
+        'district' => 'Kampala',
+        'next_of_kin_name' => 'Kin',
+        'next_of_kin_relationship' => 'Brother',
+        'next_of_kin_phone' => '0772000011',
+        'consent_at' => now(),
+    ]);
+
+    FacilityContext::set($facility->id);
+    $visit = app(EncounterService::class)->openVisit($patient, $actor, [
+        'visit_type' => VisitType::Outpatient,
+        'priority' => Priority::Routine,
+        'payer' => Payer::Cash,
+    ]);
+    FacilityContext::forget();
+
+    return $visit;
 }
 
 test('sample accounts can be clicked into the login form when the demo flag is on', function () {
@@ -367,6 +404,115 @@ test('booking a new patient asks for the registration details', function () {
     expect(Patient::query()->where('facility_id', $facility->id)->count())->toBe(0);
 });
 
+test('front office sees the facility overview', function () {
+    [$facility] = provisionHospital();
+    $clerk = User::factory()->create([
+        'facility_id' => $facility->id,
+        'role' => Role::FrontOffice,
+    ]);
+
+    $this->actingAs($clerk)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Facility overview')
+        ->assertSee($facility->name)
+        ->assertSee('Clinical')
+        ->assertSee('Queues');
+});
+
+test('the patient directory can show only current inpatients', function () {
+    [$facility] = provisionHospital();
+    $clerk = User::factory()->create([
+        'facility_id' => $facility->id,
+        'role' => Role::FrontOffice,
+    ]);
+    $admitted = Patient::query()->create([
+        'facility_id' => $facility->id,
+        'patient_number' => 'ADM-1',
+        'surname' => 'Akello',
+        'given_name' => 'Grace',
+        'sex' => 'female',
+        'date_of_birth' => '1991-02-02',
+        'phone' => '0772000091',
+        'district' => 'Kampala',
+        'next_of_kin_name' => 'Kin',
+        'next_of_kin_relationship' => 'Sister',
+        'next_of_kin_phone' => '0772000092',
+        'consent_at' => now(),
+    ]);
+    Patient::query()->create([
+        'facility_id' => $facility->id,
+        'patient_number' => 'OPD-1',
+        'surname' => 'Walker',
+        'given_name' => 'Peter',
+        'sex' => 'male',
+        'date_of_birth' => '1985-05-05',
+        'phone' => '0772000093',
+        'district' => 'Wakiso',
+        'next_of_kin_name' => 'Kin',
+        'next_of_kin_relationship' => 'Brother',
+        'next_of_kin_phone' => '0772000094',
+        'consent_at' => now(),
+    ]);
+    Visit::query()->create([
+        'facility_id' => $facility->id,
+        'patient_id' => $admitted->id,
+        'visit_number' => 'V-ADM',
+        'visit_type' => 'inpatient',
+        'status' => 'admitted',
+        'payer' => 'cash',
+        'opened_at' => now(),
+    ]);
+
+    $this->actingAs($clerk)
+        ->get(route('patients.index', ['care' => 'inpatient']))
+        ->assertOk()
+        ->assertSee('Akello')
+        ->assertDontSee('Walker');
+});
+
+test('an administrator can open only the laboratory for a new user', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Lab Tech',
+            'email' => 'labtech@example.com',
+            'password' => 'password',
+            'account' => 'staff',
+            'areas' => ['laboratory'],
+            'department_id' => $facility->departments()->where('kind', 'laboratory')->value('id'),
+        ])
+        ->assertRedirect();
+
+    $user = User::query()->where('email', 'labtech@example.com')->first();
+
+    expect($user)->not->toBeNull()
+        ->and($user->role)->toBe(Role::Staff)
+        ->and($user->permits('lab.manage'))->toBeTrue()
+        ->and($user->permits('cashier.manage'))->toBeFalse()
+        ->and($user->permits('admin.manage'))->toBeFalse();
+
+    $this->actingAs($user)
+        ->get(route('cashier.index'))
+        ->assertForbidden();
+});
+
+test('an administrator cannot remove their own full access', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.update', $admin), [
+            'account' => 'staff',
+            'areas' => ['reports'],
+            'is_active' => '1',
+        ])
+        ->assertRedirect()
+        ->assertSessionHas('error');
+
+    expect($admin->fresh()->role)->toBe(Role::Administrator);
+});
+
 test('an inactive account cannot sign in', function () {
     $user = User::factory()->create(['is_active' => false]);
 
@@ -376,4 +522,101 @@ test('an inactive account cannot sign in', function () {
     ]);
 
     $this->assertGuest();
+});
+
+test('a cancelled lab test cannot be verified', function () {
+    [$facility, $admin] = provisionHospital();
+    $visit = openCashVisit($facility, $admin);
+    $service = Service::query()->create([
+        'facility_id' => $facility->id,
+        'code' => 'BS',
+        'name' => 'Malaria smear',
+        'category' => 'laboratory',
+        'cash_price' => 3000,
+        'is_active' => true,
+    ]);
+    $test = LabTest::query()->create([
+        'facility_id' => $facility->id,
+        'service_id' => $service->id,
+        'code' => 'BS',
+        'name' => 'Malaria smear',
+        'is_active' => true,
+    ]);
+
+    FacilityContext::set($facility->id);
+    $item = app(EncounterService::class)->orderLabs($visit, $admin, [$test->id])->items()->first();
+    FacilityContext::forget();
+
+    $this->actingAs($admin)->post(route('lab.cancel', $item))->assertRedirect();
+
+    $this->actingAs($admin)
+        ->post(route('lab.verify', $item), ['result_value' => 'Negative'])
+        ->assertSessionHasErrors('result_value');
+
+    expect(LabRequestItem::query()->find($item->id))
+        ->status->toBe('cancelled')
+        ->result_value->toBeNull();
+});
+
+test('the cashier cannot take more than the bill still owes', function () {
+    [$facility, $admin] = provisionHospital();
+    $visit = openCashVisit($facility, $admin);
+    $bill = Bill::query()->where('visit_id', $visit->id)->first();
+
+    $this->actingAs($admin)->post(route('cashier.shift'), ['opening_float' => 0]);
+
+    $this->actingAs($admin)
+        ->post(route('cashier.pay', $bill), ['method' => 'cash', 'amount' => 6000])
+        ->assertSessionHasErrors('amount');
+    expect(Payment::query()->count())->toBe(0);
+
+    $this->actingAs($admin)
+        ->post(route('cashier.pay', $bill), ['method' => 'cash', 'amount' => 5000])
+        ->assertRedirect();
+    expect($bill->fresh()->status)->toBe('paid');
+
+    $this->actingAs($admin)
+        ->post(route('cashier.pay', $bill), ['method' => 'cash', 'amount' => 5000])
+        ->assertSessionHasErrors('amount');
+    expect(Payment::query()->sum('amount'))->toEqual(5000);
+});
+
+test('a waiver larger than the remaining balance cannot be approved', function () {
+    [$facility, $admin] = provisionHospital();
+    $visit = openCashVisit($facility, $admin);
+    $bill = Bill::query()->where('visit_id', $visit->id)->first();
+    $waiver = app(CashierService::class)->requestWaiver($bill, $admin, 5000, 'Cannot afford');
+
+    $this->actingAs($admin)->post(route('cashier.shift'), ['opening_float' => 0]);
+    $this->actingAs($admin)->post(route('cashier.pay', $bill), ['method' => 'cash', 'amount' => 2000]);
+
+    $this->actingAs($admin)
+        ->post(route('waivers.approve', $waiver))
+        ->assertSessionHasErrors('waiver');
+
+    expect(Waiver::query()->find($waiver->id)->status)->toBe('pending');
+    expect((int) $bill->fresh()->waived_amount)->toBe(0);
+});
+
+test('a closed visit cannot take new orders', function () {
+    $this->seed(Icd10Seeder::class);
+    [$facility, $admin] = provisionHospital();
+    $visit = openCashVisit($facility, $admin);
+    $bill = Bill::query()->where('visit_id', $visit->id)->first();
+
+    $this->actingAs($admin)->post(route('visits.triage', $visit), [
+        'priority' => 'routine',
+        'chief_complaint' => 'Headache',
+    ]);
+    $this->actingAs($admin)->post(route('cashier.shift'), ['opening_float' => 0]);
+    $this->actingAs($admin)->post(route('cashier.pay', $bill), ['method' => 'cash', 'amount' => 5000]);
+    $this->actingAs($admin)->post(route('visits.complete', $visit))->assertSessionHasNoErrors();
+    expect($visit->fresh()->status->value)->toBe('closed');
+
+    $this->actingAs($admin)
+        ->post(route('visits.consult', $visit), ['icd10_codes' => ['J06.9']])
+        ->assertSessionHasErrors('visit');
+
+    expect(BillLine::query()->where('source_type', 'consultation')->exists())->toBeFalse();
+    expect($bill->fresh()->status)->toBe('paid');
 });

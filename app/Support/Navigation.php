@@ -7,31 +7,31 @@ use App\Models\User;
 class Navigation
 {
     /**
-     * @return list<array{label: string, route: string, permission: string, pattern: string, icon: string}>
+     * @return list<array{label: string, route: string, permission: string, pattern: string, icon: string, group: string|null}>
      */
     public static function items(): array
     {
         return [
-            ['label' => 'Dashboard', 'route' => 'dashboard', 'permission' => 'dashboard.view', 'pattern' => 'dashboard', 'icon' => 'bx-pulse'],
-            ['label' => 'Patients', 'route' => 'patients.index', 'permission' => 'patients.view', 'pattern' => 'patients.*', 'icon' => 'bx-user'],
-            ['label' => 'Appointments', 'route' => 'appointments.index', 'permission' => 'appointments.manage', 'pattern' => 'appointments.*', 'icon' => 'bx-calendar'],
-            ['label' => 'Queues', 'route' => 'queues.index', 'permission' => 'queue.view', 'pattern' => 'queues.*', 'icon' => 'bx-list-ol'],
-            ['label' => 'Laboratory', 'route' => 'lab.index', 'permission' => 'lab.view', 'pattern' => 'lab.*', 'icon' => 'bx-test-tube'],
-            ['label' => 'Radiology', 'route' => 'radiology.index', 'permission' => 'radiology.view', 'pattern' => 'radiology.*', 'icon' => 'bx-scan'],
-            ['label' => 'Pharmacy', 'route' => 'pharmacy.index', 'permission' => 'pharmacy.view', 'pattern' => 'pharmacy.*', 'icon' => 'bx-capsule'],
-            ['label' => 'Cashier', 'route' => 'cashier.index', 'permission' => 'cashier.manage', 'pattern' => 'cashier.*', 'icon' => 'bx-wallet'],
-            ['label' => 'Insurance', 'route' => 'insurance.index', 'permission' => 'insurance.manage', 'pattern' => 'insurance.*', 'icon' => 'bx-shield-quarter'],
-            ['label' => 'Wards', 'route' => 'wards.index', 'permission' => 'wards.view', 'pattern' => 'wards.*', 'icon' => 'bx-bed'],
-            ['label' => 'Maternity', 'route' => 'maternity.index', 'permission' => 'maternity.manage', 'pattern' => 'maternity.*', 'icon' => 'bx-heart'],
-            ['label' => 'Theatre', 'route' => 'theatre.index', 'permission' => 'theatre.manage', 'pattern' => 'theatre.*', 'icon' => 'bx-plus-medical'],
-            ['label' => 'Inventory', 'route' => 'inventory.index', 'permission' => 'inventory.view', 'pattern' => 'inventory.*', 'icon' => 'bx-package'],
-            ['label' => 'Reports', 'route' => 'reports.index', 'permission' => 'reports.view', 'pattern' => 'reports.*', 'icon' => 'bx-bar-chart-alt-2'],
-            ['label' => 'Administration', 'route' => 'admin.users.index', 'permission' => 'admin.manage', 'pattern' => 'admin.*', 'icon' => 'bx-cog'],
+            ['label' => 'Dashboard', 'route' => 'dashboard', 'permission' => 'dashboard.view', 'pattern' => 'dashboard', 'icon' => 'bx-home-alt', 'group' => null],
+            ['label' => 'Patients', 'route' => 'patients.index', 'permission' => 'patients.view', 'pattern' => 'patients.*', 'icon' => 'bx-user', 'group' => null],
+            ['label' => 'Appointments', 'route' => 'appointments.index', 'permission' => 'appointments.manage', 'pattern' => 'appointments.*', 'icon' => 'bx-calendar', 'group' => null],
+            ['label' => 'Queues', 'route' => 'queues.index', 'permission' => 'queue.view', 'pattern' => 'queues.*', 'icon' => 'bx-list-ol', 'group' => 'Clinical'],
+            ['label' => 'Laboratory', 'route' => 'lab.index', 'permission' => 'lab.view', 'pattern' => 'lab.*', 'icon' => 'bx-test-tube', 'group' => 'Clinical'],
+            ['label' => 'Radiology', 'route' => 'radiology.index', 'permission' => 'radiology.view', 'pattern' => 'radiology.*', 'icon' => 'bx-scan', 'group' => 'Clinical'],
+            ['label' => 'Wards', 'route' => 'wards.index', 'permission' => 'wards.view', 'pattern' => 'wards.*', 'icon' => 'bx-bed', 'group' => 'Clinical'],
+            ['label' => 'Maternity', 'route' => 'maternity.index', 'permission' => 'maternity.manage', 'pattern' => 'maternity.*', 'icon' => 'bx-heart', 'group' => 'Clinical'],
+            ['label' => 'Theatre', 'route' => 'theatre.index', 'permission' => 'theatre.manage', 'pattern' => 'theatre.*', 'icon' => 'bx-plus-medical', 'group' => 'Clinical'],
+            ['label' => 'Pharmacy', 'route' => 'pharmacy.index', 'permission' => 'pharmacy.view', 'pattern' => 'pharmacy.*', 'icon' => 'bx-capsule', 'group' => 'Operations'],
+            ['label' => 'Cashier', 'route' => 'cashier.index', 'permission' => 'cashier.manage', 'pattern' => 'cashier.*', 'icon' => 'bx-wallet', 'group' => 'Operations'],
+            ['label' => 'Insurance', 'route' => 'insurance.index', 'permission' => 'insurance.manage', 'pattern' => 'insurance.*', 'icon' => 'bx-shield-quarter', 'group' => 'Operations'],
+            ['label' => 'Inventory', 'route' => 'inventory.index', 'permission' => 'inventory.view', 'pattern' => 'inventory.*', 'icon' => 'bx-package', 'group' => 'Operations'],
+            ['label' => 'Reports', 'route' => 'reports.index', 'permission' => 'reports.view', 'pattern' => 'reports.*', 'icon' => 'bx-bar-chart-alt-2', 'group' => 'Operations'],
+            ['label' => 'Administration', 'route' => 'admin.users.index', 'permission' => 'admin.manage', 'pattern' => 'admin.*', 'icon' => 'bx-cog', 'group' => 'Account'],
         ];
     }
 
     /**
-     * @return list<array{label: string, route: string, permission: string, pattern: string, icon: string}>
+     * @return list<array{label: string, route: string, permission: string, pattern: string, icon: string, group: string|null}>
      */
     public static function forUser(?User $user): array
     {
@@ -43,5 +43,37 @@ class Navigation
             self::items(),
             fn (array $item): bool => $user->permits($item['permission']),
         ));
+    }
+
+    /**
+     * @return array{primary: list<array{label: string, route: string, permission: string, pattern: string, icon: string, group: string|null}>, groups: list<array{label: string, items: list<array{label: string, route: string, permission: string, pattern: string, icon: string, group: string|null}>}>, footer: list<array{label: string, route: string, permission: string, pattern: string, icon: string, group: string|null}>}
+     */
+    public static function sections(?User $user): array
+    {
+        $primary = [];
+        $grouped = [];
+        $footer = [];
+
+        foreach (self::forUser($user) as $item) {
+            if ($item['group'] === null) {
+                $primary[] = $item;
+            } elseif ($item['group'] === 'Account') {
+                $footer[] = $item;
+            } else {
+                $grouped[$item['group']][] = $item;
+            }
+        }
+
+        $groups = [];
+
+        foreach ($grouped as $label => $items) {
+            $groups[] = ['label' => $label, 'items' => $items];
+        }
+
+        return [
+            'primary' => $primary,
+            'groups' => $groups,
+            'footer' => $footer,
+        ];
     }
 }

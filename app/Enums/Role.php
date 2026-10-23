@@ -9,6 +9,7 @@ enum Role: string
     case Diagnostics = 'diagnostics';
     case PharmacyStores = 'pharmacy_stores';
     case Administrator = 'administrator';
+    case Staff = 'staff';
     case PlatformAdmin = 'platform_admin';
 
     public function label(): string
@@ -19,6 +20,7 @@ enum Role: string
             self::Diagnostics => 'Diagnostics',
             self::PharmacyStores => 'Pharmacy and stores',
             self::Administrator => 'Administrator',
+            self::Staff => 'Staff',
             self::PlatformAdmin => 'Platform administrator',
         };
     }
@@ -30,7 +32,8 @@ enum Role: string
             self::Clinical => 'Triage, consultation, wards, maternity, and theatre',
             self::Diagnostics => 'Laboratory and imaging',
             self::PharmacyStores => 'Dispensing, procurement, and stock',
-            self::Administrator => 'Users, prices, insurance, reports, and approvals',
+            self::Administrator => 'Full access, including users, prices, and approvals',
+            self::Staff => 'Only the areas an administrator has assigned',
             self::PlatformAdmin => 'Opens and closes facilities',
         };
     }

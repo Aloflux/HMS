@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\QueueStage;
 use App\Models\Admission;
+use App\Models\Appointment;
 use App\Models\Bed;
 use App\Models\Item;
 use App\Models\Payment;
@@ -18,6 +20,13 @@ class DashboardController extends Controller
         $today = now()->startOfDay();
 
         $visits = Visit::query()->where('opened_at', '>=', $today);
+        $beds = Bed::query()->count();
+        $occupiedBeds = Bed::query()->where('status', 'occupied')->count();
+        $waitingByStage = QueueEntry::query()
+            ->where('status', 'waiting')
+            ->selectRaw('stage, count(*) as total')
+            ->groupBy('stage')
+            ->pluck('total', 'stage');
         $lowStock = Item::query()
             ->where('is_active', true)
             ->where('reorder_level', '>', 0)
@@ -32,10 +41,22 @@ class DashboardController extends Controller
             'admitted' => Admission::query()->where('status', 'admitted')->count(),
             'waiting' => QueueEntry::query()->where('status', 'waiting')->count(),
             'revenueToday' => (int) Payment::query()->where('created_at', '>=', $today)->sum('amount'),
-            'beds' => Bed::query()->count(),
-            'occupiedBeds' => Bed::query()->where('status', 'occupied')->count(),
-            'lowStock' => $lowStock,
-            'recentVisits' => Visit::query()->with('patient')->latest('opened_at')->limit(8)->get(),
+            'beds' => $beds,
+            'occupiedBeds' => $occupiedBeds,
+            'occupancy' => $beds > 0 ? (int) round(($occupiedBeds / $beds) * 100) : 0,
+            'freeBeds' => max($beds - $occupiedBeds, 0),
+            'lowStock' => $lowStock->take(4),
+            'queues' => collect(QueueStage::cases())->map(fn (QueueStage $stage): array => [
+                'label' => $stage->label(),
+                'count' => (int) ($waitingByStage[$stage->value] ?? 0),
+            ])->all(),
+            'appointments' => Appointment::query()
+                ->with(['patient', 'department'])
+                ->whereBetween('scheduled_at', [$today, now()->endOfDay()])
+                ->orderBy('scheduled_at')
+                ->limit(6)
+                ->get(),
+            'recentVisits' => Visit::query()->with(['patient', 'department'])->latest('opened_at')->limit(6)->get(),
         ]);
     }
 }

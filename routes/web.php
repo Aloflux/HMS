@@ -44,6 +44,8 @@ Route::middleware('auth')->group(function () {
     Route::middleware('permission:patients.manage')->group(function () {
         Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
         Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+        Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+        Route::patch('/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
         Route::post('/patients/{patient}/visits', [VisitController::class, 'store'])->name('visits.store');
     });
 
