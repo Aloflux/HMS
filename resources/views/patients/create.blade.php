@@ -3,7 +3,7 @@
         <x-page-title icon="bx-user-plus">Register a patient</x-page-title>
     </x-slot>
 
-    <form method="POST" action="{{ route('patients.store') }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-lg bg-white p-6 shadow-sm sm:grid-cols-2">
+    <form method="POST" action="{{ route('patients.store') }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-2xl bg-white p-6 shadow-card sm:grid-cols-2">
         @csrf
         <div>
             <x-input-label for="surname" value="Surname" />
@@ -19,7 +19,7 @@
         </div>
         <div>
             <x-input-label for="sex" value="Sex" />
-            <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-600 focus:ring-brand-600" required>
+            <select id="sex" name="sex" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0" required>
                 <option value="female" @selected(old('sex') === 'female')>Female</option>
                 <option value="male" @selected(old('sex') === 'male')>Male</option>
             </select>
@@ -62,18 +62,18 @@
         </div>
         <div class="sm:col-span-2">
             <x-input-label for="allergies" value="Known allergies" />
-            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-slate-300 focus:border-brand-600 focus:ring-brand-600">{{ old('allergies') }}</textarea>
+            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0">{{ old('allergies') }}</textarea>
         </div>
         <div>
             <x-input-label for="photo" value="Photo" />
             <input id="photo" name="photo" type="file" accept="image/*" class="mt-1 block w-full text-sm">
         </div>
         <label class="flex items-start gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" name="consent" value="1" class="mt-1 rounded border-slate-300 text-brand-700" required>
+            <input type="checkbox" name="consent" value="1" class="mt-1 rounded border-slate-300 focus:ring-brand-500 text-brand-700" required>
             <span>The patient (or guardian) consents to this facility keeping their health record under the Data Protection and Privacy Act, 2019.</span>
         </label>
         <label class="flex items-start gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" name="confirm_duplicate" value="1" class="mt-1 rounded border-slate-300 text-brand-700">
+            <input type="checkbox" name="confirm_duplicate" value="1" class="mt-1 rounded border-slate-300 focus:ring-brand-500 text-brand-700">
             <span>Register anyway if the phone, name and date of birth already match a record.</span>
         </label>
         <div class="sm:col-span-2">

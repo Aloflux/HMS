@@ -8,9 +8,9 @@
     </datalist>
 
     <div class="grid gap-6 lg:grid-cols-2">
-        <form method="POST" action="{{ route('maternity.antenatal') }}" class="rounded-lg bg-white p-5 shadow-sm">
+        <form method="POST" action="{{ route('maternity.antenatal') }}" class="rounded-2xl bg-white p-5 shadow-card">
             @csrf
-            <h2 class="font-semibold">Antenatal visit</h2>
+            <h2 class="font-bold text-slate-900">Antenatal visit</h2>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div class="sm:col-span-2">
                     <x-input-label for="anc-patient" value="Mother's patient number" />
@@ -34,15 +34,15 @@
                 </div>
                 <div class="sm:col-span-2">
                     <x-input-label for="anc-notes" value="Notes" />
-                    <textarea id="anc-notes" name="notes" rows="2" class="mt-1 block w-full rounded-md border-slate-300 text-sm">{{ old('notes') }}</textarea>
+                    <textarea id="anc-notes" name="notes" rows="2" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('notes') }}</textarea>
                 </div>
             </div>
             <div class="mt-4"><x-primary-button>Save antenatal visit</x-primary-button></div>
         </form>
 
-        <form method="POST" action="{{ route('maternity.deliveries') }}" class="rounded-lg bg-white p-5 shadow-sm">
+        <form method="POST" action="{{ route('maternity.deliveries') }}" class="rounded-2xl bg-white p-5 shadow-card">
             @csrf
-            <h2 class="font-semibold">Delivery register</h2>
+            <h2 class="font-bold text-slate-900">Delivery register</h2>
             <div class="mt-4 grid gap-3 sm:grid-cols-2">
                 <div class="sm:col-span-2">
                     <x-input-label for="delivery-patient" value="Mother's patient number" />
@@ -54,7 +54,7 @@
                 </div>
                 <div>
                     <x-input-label for="mode" value="Mode" />
-                    <select id="mode" name="mode" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                    <select id="mode" name="mode" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach (['svd' => 'Normal vaginal delivery', 'caesarean' => 'Caesarean', 'assisted' => 'Assisted'] as $value => $label)
                             <option value="{{ $value }}" @selected(old('mode') === $value)>{{ $label }}</option>
                         @endforeach
@@ -62,7 +62,7 @@
                 </div>
                 <div>
                     <x-input-label for="outcome" value="Outcome" />
-                    <select id="outcome" name="outcome" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                    <select id="outcome" name="outcome" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach (['live' => 'Live birth', 'stillbirth' => 'Stillbirth'] as $value => $label)
                             <option value="{{ $value }}" @selected(old('outcome') === $value)>{{ $label }}</option>
                         @endforeach
@@ -70,7 +70,7 @@
                 </div>
                 <div>
                     <x-input-label for="baby-sex" value="Baby's sex" />
-                    <select id="baby-sex" name="baby_sex" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                    <select id="baby-sex" name="baby_sex" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         <option value="">Not recorded</option>
                         <option value="female" @selected(old('baby_sex') === 'female')>Female</option>
                         <option value="male" @selected(old('baby_sex') === 'male')>Male</option>
@@ -90,8 +90,8 @@
     </div>
 
     <div class="mt-6 grid gap-6 lg:grid-cols-2">
-        <section class="rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Recent antenatal visits</h2>
+        <section class="rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Recent antenatal visits</h2>
             <ul class="mt-3 divide-y divide-slate-100 text-sm">
                 @forelse ($antenatal as $row)
                     <li class="flex justify-between gap-3 py-2">
@@ -103,8 +103,8 @@
                 @endforelse
             </ul>
         </section>
-        <section class="rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Deliveries</h2>
+        <section class="rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Deliveries</h2>
             <ul class="mt-3 divide-y divide-slate-100 text-sm">
                 @forelse ($deliveries as $row)
                     <li class="flex items-center justify-between gap-3 py-2">

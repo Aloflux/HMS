@@ -4,14 +4,14 @@
     <div class="grid gap-4 md:grid-cols-2">
         @foreach ($wards as $ward)
             @php($free = $ward->beds->where('status', 'available')->count())
-            <section class="rounded-lg bg-white p-5 shadow-sm">
+            <section class="rounded-2xl bg-white p-5 shadow-card">
                 <div class="flex items-center justify-between gap-3">
-                    <h2 class="font-semibold">{{ $ward->name }}</h2>
+                    <h2 class="font-bold text-slate-900">{{ $ward->name }}</h2>
                     <span class="text-sm text-slate-500">{{ $free }} of {{ $ward->beds->count() }} free</span>
                 </div>
                 <ul class="mt-3 grid gap-2 sm:grid-cols-2">
                     @foreach ($ward->beds as $bed)
-                        <li class="flex items-center justify-between gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm">
+                        <li class="flex items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
                             <span class="font-medium">{{ $bed->code }}</span>
                             <span class="flex items-center gap-2">
                                 <x-status :value="$bed->status === 'available' ? 'free' : $bed->status" />
@@ -26,8 +26,8 @@
         @endforeach
     </div>
 
-    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-        <h2 class="font-semibold">Inpatients <span class="font-normal text-slate-500">· {{ $admissions->count() }}</span></h2>
+    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+        <h2 class="font-bold text-slate-900">Inpatients <span class="font-normal text-slate-500">· {{ $admissions->count() }}</span></h2>
         <ul class="mt-3 divide-y divide-slate-100 text-sm">
             @forelse ($admissions as $admission)
                 <li class="flex flex-wrap items-center justify-between gap-3 py-3">

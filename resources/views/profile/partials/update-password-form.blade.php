@@ -1,9 +1,9 @@
-<form method="post" action="{{ route('password.update') }}" class="grid gap-4 rounded-lg bg-white p-6 shadow-sm">
+<form method="post" action="{{ route('password.update') }}" class="grid gap-4 rounded-2xl bg-white p-6 shadow-card">
     @csrf
     @method('put')
 
     <div>
-        <h2 class="flex items-center gap-2 font-semibold">
+        <h2 class="flex items-center gap-2 font-bold text-slate-900">
             <x-icon name="bx-lock-alt" class="text-lg text-brand-700" />
             Password
         </h2>

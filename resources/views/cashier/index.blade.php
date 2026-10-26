@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="header"><x-page-title>Cashier</x-page-title></x-slot>
 
-    <section class="mb-6 rounded-lg bg-white p-5 shadow-sm">
+    <section class="mb-6 rounded-2xl bg-white p-5 shadow-card">
         @if ($shift)
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h2 class="font-semibold">Shift open</h2>
+                    <h2 class="font-bold text-slate-900">Shift open</h2>
                     <p class="mt-1 text-sm text-slate-500">Since {{ $shift->opened_at->format('d M H:i') }} with a float of {{ \App\Support\Money::format($shift->opening_float) }}.</p>
                 </div>
                 <form method="POST" action="{{ route('cashier.close', $shift) }}" class="flex flex-wrap items-end gap-3">
@@ -21,7 +21,7 @@
             <form method="POST" action="{{ route('cashier.shift') }}" class="flex flex-wrap items-end gap-3">
                 @csrf
                 <div>
-                    <h2 class="font-semibold">Open a shift to take payments</h2>
+                    <h2 class="font-bold text-slate-900">Open a shift to take payments</h2>
                     <x-input-label for="opening_float" value="Opening float (UGX)" class="mt-2" />
                     <x-text-input id="opening_float" name="opening_float" type="number" min="0" value="0" class="mt-1 block" required />
                 </div>
@@ -30,11 +30,11 @@
         @endif
     </section>
 
-    <h2 class="mb-3 font-semibold">Bills waiting for payment</h2>
+    <h2 class="mb-3 font-bold text-slate-900">Bills waiting for payment</h2>
     <div class="grid gap-4">
         @forelse ($bills as $bill)
             @php($balance = $bill->cashBalance())
-            <section class="rounded-lg bg-white p-5 shadow-sm" x-data="{ method: 'cash', waiver: false }">
+            <section class="rounded-2xl bg-white p-5 shadow-card" x-data="{ method: 'cash', waiver: false }">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <a href="{{ route('visits.show', $bill->visit) }}" class="font-medium text-slate-900">{{ $bill->patient->fullName() }}</a>
@@ -51,7 +51,7 @@
                         @csrf
                         <div>
                             <x-input-label :for="'method-'.$bill->id" value="Method" />
-                            <select id="method-{{ $bill->id }}" name="method" x-model="method" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                            <select id="method-{{ $bill->id }}" name="method" x-model="method" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                 @foreach ($methods as $method)
                                     <option value="{{ $method->value }}">{{ $method->label() }}</option>
                                 @endforeach
@@ -88,13 +88,13 @@
                 </div>
             </section>
         @empty
-            <p class="rounded-lg bg-white p-5 text-sm text-slate-500 shadow-sm">No cash bills are waiting.</p>
+            <p class="rounded-2xl bg-white p-5 text-sm text-slate-500 shadow-card">No cash bills are waiting.</p>
         @endforelse
     </div>
 
     @if ($waivers->isNotEmpty())
-        <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Waivers</h2>
+        <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Waivers</h2>
             <p class="mt-1 text-sm text-slate-500">Pending requests, and decisions from the last day.</p>
             <ul class="mt-3 divide-y divide-slate-100 text-sm">
                 @foreach ($waivers as $waiver)

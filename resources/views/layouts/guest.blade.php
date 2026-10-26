@@ -26,7 +26,7 @@
                 </a>
             </div>
 
-            <div class="mt-6 w-full {{ $maxWidth }} overflow-hidden rounded-lg bg-white px-6 py-6 shadow-sm">
+            <div class="mt-6 w-full {{ $maxWidth }} overflow-hidden rounded-2xl bg-white px-6 py-6 shadow-card">
                 {{ $slot }}
             </div>
         </div>

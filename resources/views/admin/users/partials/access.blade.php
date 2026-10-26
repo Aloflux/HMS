@@ -15,7 +15,7 @@
 
 <div class="mt-4">
     <x-input-label for="department_id" value="Department" />
-    <select id="department_id" name="department_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none sm:max-w-sm" @change="applyDepartment($event.target.value)">
+    <select id="department_id" name="department_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none sm:max-w-sm" @change="applyDepartment($event.target.value)">
         <option value="">No department</option>
         @foreach ($departments as $department)
             <option value="{{ $department->id }}" @selected((string) old('department_id', $selectedDepartment ?? null) === (string) $department->id)>{{ $department->name }}</option>
@@ -27,8 +27,8 @@
 <div class="mt-4" x-show="account === 'staff'" x-cloak>
     <div class="grid gap-2 sm:grid-cols-2">
         @foreach ($areas as $area)
-            <label class="flex items-start gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm">
-                <input type="checkbox" name="areas[]" value="{{ $area['key'] }}" class="mt-1 rounded border-slate-300 text-brand-700" x-model="areas['{{ $area['key'] }}']">
+            <label class="flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                <input type="checkbox" name="areas[]" value="{{ $area['key'] }}" class="mt-1 rounded border-slate-300 focus:ring-brand-500 text-brand-700" x-model="areas['{{ $area['key'] }}']">
                 <span>
                     <span class="block font-medium text-slate-900">{{ $area['label'] }}</span>
                     <span class="block text-slate-500">{{ $area['detail'] }}</span>

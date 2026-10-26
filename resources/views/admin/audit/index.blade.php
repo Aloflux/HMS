@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header"><x-page-title icon="bx-history">Audit trail</x-page-title></x-slot>
-    <div class="overflow-x-auto rounded-lg bg-white shadow-sm">
+    <div class="overflow-x-auto rounded-2xl bg-white shadow-card">
         <table class="min-w-full text-sm">
             <tbody class="divide-y divide-slate-100">
                 @foreach ($logs as $log)

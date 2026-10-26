@@ -2,8 +2,8 @@
     <x-slot name="header"><x-page-title>Insurance and corporate accounts</x-page-title></x-slot>
 
     <div class="grid gap-6 lg:grid-cols-2">
-        <section class="rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Schemes</h2>
+        <section class="rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Schemes</h2>
             <ul class="mt-3 divide-y divide-slate-100 text-sm">
                 @forelse ($schemes as $scheme)
                     <li class="flex flex-wrap justify-between gap-2 py-2">
@@ -26,7 +26,7 @@
                 </div>
                 <div>
                     <x-input-label for="scheme-kind" value="Kind" />
-                    <select id="scheme-kind" name="kind" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                    <select id="scheme-kind" name="kind" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         <option value="private">Private insurer</option>
                         <option value="corporate" @selected(old('kind') === 'corporate')>Corporate account</option>
                     </select>
@@ -36,15 +36,15 @@
                     <x-text-input id="scheme-limit" name="cover_limit" type="number" min="0" class="mt-1 block w-full" :value="old('cover_limit')" placeholder="Leave blank for no limit" />
                 </div>
                 <label class="flex items-center gap-2 text-sm sm:col-span-2">
-                    <input type="checkbox" name="requires_preauthorisation" value="1" class="rounded border-slate-300 text-brand-700" @checked(old('requires_preauthorisation'))>
+                    <input type="checkbox" name="requires_preauthorisation" value="1" class="rounded border-slate-300 focus:ring-brand-500 text-brand-700" @checked(old('requires_preauthorisation'))>
                     Charges need an approved preauthorisation first
                 </label>
                 <div class="sm:col-span-2"><x-primary-button>Add scheme</x-primary-button></div>
             </form>
         </section>
 
-        <section class="rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Request a preauthorisation</h2>
+        <section class="rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Request a preauthorisation</h2>
             @if ($visits->isEmpty())
                 <p class="mt-3 text-sm text-slate-500">No insured visits yet. Preauthorisations are for visits paid by a scheme.</p>
             @else
@@ -52,7 +52,7 @@
                     @csrf
                     <div>
                         <x-input-label for="preauth-visit" value="Visit" />
-                        <select id="preauth-visit" name="visit_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                        <select id="preauth-visit" name="visit_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                             @foreach ($visits as $visit)
                                 <option value="{{ $visit->id }}">{{ $visit->visit_number }} · {{ $visit->patient->fullName() }}</option>
                             @endforeach
@@ -72,8 +72,8 @@
         </section>
     </div>
 
-    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-        <h2 class="font-semibold">Preauthorisations</h2>
+    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+        <h2 class="font-bold text-slate-900">Preauthorisations</h2>
         <ul class="mt-3 divide-y divide-slate-100 text-sm">
             @forelse ($preauthorisations as $preauthorisation)
                 <li class="grid gap-3 py-3 md:grid-cols-2 md:items-center">
@@ -98,14 +98,14 @@
         </ul>
     </section>
 
-    <section class="mt-6 rounded-lg bg-white p-5 shadow-sm">
-        <h2 class="font-semibold">Claims</h2>
+    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+        <h2 class="font-bold text-slate-900">Claims</h2>
         @if ($schemes->isNotEmpty())
             <form method="POST" action="{{ route('insurance.claims.store') }}" class="mt-3 grid gap-3 md:grid-cols-4">
                 @csrf
                 <div>
                     <x-input-label for="claim-scheme" value="Scheme" />
-                    <select id="claim-scheme" name="insurance_scheme_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                    <select id="claim-scheme" name="insurance_scheme_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($schemes as $scheme)
                             <option value="{{ $scheme->id }}">{{ $scheme->name }}</option>
                         @endforeach

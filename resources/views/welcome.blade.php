@@ -19,7 +19,7 @@
                 <p class="mt-4 text-lg text-brand-100">Patient registration, queues, clinical care, pharmacy, cashier and Ministry of Health reports for a single facility, on a shared multi-tenant platform.</p>
             </div>
             <div>
-                <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-semibold text-brand-900">
+                <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-md bg-white px-5 py-3 text-sm font-semibold text-brand-900">
                     <x-icon name="bx-log-in" class="text-lg" />
                     Sign in
                 </a>

@@ -33,7 +33,7 @@
         <main class="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-14">
             <div class="mx-auto flex w-full max-w-lg flex-col gap-8">
                 <div>
-                    <h1 class="text-2xl font-semibold text-slate-900">Sign in</h1>
+                    <h1 class="text-3xl font-bold tracking-tight text-slate-900">Sign in</h1>
                     <p class="mt-1 text-sm text-slate-600">Shared computers sign out after a period of inactivity.</p>
                 </div>
 
@@ -59,14 +59,14 @@
                         @endif
                     </div>
 
-                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                    <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-md bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 shadow-brand">
                         <x-icon name="bx-log-in" class="text-lg" />
                         {{ __('Log in') }}
                     </button>
                 </form>
 
                 @if ($demoAccounts !== [])
-                    <section class="flex flex-col gap-4 border-t border-slate-200 pt-6">
+                    <section class="flex flex-col gap-4 pt-6">
                         <div>
                             <h2 class="text-sm font-semibold text-slate-900">Sample stations</h2>
                             <p class="mt-1 text-sm text-slate-600">Click a station to fill the email and password. The shared password is {{ $demoPassword }}.</p>
@@ -90,7 +90,7 @@
                                         @endphp
                                         <button
                                             type="button"
-                                            class="flex items-start gap-3 rounded-lg border border-slate-200 bg-white px-3 py-3 text-start hover:border-brand-600 hover:bg-brand-50 aria-pressed:border-brand-700 aria-pressed:bg-brand-50"
+                                            class="flex items-start gap-3 rounded-md bg-slate-50 px-3 py-3 text-start transition hover:bg-brand-50 hover:shadow-card aria-pressed:bg-brand-50 aria-pressed:shadow-card"
                                             data-demo-email="{{ $account['email'] }}"
                                             data-demo-password="{{ $demoPassword }}"
                                             aria-pressed="false"

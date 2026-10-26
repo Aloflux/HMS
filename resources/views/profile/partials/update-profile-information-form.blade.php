@@ -2,12 +2,12 @@
     @csrf
 </form>
 
-<form method="post" action="{{ route('profile.update') }}" class="grid gap-4 rounded-lg bg-white p-6 shadow-sm">
+<form method="post" action="{{ route('profile.update') }}" class="grid gap-4 rounded-2xl bg-white p-6 shadow-card">
     @csrf
     @method('patch')
 
     <div>
-        <h2 class="font-semibold">Account</h2>
+        <h2 class="font-bold text-slate-900">Account</h2>
         <p class="mt-1 text-sm text-slate-500">{{ $user->accessSummary() }}. The name and email shown at this station.</p>
     </div>
 

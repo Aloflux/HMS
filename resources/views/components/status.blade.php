@@ -20,4 +20,4 @@
     };
 @endphp
 
-<span {{ $attributes->class(['inline-flex whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium', $tone]) }}>{{ $labels[$code] ?? ucfirst(str_replace('_', ' ', $code)) }}</span>
+<span {{ $attributes->class(['inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide', $tone]) }}>{{ $labels[$code] ?? ucfirst(str_replace('_', ' ', $code)) }}</span>

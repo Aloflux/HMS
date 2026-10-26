@@ -42,8 +42,8 @@
     <div class="grid gap-6 xl:grid-cols-3">
         <div class="grid content-start gap-6 xl:col-span-2">
             {{-- Clinical record: everyone who can open the visit can read it. --}}
-            <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="font-semibold">Triage</h2>
+            <section class="rounded-2xl bg-white p-5 shadow-card">
+                <h2 class="font-bold text-slate-900">Triage</h2>
                 @forelse ($visit->triageRecords->sortByDesc('created_at') as $record)
                     <div class="mt-3 border-t border-slate-100 pt-3 text-sm first:border-0 first:pt-0">
                         <p class="flex flex-wrap items-center gap-2">
@@ -81,7 +81,7 @@
                             </div>
                             <div>
                                 <x-input-label for="triage-priority" value="Priority" />
-                                <select id="triage-priority" name="priority" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                <select id="triage-priority" name="priority" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     @foreach (\App\Enums\Priority::cases() as $priority)
                                         <option value="{{ $priority->value }}" @selected(old('priority', $visit->priority->value) === $priority->value)>{{ $priority->label() }}</option>
                                     @endforeach
@@ -89,7 +89,7 @@
                             </div>
                             <div class="sm:col-span-4">
                                 <x-input-label for="triage-notes" value="Notes" />
-                                <textarea id="triage-notes" name="notes" rows="2" class="mt-1 block w-full rounded-md border-slate-300 text-sm">{{ old('notes') }}</textarea>
+                                <textarea id="triage-notes" name="notes" rows="2" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('notes') }}</textarea>
                             </div>
                             <div class="sm:col-span-4"><x-primary-button>Save triage</x-primary-button></div>
                         </form>
@@ -97,8 +97,8 @@
                 @endif
             </section>
 
-            <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="font-semibold">Consultation</h2>
+            <section class="rounded-2xl bg-white p-5 shadow-card">
+                <h2 class="font-bold text-slate-900">Consultation</h2>
                 @forelse ($visit->consultations as $consultation)
                     <div class="mt-3 border-t border-slate-100 pt-3 text-sm first:border-0 first:pt-0">
                         <p class="text-xs text-slate-400">{{ $consultation->clinician?->name }} · {{ $consultation->completed_at?->format('d M H:i') }}</p>
@@ -127,16 +127,16 @@
                             @foreach (['history' => 'History', 'examination' => 'Examination', 'plan' => 'Plan', 'referral' => 'Referral letter'] as $field => $label)
                                 <div>
                                     <x-input-label :for="'consult-'.$field" :value="$label" />
-                                    <textarea id="consult-{{ $field }}" name="{{ $field }}" rows="2" class="mt-1 block w-full rounded-md border-slate-300 text-sm">{{ old($field) }}</textarea>
+                                    <textarea id="consult-{{ $field }}" name="{{ $field }}" rows="2" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old($field) }}</textarea>
                                 </div>
                             @endforeach
                             <fieldset>
                                 <legend class="text-sm font-medium text-slate-700">Diagnoses <span class="font-normal text-slate-500">· the first ticked is the primary</span></legend>
-                                <input type="search" x-model="filter" placeholder="Filter by code or name" aria-label="Filter diagnoses" class="mt-1 w-full rounded-md border-slate-300 text-sm sm:max-w-sm">
-                                <div class="mt-2 grid max-h-56 gap-1 overflow-y-auto rounded-md border border-slate-200 p-2 sm:grid-cols-2">
+                                <input type="search" x-model="filter" placeholder="Filter by code or name" aria-label="Filter diagnoses" class="mt-1 w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm sm:max-w-sm">
+                                <div class="mt-2 grid max-h-56 gap-1 overflow-y-auto rounded-xl bg-slate-50 p-2 sm:grid-cols-2">
                                     @foreach ($icd10 as $code)
                                         <label class="flex items-start gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-50" x-show="@js(strtolower($code->code.' '.$code->title)).includes(filter.toLowerCase())">
-                                            <input type="checkbox" name="icd10_codes[]" value="{{ $code->code }}" class="mt-0.5 rounded border-slate-300 text-brand-700" @checked(in_array($code->code, old('icd10_codes', []), true))>
+                                            <input type="checkbox" name="icd10_codes[]" value="{{ $code->code }}" class="mt-0.5 rounded border-slate-300 focus:ring-brand-500 text-brand-700" @checked(in_array($code->code, old('icd10_codes', []), true))>
                                             <span><span class="font-medium">{{ $code->code }}</span> {{ $code->title }}</span>
                                         </label>
                                     @endforeach
@@ -148,8 +148,8 @@
                 @endif
             </section>
 
-            <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="font-semibold">Results</h2>
+            <section class="rounded-2xl bg-white p-5 shadow-card">
+                <h2 class="font-bold text-slate-900">Results</h2>
                 @if ($labItems->isEmpty() && $visit->imagingOrders->isEmpty())
                     <p class="mt-2 text-sm text-slate-500">No tests ordered.</p>
                 @endif
@@ -200,12 +200,12 @@
                             @if ($labTests->isEmpty())
                                 <p class="mt-2 text-sm text-slate-500">No lab tests are on the price list yet. An administrator adds them under Price list.</p>
                             @else
-                                <input type="search" x-model="filter" placeholder="Filter tests" aria-label="Filter lab tests" class="mt-2 w-full rounded-md border-slate-300 text-sm">
-                                <div class="mt-2 grid max-h-40 gap-1 overflow-y-auto rounded-md border border-slate-200 p-2">
+                                <input type="search" x-model="filter" placeholder="Filter tests" aria-label="Filter lab tests" class="mt-2 w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                                <div class="mt-2 grid max-h-40 gap-1 overflow-y-auto rounded-xl bg-slate-50 p-2">
                                     @foreach ($labTests as $test)
                                         <label class="flex items-center justify-between gap-2 rounded px-1 py-0.5 text-sm hover:bg-slate-50" x-show="@js(strtolower($test->name)).includes(filter.toLowerCase())">
                                             <span class="flex items-center gap-2">
-                                                <input type="checkbox" name="test_ids[]" value="{{ $test->id }}" class="rounded border-slate-300 text-brand-700">
+                                                <input type="checkbox" name="test_ids[]" value="{{ $test->id }}" class="rounded border-slate-300 focus:ring-brand-500 text-brand-700">
                                                 {{ $test->name }}
                                             </span>
                                             <span class="text-xs text-slate-400">{{ \App\Support\Money::format($test->service?->cash_price ?? 0) }}</span>
@@ -225,7 +225,7 @@
                                 <p class="mt-2 text-sm text-slate-500">No imaging studies are on the price list yet. An administrator adds them under Price list.</p>
                             @else
                                 <x-input-label for="imaging-study" value="Study" class="mt-2" />
-                                <select id="imaging-study" name="imaging_study_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                <select id="imaging-study" name="imaging_study_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     @foreach ($studies as $study)
                                         <option value="{{ $study->id }}">{{ $study->name }} · {{ \App\Support\Money::format($study->service?->cash_price ?? 0) }}</option>
                                     @endforeach
@@ -239,8 +239,8 @@
                 @endif
             </section>
 
-            <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="font-semibold">Prescriptions</h2>
+            <section class="rounded-2xl bg-white p-5 shadow-card">
+                <h2 class="font-bold text-slate-900">Prescriptions</h2>
                 <ul class="mt-2 divide-y divide-slate-100 text-sm">
                     @forelse ($prescriptionItems as $line)
                         @php($given = (int) $line->dispensations->sum('quantity'))
@@ -269,10 +269,10 @@
                             @csrf
                             <h3 class="text-sm font-semibold">Prescribe</h3>
                             <template x-for="(line, index) in lines" :key="line.key">
-                                <div class="mt-3 grid gap-3 rounded-md border border-slate-200 p-3 sm:grid-cols-6">
+                                <div class="mt-3 grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-6">
                                     <div class="sm:col-span-6">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-item-' + line.key">Medicine</label>
-                                        <select :id="'rx-item-' + line.key" :name="'lines[' + index + '][item_id]'" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                        <select :id="'rx-item-' + line.key" :name="'lines[' + index + '][item_id]'" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                             @foreach ($medicines as $medicine)
                                                 <option value="{{ $medicine->id }}">{{ $medicine->name }} · {{ $medicine->unit }} · {{ \App\Support\Money::format($medicine->cash_price) }} each</option>
                                             @endforeach
@@ -280,19 +280,19 @@
                                     </div>
                                     <div class="sm:col-span-2">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-dose-' + line.key">Dose</label>
-                                        <input :id="'rx-dose-' + line.key" :name="'lines[' + index + '][dose]'" required placeholder="1 g" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                        <input :id="'rx-dose-' + line.key" :name="'lines[' + index + '][dose]'" required placeholder="1 g" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     </div>
                                     <div class="sm:col-span-2">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-frequency-' + line.key">Frequency</label>
-                                        <input :id="'rx-frequency-' + line.key" :name="'lines[' + index + '][frequency]'" required placeholder="Three times a day" class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                        <input :id="'rx-frequency-' + line.key" :name="'lines[' + index + '][frequency]'" required placeholder="Three times a day" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-days-' + line.key">Days</label>
-                                        <input :id="'rx-days-' + line.key" :name="'lines[' + index + '][duration_days]'" type="number" min="1" max="90" value="3" required class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                        <input :id="'rx-days-' + line.key" :name="'lines[' + index + '][duration_days]'" type="number" min="1" max="90" value="3" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-qty-' + line.key">Quantity</label>
-                                        <input :id="'rx-qty-' + line.key" :name="'lines[' + index + '][quantity]'" type="number" min="1" max="1000" value="1" required class="mt-1 block w-full rounded-md border-slate-300 text-sm">
+                                        <input :id="'rx-qty-' + line.key" :name="'lines[' + index + '][quantity]'" type="number" min="1" max="1000" value="1" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                     </div>
                                     <div class="sm:col-span-6" x-show="lines.length > 1">
                                         <button type="button" class="text-xs text-red-700" @click="lines.splice(index, 1)">Remove this medicine</button>
@@ -311,8 +311,8 @@
         </div>
 
         <aside class="grid content-start gap-6">
-            <section class="rounded-lg bg-white p-5 shadow-sm">
-                <h2 class="font-semibold">Bill</h2>
+            <section class="rounded-2xl bg-white p-5 shadow-card">
+                <h2 class="font-bold text-slate-900">Bill</h2>
                 <ul class="mt-3 divide-y divide-slate-100 text-sm">
                     @forelse ($visit->bill?->lines ?? [] as $line)
                         <li class="flex justify-between gap-3 py-2">
@@ -342,16 +342,16 @@
             </section>
 
             @if ($visit->admission)
-                <section class="rounded-lg bg-white p-5 shadow-sm">
-                    <h2 class="font-semibold">Admission</h2>
+                <section class="rounded-2xl bg-white p-5 shadow-card">
+                    <h2 class="font-bold text-slate-900">Admission</h2>
                     <p class="mt-2 text-sm">{{ $visit->admission->bed->ward->name }} {{ $visit->admission->bed->code }} · <x-status :value="$visit->admission->status" /></p>
                     @if ($user->permits('wards.view'))
                         <a href="{{ route('wards.show', $visit->admission) }}" class="mt-2 inline-block text-sm font-semibold text-brand-700">Open ward record</a>
                     @endif
                 </section>
             @elseif ($open && $user->permits('wards.manage'))
-                <section class="rounded-lg bg-white p-5 shadow-sm">
-                    <h2 class="font-semibold">Admit</h2>
+                <section class="rounded-2xl bg-white p-5 shadow-card">
+                    <h2 class="font-bold text-slate-900">Admit</h2>
                     @if ($beds->isEmpty())
                         <p class="mt-2 text-sm text-slate-500">No bed is free. Beds being cleaned can be marked clean on the Wards page.</p>
                     @else
@@ -359,7 +359,7 @@
                             @csrf
                             <div>
                                 <x-input-label for="admit-bed" value="Bed" />
-                                <select id="admit-bed" name="bed_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm" required>
+                                <select id="admit-bed" name="bed_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" required>
                                     @foreach ($beds->groupBy(fn ($bed) => $bed->ward->name) as $ward => $wardBeds)
                                         <optgroup label="{{ $ward }}">
                                             @foreach ($wardBeds as $bed)

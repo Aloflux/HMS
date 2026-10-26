@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <form method="POST" action="{{ route('patients.update', $patient) }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-lg bg-white p-6 shadow-sm sm:grid-cols-2">
+    <form method="POST" action="{{ route('patients.update', $patient) }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-2xl bg-white p-6 shadow-card sm:grid-cols-2">
         @csrf
         @method('PATCH')
         <div>
@@ -25,7 +25,7 @@
         </div>
         <div>
             <x-input-label for="sex" value="Sex" />
-            <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-slate-300 shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none" required>
+            <select id="sex" name="sex" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" required>
                 <option value="female" @selected(old('sex', $patient->sex->value) === 'female')>Female</option>
                 <option value="male" @selected(old('sex', $patient->sex->value) === 'male')>Male</option>
             </select>
@@ -69,14 +69,14 @@
         </div>
         <div class="sm:col-span-2">
             <x-input-label for="allergies" value="Known allergies" />
-            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-slate-300 shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">{{ old('allergies', $patient->allergies) }}</textarea>
+            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none">{{ old('allergies', $patient->allergies) }}</textarea>
         </div>
         <div>
             <x-input-label for="photo" value="Photo" />
             <input id="photo" name="photo" type="file" accept="image/*" class="mt-1 block w-full text-sm">
         </div>
         <label class="flex items-start gap-2 text-sm sm:col-span-2">
-            <input type="checkbox" name="confirm_duplicate" value="1" class="mt-1 rounded border-slate-300 text-brand-700" @checked(old('confirm_duplicate'))>
+            <input type="checkbox" name="confirm_duplicate" value="1" class="mt-1 rounded border-slate-300 focus:ring-brand-500 text-brand-700" @checked(old('confirm_duplicate'))>
             <span>Save anyway if the phone, name and date of birth already match another record.</span>
         </label>
         <x-input-error :messages="$errors->get('confirm_duplicate')" class="sm:col-span-2" />

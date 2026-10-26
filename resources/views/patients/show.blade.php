@@ -6,7 +6,7 @@
         </div>
     </x-slot>
 
-    <section class="rounded-lg bg-white shadow-sm">
+    <section class="rounded-2xl bg-white shadow-card">
         <div class="flex items-center gap-4 border-b border-slate-100 px-5 py-5">
             @if ($patient->photo_path)
                 <img src="{{ route('patients.photo', $patient) }}" alt="Photo of {{ $patient->fullName() }}" class="h-14 w-14 rounded-full object-cover">
@@ -18,7 +18,7 @@
                 <p class="text-sm text-slate-500">{{ $patient->patient_number }}@if ($patient->national_id) · {{ $patient->national_id }}@endif</p>
             </div>
             @if (auth()->user()->permits('patients.manage'))
-                <a href="{{ route('patients.edit', $patient) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 hover:text-brand-700" aria-label="Edit {{ $patient->fullName() }}">
+                <a href="{{ route('patients.edit', $patient) }}" class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-500 hover:bg-brand-50 hover:text-brand-700" aria-label="Edit {{ $patient->fullName() }}">
                     <x-icon name="bx-edit" class="text-xl" />
                 </a>
             @endif
@@ -58,10 +58,10 @@
                     <h3 class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Active orders</h3>
                     <ul class="mt-3 space-y-2">
                         @foreach ($labOrders as $order)
-                            <li class="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-900">{{ $order->test?->name ?? 'Laboratory test' }} · result pending</li>
+                            <li class="rounded-xl bg-brand-50 px-3 py-2 text-sm text-brand-900">{{ $order->test?->name ?? 'Laboratory test' }} · result pending</li>
                         @endforeach
                         @foreach ($pendingMedicines as $line)
-                            <li class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">{{ $line->item?->name ?? 'Medicine' }} · pending dispense</li>
+                            <li class="rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">{{ $line->item?->name ?? 'Medicine' }} · pending dispense</li>
                         @endforeach
                         @if ($labOrders->isEmpty() && $pendingMedicines->isEmpty())
                             <li class="text-sm text-slate-500">No laboratory or pharmacy orders are waiting.</li>
@@ -90,20 +90,20 @@
     </section>
 
     @if (auth()->user()->permits('patients.manage'))
-        <section id="open-visit" class="mt-4 scroll-mt-24 rounded-lg bg-white p-5 shadow-sm">
-            <h2 class="font-semibold">Open a visit</h2>
+        <section id="open-visit" class="mt-4 scroll-mt-24 rounded-2xl bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Open a visit</h2>
             <form method="POST" action="{{ route('visits.store', $patient) }}" class="mt-4 grid gap-4 sm:grid-cols-2">
                 @csrf
                 <div>
                     <x-input-label for="visit_type" value="Visit type" />
-                    <select id="visit_type" name="visit_type" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">
+                    <select id="visit_type" name="visit_type" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
                         <option value="outpatient">Outpatient</option>
                         <option value="emergency">Emergency</option>
                     </select>
                 </div>
                 <div>
                     <x-input-label for="priority" value="Priority" />
-                    <select id="priority" name="priority" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">
+                    <select id="priority" name="priority" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
                         <option value="routine">Routine</option>
                         <option value="urgent">Urgent</option>
                         <option value="emergency">Emergency</option>
@@ -111,7 +111,7 @@
                 </div>
                 <div>
                     <x-input-label for="payer" value="Payer" />
-                    <select id="payer" name="payer" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">
+                    <select id="payer" name="payer" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
                         <option value="cash">Cash</option>
                         <option value="insurance">Insurance</option>
                         <option value="corporate">Corporate</option>
@@ -119,7 +119,7 @@
                 </div>
                 <div>
                     <x-input-label for="department_id" value="Department" />
-                    <select id="department_id" name="department_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">
+                    <select id="department_id" name="department_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
                         <option value="">Choose a department</option>
                         @foreach ($departments as $department)
                             <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -128,7 +128,7 @@
                 </div>
                 <div>
                     <x-input-label for="insurance_scheme_id" value="Insurance scheme" />
-                    <select id="insurance_scheme_id" name="insurance_scheme_id" class="mt-1 block w-full rounded-md border-slate-300 text-sm shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none">
+                    <select id="insurance_scheme_id" name="insurance_scheme_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
                         <option value="">Only when the payer is not cash</option>
                         @foreach ($schemes as $scheme)
                             <option value="{{ $scheme->id }}">{{ $scheme->name }}</option>

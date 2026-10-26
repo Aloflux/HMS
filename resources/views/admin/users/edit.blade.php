@@ -10,7 +10,7 @@
     <form
         method="POST"
         action="{{ route('admin.users.update', $user) }}"
-        class="rounded-lg bg-white p-5 shadow-sm"
+        class="rounded-2xl bg-white p-5 shadow-card"
         x-data="{
             account: @js(old('account', $user->role === \App\Enums\Role::Administrator ? 'administrator' : 'staff')),
             areas: @js((object) array_fill_keys(old('areas', $user->selectedAreaKeys()), true)),
