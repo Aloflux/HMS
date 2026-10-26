@@ -20,7 +20,7 @@
     :class="sidebar ? 'flex' : 'hidden lg:flex'"
 >
     <div class="mb-3 flex h-16 shrink-0 items-center justify-between px-5">
-        <a href="{{ auth()->user()->role === \App\Enums\Role::PlatformAdmin ? route('platform.facilities.index') : route('dashboard') }}" class="flex items-center gap-3">
+        <a href="{{ auth()->user()->role === \App\Enums\Role::PlatformAdmin ? route('platform.dashboard') : route('dashboard') }}" class="flex items-center gap-3">
             <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-700 text-white shadow-brand">
                 <x-icon name="bx-plus-medical" class="text-xl" />
             </span>
@@ -46,11 +46,13 @@
 
     <nav class="flex flex-1 flex-col gap-1 overflow-y-auto px-4 pb-4">
         @if (auth()->user()->role === \App\Enums\Role::PlatformAdmin)
-            @php($platformItem = ['pattern' => 'platform.*'])
-            <a href="{{ route('platform.facilities.index') }}" @click="sidebar = false" class="{{ $navClass($platformItem) }}">
-                <x-icon name="bx-buildings" class="{{ $navIconClass($platformItem) }}" />
-                <span>Facilities</span>
-            </a>
+            <p class="mb-1 mt-3 px-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Platform</p>
+            @foreach ([['platform.dashboard', 'platform.dashboard', 'bx-grid-alt', 'Overview'], ['platform.facilities.index', 'platform.facilities.*', 'bx-buildings', 'Facilities']] as [$platformRoute, $platformPattern, $platformIcon, $platformLabel])
+                <a href="{{ route($platformRoute) }}" @click="sidebar = false" class="{{ $navClass(['pattern' => $platformPattern]) }}">
+                    <x-icon :name="$platformIcon" class="{{ $navIconClass(['pattern' => $platformPattern]) }}" />
+                    <span>{{ $platformLabel }}</span>
+                </a>
+            @endforeach
         @endif
 
         @if ($navigation['primary'] !== [])

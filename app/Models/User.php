@@ -142,7 +142,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function homeRoute(): string
     {
         return $this->role === Role::PlatformAdmin
-            ? 'platform.facilities.index'
+            ? 'platform.dashboard'
             : 'dashboard';
     }
 }

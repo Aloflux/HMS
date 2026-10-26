@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Enums\Role;
+use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Services\FacilityProvisioner;
@@ -15,16 +16,44 @@ use Illuminate\View\View;
 
 class FacilityController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
+        $search = trim((string) $request->query('q', ''));
+        $status = in_array($request->query('status'), ['active', 'inactive', 'setup'], true) ? $request->query('status') : 'all';
+        $sort = $request->query('sort') === 'newest' ? 'newest' : 'name';
+
+        $facilities = Facility::query()
+            ->withCount([
+                'patients' => fn ($query) => $query->withoutGlobalScope('facility'),
+                'users as admins_count' => fn ($query) => $query->where('role', Role::Administrator),
+                'users as active_admins_count' => fn ($query) => $query->where('role', Role::Administrator)->where('is_active', true),
+                'users as staff_count',
+            ])
+            ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
+                ->whereLike('name', "%{$search}%")
+                ->orWhereLike('code', "%{$search}%")
+                ->orWhereLike('district', "%{$search}%")))
+            ->when($status === 'active', fn ($query) => $query->where('is_active', true)->whereNotNull('onboarded_at'))
+            ->when($status === 'inactive', fn ($query) => $query->where('is_active', false))
+            ->when($status === 'setup', fn ($query) => $query->whereNull('onboarded_at'))
+            ->when($sort === 'newest', fn ($query) => $query->latest(), fn ($query) => $query->orderBy('name'))
+            ->get();
+
+        $all = Facility::query()->get(['id', 'is_active', 'onboarded_at']);
+
         return view('platform.facilities.index', [
-            'facilities' => Facility::query()
-                ->withCount([
-                    'patients' => fn ($query) => $query->withoutGlobalScope('facility'),
-                    'users as admins_count' => fn ($query) => $query->where('role', Role::Administrator),
-                ])
-                ->orderBy('name')
-                ->get(),
+            'facilities' => $facilities,
+            'search' => $search,
+            'status' => $status,
+            'sort' => $sort,
+            'counts' => [
+                'all' => $all->count(),
+                'active' => $all->where('is_active', true)->whereNotNull('onboarded_at')->count(),
+                'setup' => $all->whereNull('onboarded_at')->count(),
+                'inactive' => $all->where('is_active', false)->count(),
+            ],
+            'kinds' => RegisteredUserController::FACILITY_KINDS,
+            'openProvision' => $request->boolean('provision') || (bool) session('errors')?->hasAny(['name', 'code', 'kind', 'district', 'bed_capacity', 'admin_name', 'admin_email', 'admin_password']),
         ]);
     }
 
@@ -69,6 +98,6 @@ class FacilityController extends Controller
 
         $facility->update($data);
 
-        return back()->with('status', 'Facility updated.');
+        return back()->with('status', $facility->name.($facility->is_active ? ' is active again.' : ' is now inactive. Its staff cannot sign in.'));
     }
 }

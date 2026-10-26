@@ -15,6 +15,7 @@ use App\Http\Controllers\MaternityController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PharmacyController;
+use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\FacilityAdminController;
 use App\Http\Controllers\Platform\FacilityController;
 use App\Http\Controllers\ProfileController;
@@ -221,6 +222,7 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
     });
 
     Route::middleware('permission:platform.manage')->prefix('platform')->group(function () {
+        Route::get('/', PlatformDashboardController::class)->name('platform.dashboard');
         Route::get('/facilities', [FacilityController::class, 'index'])->name('platform.facilities.index');
         Route::post('/facilities', [FacilityController::class, 'store'])->name('platform.facilities.store');
         Route::patch('/facilities/{facility}', [FacilityController::class, 'update'])->name('platform.facilities.update');
