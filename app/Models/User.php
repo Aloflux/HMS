@@ -4,14 +4,17 @@ namespace App\Models;
 
 use App\Authorization\RolePermissions;
 use App\Enums\Role;
+use App\Jobs\SendNotification;
 use App\Models\Concerns\RecordsAudit;
 use App\Notifications\VerifyEmailAddress;
+use App\Support\MailPressure;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Notification;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -56,11 +59,27 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Send the branded, queued verification email instead of the framework default.
+     * Send the branded verification email instead of the framework default.
      */
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new VerifyEmailAddress);
+    }
+
+    /**
+     * Deliver mail in the request until a burst is large enough to stall it.
+     */
+    public function notify($instance)
+    {
+        if (MailPressure::shouldQueue()) {
+            SendNotification::dispatch($this, $instance);
+
+            return;
+        }
+
+        MailPressure::record();
+
+        Notification::sendNow($this, $instance);
     }
 
     public function facility(): BelongsTo

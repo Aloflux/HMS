@@ -3,11 +3,14 @@
 namespace App\Notifications;
 
 use App\Models\Facility;
+use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class FacilityReady extends Notification
 {
+    use Queueable;
+
     public function __construct(public Facility $facility) {}
 
     /**

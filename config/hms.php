@@ -12,6 +12,12 @@ return [
 
     'idle_timeout_minutes' => (int) env('HMS_IDLE_TIMEOUT', 15),
 
+    /*
+    | Messages up to this number are sent during the request.
+    | Anything beyond it, or already waiting, is queued so a burst cannot stall the process.
+    */
+    'mail_queue_after' => (int) env('HMS_MAIL_QUEUE_AFTER', 5),
+
     'currency' => 'UGX',
 
     'demo_accounts' => [
