@@ -8,7 +8,7 @@
             <div class="relative">
                 <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
                     <x-icon name="bx-plus-medical" class="text-3xl text-brand-200" />
-                    <span class="text-xl font-semibold">AfyaDesk</span>
+                    <span class="text-xl font-semibold">Tunzuri</span>
                 </a>
                 <p class="mt-8 max-w-md text-3xl font-semibold leading-tight lg:mt-16 lg:text-4xl">Set up your facility in minutes.</p>
                 <p class="mt-4 max-w-md text-sm leading-6 text-brand-100 lg:text-base">Register your clinic or hospital, confirm your email, then walk through a short setup. You become the facility administrator.</p>

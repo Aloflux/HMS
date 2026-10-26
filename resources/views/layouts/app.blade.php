@@ -7,7 +7,7 @@
         <meta name="idle-timeout" content="{{ config('hms.idle_timeout_minutes') }}">
 
         @php($pageTitle = \App\Support\Navigation::titleFor(request()->route()?->getName()))
-        <title>{{ $pageTitle ? $pageTitle.' · ' : '' }}{{ config('app.name', 'AfyaDesk') }}</title>
+        <title>{{ $pageTitle ? $pageTitle.' · ' : '' }}{{ config('app.name', 'Tunzuri') }}</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />

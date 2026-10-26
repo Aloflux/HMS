@@ -18,7 +18,7 @@
                         {{ $stats['active'] }} live
                     </span>
                 </div>
-                <p class="mt-2 text-sm text-slate-500">Every facility on AfyaDesk at a glance. Counts only; patient records stay inside each facility.</p>
+                <p class="mt-2 text-sm text-slate-500">Every facility on Tunzuri at a glance. Counts only; patient records stay inside each facility.</p>
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 <a href="{{ route('platform.facilities.index') }}" class="inline-flex items-center gap-2 rounded-md bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-card hover:shadow-card-hover">

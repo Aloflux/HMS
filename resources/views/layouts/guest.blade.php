@@ -5,7 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'AfyaDesk') }}</title>
+        <title>{{ config('app.name', 'Tunzuri') }}</title>
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -22,7 +22,7 @@
             <div>
                 <a href="/" class="inline-flex items-center gap-2 text-brand-800">
                     <x-icon name="bx-plus-medical" class="text-4xl text-brand-700" />
-                    <span class="text-2xl font-semibold">AfyaDesk</span>
+                    <span class="text-2xl font-semibold">Tunzuri</span>
                 </a>
             </div>
 

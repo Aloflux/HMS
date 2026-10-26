@@ -11,7 +11,7 @@
                 <span class="inline-flex h-9 w-9 items-center justify-center rounded-md bg-brand-700 text-white shadow-brand">
                     <x-icon name="bx-plus-medical" class="text-lg" />
                 </span>
-                <span class="text-lg font-bold tracking-tight text-slate-900">AfyaDesk</span>
+                <span class="text-lg font-bold tracking-tight text-slate-900">Tunzuri</span>
             </span>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
@@ -106,7 +106,7 @@
                         <x-text-input id="moh_code" name="moh_code" class="mt-1 block w-full" :value="old('moh_code', $facility->moh_code)" />
                     </div>
                     <div>
-                        <x-input-label value="AfyaDesk code" />
+                        <x-input-label value="Tunzuri code" />
                         <p class="mt-1 flex h-[42px] items-center rounded-md bg-slate-50 px-3 text-sm font-semibold text-slate-700">{{ $facility->code }}</p>
                     </div>
                 </div>

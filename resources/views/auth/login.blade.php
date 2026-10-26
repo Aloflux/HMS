@@ -8,7 +8,7 @@
             <div class="relative">
                 <a href="{{ url('/') }}" class="inline-flex items-center gap-2">
                     <x-icon name="bx-plus-medical" class="text-3xl text-brand-200" />
-                    <span class="text-xl font-semibold">AfyaDesk</span>
+                    <span class="text-xl font-semibold">Tunzuri</span>
                 </a>
                 <p class="mt-8 max-w-md text-3xl font-semibold leading-tight lg:mt-16 lg:text-4xl">One record, from the queue to the receipt.</p>
                 <p class="mt-4 max-w-md text-sm leading-6 text-brand-100 lg:text-base">Sign in with the account issued for your station. You only see the areas an administrator has opened for you.</p>
@@ -37,7 +37,7 @@
                     <p class="mt-1 text-sm text-slate-600">Shared computers sign out after a period of inactivity.</p>
                     @if (Route::has('register'))
                         <p class="mt-3 text-sm text-slate-600">
-                            New to AfyaDesk?
+                            New to Tunzuri?
                             <a href="{{ route('register') }}" class="font-semibold text-brand-700 hover:text-brand-800">Register your facility</a>
                         </p>
                     @endif

@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>{{ config('app.name', 'AfyaDesk') }}</title>
+        <title>{{ config('app.name', 'Tunzuri') }}</title>
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
             @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -13,7 +13,7 @@
             <div>
                 <p class="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-brand-200">
                     <x-icon name="bx-plus-medical" class="text-lg" />
-                    AfyaDesk
+                    Tunzuri
                 </p>
                 <h1 class="mt-3 text-4xl font-semibold">One record, every service billed.</h1>
                 <p class="mt-4 text-lg text-brand-100">Patient registration, queues, clinical care, pharmacy, cashier and Ministry of Health reports for a single facility, on a shared multi-tenant platform.</p>

@@ -16,9 +16,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
+        $samples = app()->environment('local', 'development');
+
         return view('auth.login', [
-            'demoAccounts' => config('hms.show_demo_login') ? config('hms.demo_accounts') : [],
-            'demoPassword' => config('hms.show_demo_login') ? config('hms.demo_password') : null,
+            'demoAccounts' => $samples ? config('hms.demo_accounts') : [],
+            'demoPassword' => $samples ? config('hms.demo_password') : null,
         ]);
     }
 

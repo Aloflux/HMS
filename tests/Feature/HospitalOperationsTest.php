@@ -28,21 +28,25 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Icd10Seeder;
 use Illuminate\Support\Facades\Hash;
 
-test('sample accounts can be clicked into the login form when the demo flag is on', function () {
-    config(['hms.show_demo_login' => true, 'hms.demo_password' => 'password']);
+test('sample stations are shown in development', function (string $environment) {
+    $this->app->detectEnvironment(fn () => $environment);
+    config(['hms.demo_password' => 'password']);
 
     $this->get(route('login'))
         ->assertOk()
-        ->assertSee('data-demo-email="admin@stmarys.afyadesk.test"', false)
-        ->assertSee('data-demo-email="front@stmarys.afyadesk.test"', false)
+        ->assertSee('Sample stations', false)
+        ->assertSee('data-demo-email="platform@tunzuri.test"', false)
+        ->assertSee('data-demo-email="admin@stmarys.tunzuri.test"', false)
+        ->assertDontSee('data-demo-email="front@stmarys.tunzuri.test"', false)
         ->assertSee('data-demo-password="password"', false);
-});
+})->with(['local', 'development']);
 
-test('sample accounts stay hidden when the demo flag is off', function () {
-    config(['hms.show_demo_login' => false]);
+test('sample stations are hidden in production', function () {
+    $this->app->detectEnvironment(fn () => 'production');
 
     $this->get(route('login'))
         ->assertOk()
+        ->assertDontSee('Sample stations', false)
         ->assertDontSee('data-demo-email', false);
 });
 
@@ -579,8 +583,8 @@ test('the seeder creates only a platform administrator and one facility administ
     $this->seed(DatabaseSeeder::class);
 
     expect(User::query()->orderBy('email')->pluck('role', 'email')->map->value->all())->toBe([
-        'admin@stmarys.afyadesk.test' => 'administrator',
-        'platform@afyadesk.test' => 'platform_admin',
+        'admin@stmarys.tunzuri.test' => 'administrator',
+        'platform@tunzuri.test' => 'platform_admin',
     ]);
     expect(Patient::query()->count())->toBeGreaterThan(0);
 });
@@ -739,7 +743,7 @@ test('the visit page explains empty catalogues instead of showing empty order fo
 
 test('the seeded visit page shows every order form and the full record', function () {
     $this->seed(DatabaseSeeder::class);
-    $admin = User::query()->where('email', 'admin@stmarys.afyadesk.test')->first();
+    $admin = User::query()->where('email', 'admin@stmarys.tunzuri.test')->first();
     $visit = Visit::query()->whereHas('prescriptions')->first();
 
     $this->actingAs($admin)

@@ -25,7 +25,7 @@
                 <x-icon name="bx-plus-medical" class="text-xl" />
             </span>
             <span>
-                <span class="block text-lg font-bold leading-tight tracking-tight text-slate-900">AfyaDesk</span>
+                <span class="block text-lg font-bold leading-tight tracking-tight text-slate-900">Tunzuri</span>
                 <span class="block text-[10px] font-semibold uppercase tracking-widest text-brand-700">Clinical workspace</span>
             </span>
         </a>
