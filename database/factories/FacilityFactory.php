@@ -22,6 +22,17 @@ class FacilityFactory extends Factory
             'district' => 'Kampala',
             'bed_capacity' => 40,
             'is_active' => true,
+            'onboarded_at' => now(),
         ];
+    }
+
+    /**
+     * A self-registered facility whose owner has not finished the setup wizard.
+     */
+    public function pendingOnboarding(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'onboarded_at' => null,
+        ]);
     }
 }

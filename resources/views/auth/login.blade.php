@@ -35,6 +35,12 @@
                 <div>
                     <h1 class="text-3xl font-bold tracking-tight text-slate-900">Sign in</h1>
                     <p class="mt-1 text-sm text-slate-600">Shared computers sign out after a period of inactivity.</p>
+                    @if (Route::has('register'))
+                        <p class="mt-3 text-sm text-slate-600">
+                            New to AfyaDesk?
+                            <a href="{{ route('register') }}" class="font-semibold text-brand-700 hover:text-brand-800">Register your facility</a>
+                        </p>
+                    @endif
                 </div>
 
                 <x-auth-session-status :status="session('status')" />

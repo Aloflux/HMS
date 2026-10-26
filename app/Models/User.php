@@ -5,13 +5,15 @@ namespace App\Models;
 use App\Authorization\RolePermissions;
 use App\Enums\Role;
 use App\Models\Concerns\RecordsAudit;
+use App\Notifications\VerifyEmailAddress;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable, RecordsAudit;
@@ -22,6 +24,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
         'facility_id',
         'role',
@@ -50,6 +53,14 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Send the branded, queued verification email instead of the framework default.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmailAddress);
     }
 
     public function facility(): BelongsTo

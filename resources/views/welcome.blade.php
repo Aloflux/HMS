@@ -23,6 +23,10 @@
                     <x-icon name="bx-log-in" class="text-lg" />
                     Sign in
                 </a>
+                <a href="{{ route('register') }}" class="ms-2 inline-flex items-center gap-2 rounded-md bg-brand-700 px-5 py-3 text-sm font-semibold text-white">
+                    <x-icon name="bx-buildings" class="text-lg" />
+                    Register your facility
+                </a>
                 </div>
             </main>
     </body>

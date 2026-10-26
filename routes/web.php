@@ -12,6 +12,7 @@ use App\Http\Controllers\InsuranceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\MaternityController;
+use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PharmacyController;
 use App\Http\Controllers\Platform\FacilityAdminController;
@@ -34,7 +35,16 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('onboarding')->group(function () {
+    Route::get('/{step?}', [OnboardingController::class, 'show'])
+        ->whereIn('step', OnboardingController::STEPS)
+        ->name('onboarding.show');
+    Route::post('/facility', [OnboardingController::class, 'saveFacility'])->name('onboarding.facility');
+    Route::post('/wards', [OnboardingController::class, 'saveWards'])->name('onboarding.wards');
+    Route::post('/finish', [OnboardingController::class, 'finish'])->name('onboarding.finish');
+});
+
+Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

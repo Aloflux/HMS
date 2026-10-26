@@ -17,11 +17,12 @@ class FacilityProvisioner
 {
     /**
      * @param  array{name: string, code: string, kind: string, district: string, address?: ?string, phone?: ?string, email?: ?string, bed_capacity?: int, country?: string, moh_code?: ?string}  $attributes
-     * @param  array{name: string, email: string, password: string}  $admin
+     * @param  array{name: string, email: string, password: string, phone?: ?string}  $admin
+     * @param  bool  $selfService  A facility that signed itself up: the owner must verify their email and finish setup first.
      */
-    public function provision(array $attributes, array $admin): Facility
+    public function provision(array $attributes, array $admin, bool $selfService = false): Facility
     {
-        return DB::transaction(function () use ($attributes, $admin): Facility {
+        return DB::transaction(function () use ($attributes, $admin, $selfService): Facility {
             $facility = Facility::query()->create([
                 'name' => $attributes['name'],
                 'code' => strtoupper($attributes['code']),
@@ -34,6 +35,7 @@ class FacilityProvisioner
                 'bed_capacity' => $attributes['bed_capacity'] ?? 0,
                 'moh_code' => $attributes['moh_code'] ?? null,
                 'is_active' => true,
+                'onboarded_at' => $selfService ? null : now(),
             ]);
 
             FacilityContext::set($facility->id);
@@ -122,9 +124,10 @@ class FacilityProvisioner
                 'name' => $admin['name'],
                 'email' => $admin['email'],
                 'password' => $admin['password'],
+                'phone' => $admin['phone'] ?? null,
                 'facility_id' => $facility->id,
                 'role' => Role::Administrator,
-                'email_verified_at' => now(),
+                'email_verified_at' => $selfService ? null : now(),
                 'is_active' => true,
             ]);
 

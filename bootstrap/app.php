@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureFacilityOnboarded;
 use App\Http\Middleware\EnsurePermission;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetFacilityContext;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'permission' => EnsurePermission::class,
+            'onboarded' => EnsureFacilityOnboarded::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -27,6 +27,7 @@ class Facility extends Model
         'bed_capacity',
         'moh_code',
         'is_active',
+        'onboarded_at',
     ];
 
     protected function casts(): array
@@ -34,7 +35,13 @@ class Facility extends Model
         return [
             'is_active' => 'boolean',
             'bed_capacity' => 'integer',
+            'onboarded_at' => 'datetime',
         ];
+    }
+
+    public function isOnboarded(): bool
+    {
+        return $this->onboarded_at !== null;
     }
 
     public function departments(): HasMany

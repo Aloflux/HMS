@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Admission;
 use App\Models\Bed;
 use App\Models\Department;
-use App\Models\StockLocation;
 use App\Models\Ward;
 use App\Services\AuditLogger;
+use App\Services\WardManager;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ class WardController extends Controller
         ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, WardManager $wards): RedirectResponse
     {
         $facilityId = $request->user()->facility_id;
         $data = $request->validate([
@@ -47,28 +47,14 @@ class WardController extends Controller
             'create_store' => ['boolean'],
         ]);
 
-        DB::transaction(function () use ($data, $facilityId, $request): void {
-            $ward = Ward::query()->create([
-                'facility_id' => $facilityId,
-                'department_id' => $data['department_id'] ?? null,
-                'name' => $data['name'],
-                'code' => strtoupper($data['code']),
-            ]);
-
-            $this->addBeds($ward, (int) $data['beds']);
-
-            $storeName = $ward->name.' store';
-
-            if ($request->boolean('create_store') && ! StockLocation::query()->where('name', $storeName)->exists()) {
-                StockLocation::query()->create([
-                    'facility_id' => $facilityId,
-                    'name' => $storeName,
-                    'kind' => 'ward',
-                    'department_id' => $ward->department_id,
-                    'is_active' => true,
-                ]);
-            }
-        });
+        DB::transaction(fn (): Ward => $wards->create(
+            $facilityId,
+            $data['name'],
+            $data['code'],
+            $data['department_id'] ?? null,
+            (int) $data['beds'],
+            $request->boolean('create_store'),
+        ));
 
         return back()->with('status', 'Ward added.');
     }
@@ -102,13 +88,13 @@ class WardController extends Controller
         return back()->with('status', 'Ward removed.');
     }
 
-    public function storeBeds(Request $request, Ward $ward): RedirectResponse
+    public function storeBeds(Request $request, Ward $ward, WardManager $wards): RedirectResponse
     {
         $data = $request->validate([
             'count' => ['required', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $created = DB::transaction(fn (): int => $this->addBeds($ward, (int) $data['count']));
+        $created = DB::transaction(fn (): int => $wards->addBeds($ward, (int) $data['count']));
 
         return back()->with('status', $created.' '.str('bed')->plural($created).' added to '.$ward->name.'.');
     }
@@ -167,27 +153,5 @@ class WardController extends Controller
         AuditLogger::log('deleted', $bed);
 
         return back()->with('status', $bed->code.' removed.');
-    }
-
-    /**
-     * Add beds named "Bed N", numbered after the highest number already used in the ward.
-     */
-    private function addBeds(Ward $ward, int $count): int
-    {
-        $highest = $ward->beds()
-            ->lockForUpdate()
-            ->pluck('code')
-            ->map(fn (string $code): int => preg_match('/(\d+)$/', $code, $matches) ? (int) $matches[1] : 0)
-            ->max() ?? 0;
-
-        for ($number = $highest + 1; $number <= $highest + $count; $number++) {
-            $ward->beds()->create([
-                'facility_id' => $ward->facility_id,
-                'code' => 'Bed '.$number,
-                'status' => 'available',
-            ]);
-        }
-
-        return $count;
     }
 }
