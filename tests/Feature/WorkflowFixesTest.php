@@ -11,6 +11,7 @@ use App\Models\Facility;
 use App\Models\ImagingOrder;
 use App\Models\ImagingStudy;
 use App\Models\InsuranceScheme;
+use App\Models\LabTest;
 use App\Models\Patient;
 use App\Models\Preauthorisation;
 use App\Models\QueueEntry;
@@ -230,4 +231,37 @@ test('lab staff see results but not the day takings, and tabs are titled by page
         ->assertSee('<title>Dashboard · ', false)
         ->assertDontSee('Collected today')
         ->assertSee('Laboratory');
+});
+
+test('the laboratory page puts emergencies first, groups a request, and keeps a searchable results log', function () {
+    [$facility, $admin] = provisionHospital();
+    $service = Service::query()->create(['facility_id' => $facility->id, 'code' => 'LAB', 'name' => 'Lab', 'category' => 'laboratory', 'cash_price' => 3000, 'is_active' => true]);
+    $malaria = LabTest::query()->create(['facility_id' => $facility->id, 'service_id' => $service->id, 'code' => 'BS', 'name' => 'Malaria smear', 'is_active' => true]);
+    $hb = LabTest::query()->create(['facility_id' => $facility->id, 'service_id' => $service->id, 'code' => 'HB', 'name' => 'Haemoglobin', 'unit' => 'g/dL', 'is_active' => true]);
+
+    $routine = openCashVisit($facility, $admin);
+    $emergency = openCashVisit($facility, $admin);
+    $emergency->update(['priority' => 'emergency']);
+    $emergency->patient->update(['surname' => 'Emergencyperson']);
+    FacilityContext::set($facility->id);
+    app(EncounterService::class)->orderLabs($routine, $admin, [$malaria->id]);
+    $request = app(EncounterService::class)->orderLabs($emergency, $admin, [$malaria->id, $hb->id]);
+    FacilityContext::forget();
+
+    $page = $this->actingAs($admin)->get(route('lab.index'))->assertOk();
+    $html = (string) $page->getContent();
+    expect(strpos($html, 'Emergencyperson'))->toBeLessThan(strpos($html, $routine->patient->fullName()))
+        ->and(substr_count($html, 'Emergencyperson'))->toBe(1);
+    $page->assertSee('g/dL');
+
+    $hbItem = $request->items()->where('lab_test_id', $hb->id)->first();
+    $this->actingAs($admin)->post(route('lab.verify', $hbItem), ['result_value' => '6.1', 'result_flag' => 'critical'])->assertSessionHasNoErrors();
+
+    $this->actingAs($admin)->get(route('lab.index', ['tab' => 'verified', 'q' => 'Haemo']))
+        ->assertSee('6.1 g/dL')
+        ->assertSee('Critical');
+    $this->actingAs($admin)->get(route('lab.index'))->assertSee('1 flagged');
+
+    $clinician = staffFor($facility, 'clinical');
+    $this->actingAs($clinician)->get(route('lab.index'))->assertOk()->assertDontSee('name="result_value"', false);
 });
