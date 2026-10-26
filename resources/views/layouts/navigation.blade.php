@@ -19,9 +19,9 @@
     class="no-print fixed inset-y-0 start-0 z-30 flex w-64 flex-col bg-white shadow-card lg:flex"
     :class="sidebar ? 'flex' : 'hidden lg:flex'"
 >
-    <div class="flex items-center justify-between px-5 pt-6 pb-4">
+    <div class="mb-3 flex h-16 shrink-0 items-center justify-between px-5">
         <a href="{{ auth()->user()->role === \App\Enums\Role::PlatformAdmin ? route('platform.facilities.index') : route('dashboard') }}" class="flex items-center gap-3">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-700 text-white shadow-brand">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-700 text-white shadow-brand">
                 <x-icon name="bx-plus-medical" class="text-xl" />
             </span>
             <span>
@@ -33,7 +33,7 @@
     </div>
 
     @if ($currentFacility)
-        <div class="mx-4 mb-2 flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-2.5">
+        <div class="mx-4 mb-2 flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2.5">
             <span class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                 <x-icon name="bx-buildings" class="text-lg" />
             </span>
@@ -75,14 +75,14 @@
     </nav>
 
     <div class="p-4">
-        <div class="rounded-2xl bg-slate-50 p-2">
+        <div class="rounded-lg bg-slate-50 p-2">
             @foreach ($navigation['footer'] as $item)
                 <a href="{{ route($item['route']) }}" @click="sidebar = false" class="{{ $navClass($item) }}">
                     <x-icon :name="$item['icon']" class="{{ $navIconClass($item) }}" />
                     <span>{{ $item['label'] }}</span>
                 </a>
             @endforeach
-            <div class="flex items-center gap-3 rounded-xl bg-white px-3 py-2.5 shadow-card">
+            <div class="flex items-center gap-3 rounded-md bg-white px-3 py-2.5 shadow-card">
                 <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">{{ $initials }}</span>
                 <a href="{{ route('profile.edit') }}" @click="sidebar = false" class="min-w-0 flex-1">
                     <span class="block truncate text-sm font-semibold text-slate-900">{{ auth()->user()->name }}</span>

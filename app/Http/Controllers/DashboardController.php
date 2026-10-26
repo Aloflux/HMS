@@ -20,7 +20,7 @@ class DashboardController extends Controller
         $today = now()->startOfDay();
 
         $visits = Visit::query()->where('opened_at', '>=', $today);
-        $beds = Bed::query()->count();
+        $beds = Bed::query()->where('status', '!=', 'closed')->count();
         $occupiedBeds = Bed::query()->where('status', 'occupied')->count();
         $waitingByStage = QueueEntry::query()
             ->where('status', 'waiting')

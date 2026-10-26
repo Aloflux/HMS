@@ -14,7 +14,7 @@
     </x-slot>
 
     @unless ($admission->isOpen())
-        <div class="mb-6 rounded-2xl bg-white p-5 shadow-card">
+        <div class="mb-6 rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Discharged {{ $admission->discharged_at?->format('d M Y H:i') }} · {{ ucfirst((string) $admission->discharge_outcome) }}</h2>
             <p class="mt-2 whitespace-pre-line text-sm text-slate-600">{{ $admission->discharge_summary }}</p>
             <p class="mt-2 text-xs text-slate-500">The ward record is closed. Nothing more can be charted or issued.</p>
@@ -22,13 +22,13 @@
     @endunless
 
     <div class="grid gap-6 lg:grid-cols-2">
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Nursing notes</h2>
             @if ($admission->isOpen() && auth()->user()->permits('wards.manage'))
                 <form method="POST" action="{{ route('wards.notes', $admission) }}" class="mt-3">
                     @csrf
                     <x-input-label for="note" value="New note" />
-                    <textarea id="note" name="note" rows="3" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('note') }}</textarea>
+                    <textarea id="note" name="note" rows="3" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('note') }}</textarea>
                     <div class="mt-3"><x-primary-button>Save note</x-primary-button></div>
                 </form>
             @endif
@@ -44,14 +44,14 @@
             </ul>
         </section>
 
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Medication chart</h2>
             @if ($admission->isOpen() && auth()->user()->permits('wards.manage'))
                 <form method="POST" action="{{ route('wards.medications', $admission) }}" class="mt-3 grid gap-3 sm:grid-cols-3">
                     @csrf
                     <div class="sm:col-span-3">
                         <x-input-label for="medication-item" value="Medicine" />
-                        <select id="medication-item" name="item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                        <select id="medication-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                             @foreach ($items as $item)
                                 <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }}</option>
                             @endforeach
@@ -63,7 +63,7 @@
                     </div>
                     <div>
                         <x-input-label for="medication-status" value="Status" />
-                        <select id="medication-status" name="status" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                        <select id="medication-status" name="status" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                             @foreach (['given' => 'Given', 'due' => 'Due', 'missed' => 'Missed', 'refused' => 'Refused'] as $value => $label)
                                 <option value="{{ $value }}" @selected(old('status') === $value)>{{ $label }}</option>
                             @endforeach
@@ -88,7 +88,7 @@
             </ul>
         </section>
 
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Ward stock used</h2>
             @if ($admission->isOpen() && auth()->user()->permits('wards.manage'))
                 @if ($locations->isEmpty())
@@ -98,7 +98,7 @@
                         @csrf
                         <div>
                             <x-input-label for="issue-location" value="From store" />
-                            <select id="issue-location" name="stock_location_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                            <select id="issue-location" name="stock_location_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                 @foreach ($locations as $location)
                                     <option value="{{ $location->id }}" @selected((string) old('stock_location_id') === (string) $location->id)>{{ $location->name }}</option>
                                 @endforeach
@@ -110,7 +110,7 @@
                         </div>
                         <div class="sm:col-span-2">
                             <x-input-label for="issue-item" value="Item" />
-                            <select id="issue-item" name="item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                            <select id="issue-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                 @foreach ($items as $item)
                                     <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} · {{ $item->billing_type->label() }}</option>
                                 @endforeach
@@ -133,17 +133,17 @@
         </section>
 
         @if ($admission->isOpen() && auth()->user()->permits('wards.manage'))
-            <form method="POST" action="{{ route('wards.discharge', $admission) }}" class="rounded-2xl bg-white p-5 shadow-card">
+            <form method="POST" action="{{ route('wards.discharge', $admission) }}" class="rounded-lg bg-white p-5 shadow-card">
                 @csrf
                 <h2 class="font-bold text-slate-900">Discharge</h2>
                 <p class="mt-1 text-sm text-slate-500">The cash balance must be settled and pending prescriptions and lab tests closed first.</p>
                 <div class="mt-3">
                     <x-input-label for="discharge-summary" value="Discharge summary" />
-                    <textarea id="discharge-summary" name="discharge_summary" rows="3" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('discharge_summary') }}</textarea>
+                    <textarea id="discharge-summary" name="discharge_summary" rows="3" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">{{ old('discharge_summary') }}</textarea>
                 </div>
                 <div class="mt-3">
                     <x-input-label for="discharge-outcome" value="Outcome" />
-                    <select id="discharge-outcome" name="discharge_outcome" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="discharge-outcome" name="discharge_outcome" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach (['recovered' => 'Recovered', 'referred' => 'Referred', 'died' => 'Died', 'absconded' => 'Absconded'] as $value => $label)
                             <option value="{{ $value }}" @selected(old('discharge_outcome') === $value)>{{ $label }}</option>
                         @endforeach

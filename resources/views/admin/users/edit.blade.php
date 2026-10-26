@@ -10,7 +10,7 @@
     <form
         method="POST"
         action="{{ route('admin.users.update', $user) }}"
-        class="rounded-2xl bg-white p-5 shadow-card"
+        class="rounded-lg bg-white p-5 shadow-card"
         x-data="{
             account: @js(old('account', $user->role === \App\Enums\Role::Administrator ? 'administrator' : 'staff')),
             areas: @js((object) array_fill_keys(old('areas', $user->selectedAreaKeys()), true)),
@@ -48,7 +48,7 @@
             <legend class="text-sm font-medium text-slate-700">Status</legend>
             <div class="mt-2 flex flex-wrap gap-2">
                 @foreach (['1' => 'Active, can sign in', '0' => 'Inactive, cannot sign in'] as $value => $label)
-                    <label class="inline-flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                    <label class="inline-flex items-center gap-2 rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
                         <input type="radio" name="is_active" value="{{ $value }}" class="text-brand-700" @checked((string) old('is_active', (int) $user->is_active) === (string) $value)>
                         {{ $label }}
                     </label>

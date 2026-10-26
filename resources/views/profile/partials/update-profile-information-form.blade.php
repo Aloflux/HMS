@@ -2,7 +2,7 @@
     @csrf
 </form>
 
-<form method="post" action="{{ route('profile.update') }}" class="grid gap-4 rounded-2xl bg-white p-6 shadow-card">
+<form method="post" action="{{ route('profile.update') }}" class="grid gap-4 rounded-lg bg-white p-6 shadow-card">
     @csrf
     @method('patch')
 

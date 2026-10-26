@@ -8,7 +8,7 @@
             </button>
         </div>
     </x-slot>
-    <article class="print-sheet mx-auto max-w-md rounded-2xl bg-white p-6 shadow-card">
+    <article class="print-sheet mx-auto max-w-md rounded-lg bg-white p-6 shadow-card">
         <h2 class="text-lg font-semibold">{{ $payment->bill->visit->facility->name ?? auth()->user()->facility->name }}</h2>
         <p class="text-sm text-slate-500">{{ $payment->created_at->format('d M Y H:i') }}</p>
         <p class="mt-4 text-sm">{{ $payment->bill->patient->fullName() }}</p>

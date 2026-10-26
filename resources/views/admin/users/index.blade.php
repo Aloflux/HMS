@@ -12,10 +12,10 @@
         </div>
     </x-slot>
 
-    <div class="rounded-2xl bg-white shadow-card">
+    <div class="rounded-lg bg-white shadow-card">
         <form method="GET" action="{{ route('admin.users.index') }}" class="border-b border-slate-100 p-4">
             <label for="q" class="sr-only">Search users</label>
-            <input id="q" name="q" type="search" value="{{ $search }}" placeholder="Search by name or email" class="w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none sm:max-w-sm">
+            <input id="q" name="q" type="search" value="{{ $search }}" placeholder="Search by name or email" class="w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none sm:max-w-sm">
         </form>
 
         <div class="overflow-x-auto">

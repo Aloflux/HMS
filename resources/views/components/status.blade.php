@@ -13,6 +13,7 @@
     ];
 
     $tone = match ($code) {
+        'closed' => 'bg-slate-100 text-slate-600',
         'cancelled', 'rejected', 'missed', 'refused', 'no_show', 'died', 'stillbirth' => 'bg-red-50 text-red-700',
         'pending', 'waiting', 'due', 'booked', 'ordered', 'submitted', 'sent', 'draft', 'open', 'partial', 'cleaning', 'resulted', 'in_progress' => 'bg-amber-50 text-amber-800',
         'serving', 'admitted', 'occupied', 'consulting', 'triaged', 'registered', 'checked_in' => 'bg-sky-50 text-sky-800',

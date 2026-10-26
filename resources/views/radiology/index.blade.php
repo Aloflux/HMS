@@ -2,7 +2,7 @@
     <x-slot name="header"><x-page-title>Radiology</x-page-title></x-slot>
     <div class="grid gap-4">
         @forelse ($orders as $order)
-            <section class="rounded-2xl bg-white p-5 shadow-card">
+            <section class="rounded-lg bg-white p-5 shadow-card">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <p class="font-medium">{{ $order->study->name }}</p>
@@ -32,7 +32,7 @@
                         @csrf
                         <div>
                             <x-input-label :for="'report-'.$order->id" value="Report" />
-                            <textarea id="report-{{ $order->id }}" name="report" rows="3" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
+                            <textarea id="report-{{ $order->id }}" name="report" rows="3" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
                         </div>
                         <div>
                             <x-input-label :for="'image-'.$order->id" value="Image or PDF (optional, up to 5 MB)" />

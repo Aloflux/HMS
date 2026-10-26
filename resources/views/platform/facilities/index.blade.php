@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header"><x-page-title icon="bx-buildings">Facilities</x-page-title></x-slot>
-    <form method="POST" action="{{ route('platform.facilities.store') }}" class="rounded-2xl bg-white p-5 shadow-card">
+    <form method="POST" action="{{ route('platform.facilities.store') }}" class="rounded-lg bg-white p-5 shadow-card">
         @csrf
         <h2 class="font-bold text-slate-900">Provision a facility</h2>
         <p class="mt-1 text-sm text-slate-500">Creates the departments, stores, wards, starter prices, and a first administrator.</p>
@@ -9,7 +9,7 @@
             <div><x-input-label for="facility-code" value="Short code" /><x-text-input id="facility-code" name="code" class="mt-1 block w-full" :value="old('code')" placeholder="Used in patient numbers" required /></div>
             <div>
                 <x-input-label for="facility-kind" value="Kind" />
-                <select id="facility-kind" name="kind" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                <select id="facility-kind" name="kind" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                     <option value="hospital">Hospital</option>
                     <option value="clinic" @selected(old('kind') === 'clinic')>Clinic</option>
                     <option value="faith_based" @selected(old('kind') === 'faith_based')>Faith-based</option>
@@ -26,7 +26,7 @@
         </div>
         <div class="mt-4"><x-primary-button>Provision facility</x-primary-button></div>
     </form>
-    <div class="mt-6 overflow-x-auto rounded-2xl bg-white shadow-card">
+    <div class="mt-6 overflow-x-auto rounded-lg bg-white shadow-card">
         <table class="min-w-full text-sm">
             @foreach ($facilities as $facility)
                 <tr class="border-t border-slate-100">
@@ -38,7 +38,7 @@
                         <form method="POST" action="{{ route('platform.facilities.update', $facility) }}" class="flex gap-2">
                             @csrf
                             @method('PATCH')
-                            <select name="is_active" class="rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                            <select name="is_active" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                 <option value="1" @selected($facility->is_active)>Active</option>
                                 <option value="0" @selected(! $facility->is_active)>Inactive</option>
                             </select>

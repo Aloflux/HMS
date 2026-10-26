@@ -9,7 +9,7 @@
     <div class="grid gap-4 lg:grid-cols-2">
         @foreach ($locations as $location)
             @php($stocked = $location->batches->where('quantity', '>', 0)->sortBy(fn ($batch) => $batch->item->name))
-            <section class="rounded-2xl bg-white p-5 shadow-card">
+            <section class="rounded-lg bg-white p-5 shadow-card">
                 <h2 class="font-bold text-slate-900">{{ $location->name }}</h2>
                 <div class="mt-3 overflow-x-auto">
                     <table class="min-w-full text-left text-sm">
@@ -41,7 +41,7 @@
     </div>
 
     @if ($user->permits('inventory.purchase'))
-        <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+        <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Purchase orders</h2>
             <form method="POST" action="{{ route('inventory.order') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ newSupplier: @js($suppliers->isEmpty() || filled(old('supplier_name'))) }">
                 @csrf
@@ -53,7 +53,7 @@
                         @endif
                     </div>
                     <template x-if="! newSupplier">
-                        <select id="supplier" name="supplier_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" required>
+                        <select id="supplier" name="supplier_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" required>
                             @foreach ($suppliers as $supplier)
                                 <option value="{{ $supplier->id }}" @selected((string) old('supplier_id') === (string) $supplier->id)>{{ $supplier->name }}</option>
                             @endforeach
@@ -65,7 +65,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <x-input-label for="order-item" value="Item" />
-                    <select id="order-item" name="item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="order-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($items as $item)
                             <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} ({{ $item->unit }})</option>
                         @endforeach
@@ -84,7 +84,7 @@
 
             <div class="mt-6 grid gap-3">
                 @foreach ($orders as $order)
-                    <div class="rounded-xl bg-slate-50 p-4 text-sm">
+                    <div class="rounded-md bg-slate-50 p-4 text-sm">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <span class="font-medium">{{ $order->number }} · {{ $order->supplier->name }}</span>
                             <x-status :value="$order->status" />
@@ -119,14 +119,14 @@
         </section>
     @endif
 
-    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Requisitions from the main store</h2>
         @if ($user->permits('inventory.requisition'))
             <form method="POST" action="{{ route('inventory.requisition') }}" class="mt-4 grid gap-3 md:grid-cols-4">
                 @csrf
                 <div>
                     <x-input-label for="requisition-store" value="For store" />
-                    <select id="requisition-store" name="stock_location_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="requisition-store" name="stock_location_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($receivingStores as $location)
                             <option value="{{ $location->id }}">{{ $location->name }}</option>
                         @endforeach
@@ -134,7 +134,7 @@
                 </div>
                 <div>
                     <x-input-label for="requisition-item" value="Item" />
-                    <select id="requisition-item" name="item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="requisition-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($items as $item)
                             <option value="{{ $item->id }}">{{ $item->name }} ({{ $item->unit }})</option>
                         @endforeach
@@ -167,7 +167,7 @@
         </ul>
     </section>
 
-    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card">
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Stock adjustments</h2>
         <p class="mt-1 text-sm text-slate-500">For expiry, damage, loss, or a count that does not match. An administrator approves before stock changes.</p>
         @if ($user->permits('inventory.adjust'))
@@ -175,7 +175,7 @@
                 @csrf
                 <div>
                     <x-input-label for="adjust-store" value="Store" />
-                    <select id="adjust-store" name="stock_location_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="adjust-store" name="stock_location_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($locations as $location)
                             <option value="{{ $location->id }}">{{ $location->name }}</option>
                         @endforeach
@@ -183,7 +183,7 @@
                 </div>
                 <div>
                     <x-input-label for="adjust-item" value="Item" />
-                    <select id="adjust-item" name="item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="adjust-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         @foreach ($items as $item)
                             <option value="{{ $item->id }}">{{ $item->name }} ({{ $item->unit }})</option>
                         @endforeach
@@ -195,7 +195,7 @@
                 </div>
                 <div>
                     <x-input-label for="adjust-reason" value="Reason" />
-                    <select id="adjust-reason" name="reason_code" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                    <select id="adjust-reason" name="reason_code" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                         <option value="expiry">Expired</option>
                         <option value="damage">Damaged</option>
                         <option value="loss">Lost</option>

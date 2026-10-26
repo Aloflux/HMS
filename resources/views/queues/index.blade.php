@@ -23,7 +23,7 @@
         <p class="mb-4 text-sm text-slate-500">Choose a queue above to call the next patient.</p>
     @endif
 
-    <div class="overflow-x-auto rounded-2xl bg-white shadow-card">
+    <div class="overflow-x-auto rounded-lg bg-white shadow-card">
         <table class="min-w-full text-sm">
             <thead class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80">
                 <tr>

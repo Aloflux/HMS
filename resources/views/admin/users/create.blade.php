@@ -10,7 +10,7 @@
     <form
         method="POST"
         action="{{ route('admin.users.store') }}"
-        class="rounded-2xl bg-white p-5 shadow-card"
+        class="rounded-lg bg-white p-5 shadow-card"
         x-data="{
             account: @js(old('account', 'staff')),
             areas: @js((object) array_fill_keys(old('areas', []), true)),

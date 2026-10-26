@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header"><x-page-title icon="bx-capsule">Pharmacy</x-page-title></x-slot>
-    <section class="rounded-2xl bg-white p-5 shadow-card">
+    <section class="rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Pharmacy shelf</h2>
         <p class="mt-1 text-sm text-slate-500">Working stock in the pharmacy. The batch that expires sooner is used first. The rest stays in the main store until it is issued.</p>
         <div class="mt-4 overflow-x-auto">
@@ -43,7 +43,7 @@
                 $unit = $line->item->unit;
                 $shelfQty = (int) ($onHand[$line->item_id] ?? 0);
             @endphp
-            <article class="rounded-2xl bg-white p-5 shadow-card">
+            <article class="rounded-lg bg-white p-5 shadow-card">
                 <div class="grid gap-4 sm:grid-cols-2">
                     <div>
                         <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Medicine</p>
@@ -108,7 +108,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
-                            <select id="substitute-{{ $line->id }}" name="substitute_item_id" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                            <select id="substitute-{{ $line->id }}" name="substitute_item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                 <option value="">Dispense {{ $line->item->name }}</option>
                                 @foreach ($substitutes as $substitute)
                                     @continue($substitute->id === $line->item_id)

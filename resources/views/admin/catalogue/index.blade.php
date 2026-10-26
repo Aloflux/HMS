@@ -11,7 +11,7 @@
     </x-slot>
 
     <div class="grid gap-6 lg:grid-cols-2">
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Services</h2>
             <form method="POST" action="{{ route('admin.services.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
                 @csrf
@@ -28,7 +28,7 @@
             </ul>
         </section>
 
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Stock items</h2>
             <form method="POST" action="{{ route('admin.items.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
                 @csrf
@@ -54,7 +54,7 @@
             </ul>
         </section>
 
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Lab tests</h2>
             @if ($services->isEmpty())
                 <p class="mt-3 text-sm text-slate-500">Add the service that sets this test's price first.</p>
@@ -85,7 +85,7 @@
             </ul>
         </section>
 
-        <section class="rounded-2xl bg-white p-5 shadow-card">
+        <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Imaging studies</h2>
             @if ($services->isEmpty())
                 <p class="mt-3 text-sm text-slate-500">Add the service that sets this study's price first.</p>

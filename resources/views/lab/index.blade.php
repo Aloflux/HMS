@@ -12,18 +12,18 @@
     </x-slot>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-test-tube" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-test-tube" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Tests waiting</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">{{ number_format($stats['waiting']) }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl {{ $stats['urgent'] > 0 ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-700' }}"><x-icon name="bx-error" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md {{ $stats['urgent'] > 0 ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-700' }}"><x-icon name="bx-error" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Urgent requests</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight {{ $stats['urgent'] > 0 ? 'text-red-700' : 'text-slate-900' }}">{{ number_format($stats['urgent']) }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl {{ $oldestMinutes !== null && $oldestMinutes > 120 ? 'bg-amber-50 text-amber-700' : 'bg-brand-50 text-brand-700' }}"><x-icon name="bx-time-five" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md {{ $oldestMinutes !== null && $oldestMinutes > 120 ? 'bg-amber-50 text-amber-700' : 'bg-brand-50 text-brand-700' }}"><x-icon name="bx-time-five" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Longest wait</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">
                 @if ($oldestMinutes === null)
@@ -35,9 +35,9 @@
                 @endif
             </p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
+        <div class="rounded-lg bg-white p-5 shadow-card">
             <div class="flex items-start justify-between gap-3">
-                <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-check-double" class="text-xl" /></span>
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-check-double" class="text-xl" /></span>
                 @if ($stats['flaggedToday'] > 0)
                     <span class="rounded-full bg-red-50 px-2 py-1 text-xs font-medium text-red-700">{{ $stats['flaggedToday'] }} flagged</span>
                 @endif
@@ -48,11 +48,11 @@
     </div>
 
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <nav class="inline-flex rounded-2xl bg-white p-1 shadow-card" aria-label="Laboratory views">
+        <nav class="inline-flex rounded-lg bg-white p-1 shadow-card" aria-label="Laboratory views">
             @foreach (['waiting' => 'Waiting for result', 'verified' => 'Verified results'] as $value => $label)
                 <a
                     href="{{ route('lab.index', array_filter(['tab' => $value === 'waiting' ? null : $value, 'q' => $search ?: null])) }}"
-                    class="rounded-xl px-4 py-1.5 text-sm {{ $tab === $value ? 'bg-brand-700 font-semibold text-white' : 'text-slate-600 hover:text-slate-900' }}"
+                    class="rounded-md px-4 py-1.5 text-sm {{ $tab === $value ? 'bg-brand-700 font-semibold text-white' : 'text-slate-600 hover:text-slate-900' }}"
                     @if ($tab === $value) aria-current="page" @endif
                 >
                     {{ $label }}
@@ -69,7 +69,7 @@
             <label class="relative block">
                 <span class="sr-only">Search the laboratory</span>
                 <x-icon name="bx-search" class="pointer-events-none absolute start-3 top-1/2 -translate-y-1/2 text-lg text-slate-400" />
-                <input type="search" name="q" value="{{ $search }}" placeholder="Patient, number, visit, or test" class="w-full rounded-2xl border-slate-200 bg-white py-2 ps-10 pe-4 text-sm shadow-card focus:border-brand-600 focus:ring-0 focus:outline-none">
+                <input type="search" name="q" value="{{ $search }}" placeholder="Patient, number, visit, or test" class="w-full rounded-lg border-slate-200 bg-white py-2 ps-10 pe-4 text-sm shadow-card focus:border-brand-600 focus:ring-0 focus:outline-none">
             </label>
         </form>
     </div>
@@ -92,7 +92,7 @@
                         default => 'bg-slate-100 text-slate-600',
                     };
                 @endphp
-                <article class="overflow-hidden rounded-2xl bg-white {{ $visit->priority === \App\Enums\Priority::Emergency ? 'shadow-danger' : 'shadow-card' }}">
+                <article class="overflow-hidden rounded-lg bg-white {{ $visit->priority === \App\Enums\Priority::Emergency ? 'shadow-danger' : 'shadow-card' }}">
                     <header class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 px-5 py-4">
                         <div class="flex items-start gap-3">
                             <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-50 text-sm font-semibold text-brand-800">{{ $patient->initials() }}</span>
@@ -136,8 +136,8 @@
                                     @if ($canResult)
                                         <div class="lg:col-span-3">
                                             <label for="result-{{ $item->id }}" class="sr-only">Result for {{ $item->test->name }}</label>
-                                            <div class="flex items-center rounded-xl border border-transparent bg-slate-100/70 focus-within:border-brand-600 focus-within:bg-white">
-                                                <input id="result-{{ $item->id }}" name="result_value" required placeholder="Result" class="w-full min-w-0 rounded-xl border-0 bg-transparent text-sm focus:ring-0 focus:outline-none">
+                                            <div class="flex items-center rounded-md border border-transparent bg-slate-100/70 focus-within:border-brand-600 focus-within:bg-white">
+                                                <input id="result-{{ $item->id }}" name="result_value" required placeholder="Result" class="w-full min-w-0 rounded-md border-0 bg-transparent text-sm focus:ring-0 focus:outline-none">
                                                 @if ($item->test->unit)
                                                     <span class="shrink-0 pe-3 text-xs text-slate-500">{{ $item->test->unit }}</span>
                                                 @endif
@@ -145,9 +145,9 @@
                                         </div>
                                         <fieldset class="lg:col-span-3">
                                             <legend class="sr-only">Flag</legend>
-                                            <div class="inline-flex rounded-xl bg-slate-100 p-0.5 text-xs font-medium">
+                                            <div class="inline-flex rounded-md bg-slate-100 p-0.5 text-xs font-medium">
                                                 @foreach (['normal' => ['Normal', 'has-checked:bg-white has-checked:text-slate-900 has-checked:shadow-sm'], 'abnormal' => ['Abnormal', 'has-checked:bg-amber-100 has-checked:text-amber-900'], 'critical' => ['Critical', 'has-checked:bg-red-600 has-checked:text-white']] as $flag => [$label, $checkedClasses])
-                                                    <label class="cursor-pointer rounded-xl px-2.5 py-1.5 text-slate-600 {{ $checkedClasses }}">
+                                                    <label class="cursor-pointer rounded-md px-2.5 py-1.5 text-slate-600 {{ $checkedClasses }}">
                                                         <input type="radio" name="result_flag" value="{{ $flag }}" class="sr-only" @checked($flag === 'normal')>
                                                         {{ $label }}
                                                     </label>
@@ -166,7 +166,7 @@
                     </ul>
                 </article>
             @empty
-                <div class="rounded-2xl bg-white px-5 py-12 text-center shadow-card">
+                <div class="rounded-lg bg-white px-5 py-12 text-center shadow-card">
                     <x-icon name="bx-check-circle" class="text-4xl text-brand-600" />
                     <p class="mt-2 font-medium">{{ $search !== '' ? 'No waiting tests match "'.$search.'".' : 'All caught up.' }}</p>
                     <p class="mt-1 text-sm text-slate-500">{{ $search !== '' ? 'Try a patient number or test name.' : 'New requests appear here as soon as a clinician orders them.' }}</p>
@@ -174,7 +174,7 @@
             @endforelse
         </div>
     @else
-        <div class="mt-4 overflow-x-auto rounded-2xl bg-white shadow-card">
+        <div class="mt-4 overflow-x-auto rounded-lg bg-white shadow-card">
             <table class="min-w-full text-sm">
                 <thead class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80">
                     <tr>

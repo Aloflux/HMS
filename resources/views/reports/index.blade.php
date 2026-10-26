@@ -20,11 +20,11 @@
         <x-primary-button>Update</x-primary-button>
     </form>
     <div class="grid gap-4 md:grid-cols-3">
-        <section class="rounded-2xl bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Cash collected</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ \App\Support\Money::format($revenue) }}</p></section>
-        <section class="rounded-2xl bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Dispenses without a charge</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ $unbilledDispenses }}</p></section>
-        <section class="rounded-2xl bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ward issues in 7 days</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ $wardIssuesThisWeek }}</p></section>
+        <section class="rounded-lg bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Cash collected</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ \App\Support\Money::format($revenue) }}</p></section>
+        <section class="rounded-lg bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Dispenses without a charge</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ $unbilledDispenses }}</p></section>
+        <section class="rounded-lg bg-white p-5 shadow-card"><p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ward issues in 7 days</p><p class="mt-2 text-3xl font-extrabold tracking-tight text-slate-900">{{ $wardIssuesThisWeek }}</p></section>
     </div>
-    <section class="mt-6 overflow-x-auto rounded-2xl bg-white p-5 shadow-card">
+    <section class="mt-6 overflow-x-auto rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">HMIS 105 outpatient attendance</h2>
         <table class="mt-3 min-w-full text-sm">
             <thead><tr class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80"><th class="py-2 font-medium">Sex</th><th class="font-medium">Age</th><th class="font-medium">New</th><th class="font-medium">Reattendance</th></tr></thead>
@@ -41,7 +41,7 @@
             @endforeach
         </ul>
     </section>
-    <section class="mt-6 rounded-2xl bg-white p-5 shadow-card text-sm">
+    <section class="mt-6 rounded-lg bg-white p-5 shadow-card text-sm">
         <h2 class="font-bold text-slate-900">HMIS 108 inpatient</h2>
         <p class="mt-2">Admissions {{ $inpatient['admissions'] }} · Discharges {{ $inpatient['discharges'] }} · Deaths {{ $inpatient['deaths'] }}</p>
         <p>Bed days {{ $inpatient['bed_days'] }} · Occupancy {{ $inpatient['occupancy'] }}% of {{ $inpatient['beds'] }} beds</p>

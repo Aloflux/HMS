@@ -3,7 +3,7 @@
         <x-page-title icon="bx-user-plus">Register a patient</x-page-title>
     </x-slot>
 
-    <form method="POST" action="{{ route('patients.store') }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-2xl bg-white p-6 shadow-card sm:grid-cols-2">
+    <form method="POST" action="{{ route('patients.store') }}" enctype="multipart/form-data" class="grid max-w-3xl gap-4 rounded-lg bg-white p-6 shadow-card sm:grid-cols-2">
         @csrf
         <div>
             <x-input-label for="surname" value="Surname" />
@@ -19,7 +19,7 @@
         </div>
         <div>
             <x-input-label for="sex" value="Sex" />
-            <select id="sex" name="sex" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0" required>
+            <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0" required>
                 <option value="female" @selected(old('sex') === 'female')>Female</option>
                 <option value="male" @selected(old('sex') === 'male')>Male</option>
             </select>
@@ -62,7 +62,7 @@
         </div>
         <div class="sm:col-span-2">
             <x-input-label for="allergies" value="Known allergies" />
-            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0">{{ old('allergies') }}</textarea>
+            <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0">{{ old('allergies') }}</textarea>
         </div>
         <div>
             <x-input-label for="photo" value="Photo" />

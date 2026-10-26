@@ -102,7 +102,7 @@ class HmisReport
                 return max(1, $startAt->diffInDays($endAt) ?: 1);
             });
 
-        $beds = Bed::query()->count();
+        $beds = Bed::query()->where('status', '!=', 'closed')->count();
         $days = max(1, $from->diffInDays($to) + 1);
         $occupancy = $beds === 0 ? 0 : round(($bedDays / ($beds * $days)) * 100, 1);
 

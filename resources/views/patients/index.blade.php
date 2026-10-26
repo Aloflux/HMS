@@ -15,34 +15,34 @@
     </x-slot>
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-user" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-user" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total patients</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">{{ number_format($totalPatients) }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-bed" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-bed" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Inpatients</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">{{ number_format($inpatients) }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-plus-medical" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-plus-medical" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Opened today</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">{{ number_format($openedToday) }}</p>
         </div>
-        <div class="rounded-2xl bg-white p-5 shadow-card">
-            <span class="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700"><x-icon name="bx-shield-quarter" class="text-xl" /></span>
+        <div class="rounded-lg bg-white p-5 shadow-card">
+            <span class="inline-flex h-10 w-10 items-center justify-center rounded-md bg-brand-50 text-brand-700"><x-icon name="bx-shield-quarter" class="text-xl" /></span>
             <p class="mt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Insurance</p>
             <p class="mt-1 text-4xl font-extrabold tracking-tight text-slate-900">{{ $insuranceRate }}%</p>
         </div>
     </div>
 
-    <section class="mt-4 rounded-2xl bg-white shadow-card">
+    <section class="mt-4 rounded-lg bg-white shadow-card">
         <div class="flex flex-wrap items-center justify-between gap-3 px-5 pt-5">
             <div class="flex flex-wrap items-center gap-1">
                 <h2 class="me-3 font-bold text-slate-900">All patients</h2>
                 @foreach (['all' => 'All', 'inpatient' => 'Inpatient', 'outpatient' => 'Outpatient'] as $value => $label)
-                    <a href="{{ route('patients.index', array_filter(['q' => $search, 'care' => $value === 'all' ? null : $value, 'sort' => $sort === 'latest' ? null : $sort])) }}" class="rounded-xl px-3 py-1.5 text-sm {{ $care === $value ? 'bg-brand-50 font-semibold text-brand-800' : 'text-slate-500 hover:bg-slate-50' }}">{{ $label }}</a>
+                    <a href="{{ route('patients.index', array_filter(['q' => $search, 'care' => $value === 'all' ? null : $value, 'sort' => $sort === 'latest' ? null : $sort])) }}" class="rounded-md px-3 py-1.5 text-sm {{ $care === $value ? 'bg-brand-50 font-semibold text-brand-800' : 'text-slate-500 hover:bg-slate-50' }}">{{ $label }}</a>
                 @endforeach
             </div>
             <form method="GET" class="flex items-center gap-2 text-sm text-slate-500">
@@ -53,7 +53,7 @@
                     <input type="hidden" name="care" value="{{ $care }}">
                 @endif
                 <label for="sort">Sort by</label>
-                <select id="sort" name="sort" class="rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none" @change="$el.form.submit()">
+                <select id="sort" name="sort" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none" @change="$el.form.submit()">
                     <option value="latest" @selected($sort === 'latest')>Latest registered</option>
                     <option value="name" @selected($sort === 'name')>Name</option>
                 </select>
@@ -61,7 +61,7 @@
         </div>
 
         <form method="GET" class="mt-4 px-5 md:hidden">
-            <input type="search" name="q" value="{{ $search }}" placeholder="Name, phone, patient number or national ID" class="w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none">
+            <input type="search" name="q" value="{{ $search }}" placeholder="Name, phone, patient number or national ID" class="w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none">
             @if ($care !== 'all')
                 <input type="hidden" name="care" value="{{ $care }}">
             @endif

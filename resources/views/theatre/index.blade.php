@@ -7,7 +7,7 @@
         @endforeach
     </datalist>
 
-    <form method="POST" action="{{ route('theatre.store') }}" class="mb-6 rounded-2xl bg-white p-5 shadow-card">
+    <form method="POST" action="{{ route('theatre.store') }}" class="mb-6 rounded-lg bg-white p-5 shadow-card">
         @csrf
         <h2 class="font-bold text-slate-900">Book theatre</h2>
         <div class="mt-4 grid gap-3 md:grid-cols-4">
@@ -29,7 +29,7 @@
 
     <div class="grid gap-4">
         @forelse ($bookings as $booking)
-            <section class="rounded-2xl bg-white p-5 shadow-card">
+            <section class="rounded-lg bg-white p-5 shadow-card">
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <p class="font-medium">{{ $booking->procedure }}</p>
@@ -50,11 +50,11 @@
                         @csrf
                         <div>
                             <x-input-label :for="'findings-'.$booking->id" value="Findings" />
-                            <textarea id="findings-{{ $booking->id }}" name="findings" rows="2" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
+                            <textarea id="findings-{{ $booking->id }}" name="findings" rows="2" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
                         </div>
                         <div>
                             <x-input-label :for="'notes-'.$booking->id" value="Operation notes" />
-                            <textarea id="notes-{{ $booking->id }}" name="procedure_notes" rows="3" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
+                            <textarea id="notes-{{ $booking->id }}" name="procedure_notes" rows="3" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm"></textarea>
                         </div>
                         <div><x-primary-button>Save operation note</x-primary-button></div>
                     </form>

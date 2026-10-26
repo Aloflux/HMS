@@ -4,7 +4,7 @@
     <form
         method="POST"
         action="{{ route('appointments.store') }}"
-        class="mb-6 rounded-2xl bg-white p-5 shadow-card"
+        class="mb-6 rounded-lg bg-white p-5 shadow-card"
         x-data="{
             mode: @js(old('booking_for', 'existing')),
             query: '',
@@ -40,7 +40,7 @@
 
         <div class="mt-4" x-show="mode === 'existing'">
             <x-input-label for="patient_search" value="Patient" />
-            <input id="patient_search" type="search" x-model="query" placeholder="Name, phone, or patient number" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" autocomplete="off">
+            <input id="patient_search" type="search" x-model="query" placeholder="Name, phone, or patient number" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" autocomplete="off">
             <input type="hidden" name="patient_id" :value="patientId" :disabled="mode !== 'existing'">
             <x-input-error :messages="$errors->get('patient_id')" class="mt-2" />
 
@@ -49,7 +49,7 @@
                 <button type="button" class="ml-2 text-brand-700" @click="patientId = ''">Change</button>
             </p>
 
-            <ul class="mt-2 overflow-hidden rounded-xl bg-white shadow-float" x-show="matches.length" x-cloak>
+            <ul class="mt-2 overflow-hidden rounded-md bg-white shadow-float" x-show="matches.length" x-cloak>
                 <template x-for="patient in matches" :key="patient.id">
                     <li class="border-b border-slate-100 last:border-b-0">
                         <button type="button" class="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-slate-50" @click="choose(patient)">
@@ -78,7 +78,7 @@
             </div>
             <div>
                 <x-input-label for="sex" value="Sex" />
-                <select id="sex" name="sex" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" x-bind:disabled="mode !== 'new'" x-bind:required="mode === 'new'">
+                <select id="sex" name="sex" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" x-bind:disabled="mode !== 'new'" x-bind:required="mode === 'new'">
                     <option value="female" @selected(old('sex', 'female') === 'female')>Female</option>
                     <option value="male" @selected(old('sex') === 'male')>Male</option>
                 </select>
@@ -121,7 +121,7 @@
             </div>
             <div class="sm:col-span-2">
                 <x-input-label for="allergies" value="Known allergies" />
-                <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" x-bind:disabled="mode !== 'new'">{{ old('allergies') }}</textarea>
+                <textarea id="allergies" name="allergies" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none" x-bind:disabled="mode !== 'new'">{{ old('allergies') }}</textarea>
                 <x-input-error :messages="$errors->get('allergies')" class="mt-2" />
             </div>
             <label class="flex items-start gap-2 text-sm sm:col-span-2">
@@ -139,7 +139,7 @@
         <div class="mt-4 grid gap-4 md:grid-cols-3">
             <div>
                 <x-input-label for="department_id" value="Department" />
-                <select id="department_id" name="department_id" required class="mt-1 block w-full rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none">
+                <select id="department_id" name="department_id" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 shadow-none focus:outline-none">
                     @foreach ($departments as $department)
                         <option value="{{ $department->id }}" @selected((string) old('department_id') === (string) $department->id)>{{ $department->name }}</option>
                     @endforeach
@@ -171,7 +171,7 @@
         @endforeach
     </div>
 
-    <div class="overflow-x-auto rounded-2xl bg-white shadow-card">
+    <div class="overflow-x-auto rounded-lg bg-white shadow-card">
         <table class="min-w-full text-sm">
             <thead class="text-left text-xs uppercase tracking-wide text-slate-400 bg-slate-50/80">
                 <tr>
@@ -212,19 +212,19 @@
                                     >
                                         @csrf
                                         <label class="text-xs text-slate-500" for="payer-{{ $appointment->id }}">Who pays</label>
-                                        <select id="payer-{{ $appointment->id }}" name="payer" x-model="payer" class="rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                                        <select id="payer-{{ $appointment->id }}" name="payer" x-model="payer" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                             @foreach ($payers as $payer)
                                                 <option value="{{ $payer->value }}">{{ $payer->label() }}</option>
                                             @endforeach
                                         </select>
                                         <template x-if="payer !== 'cash'">
                                             <div class="grid gap-2">
-                                                <select name="insurance_scheme_id" class="rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" aria-label="Scheme">
+                                                <select name="insurance_scheme_id" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" aria-label="Scheme">
                                                     @foreach ($schemes as $scheme)
                                                         <option value="{{ $scheme->id }}" @selected($lastVisit?->insurance_scheme_id === $scheme->id)>{{ $scheme->name }}</option>
                                                     @endforeach
                                                 </select>
-                                                <input name="member_number" value="{{ $lastVisit?->member_number }}" placeholder="Member number" aria-label="Member number" class="rounded-xl border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                                                <input name="member_number" value="{{ $lastVisit?->member_number }}" placeholder="Member number" aria-label="Member number" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
                                             </div>
                                         </template>
                                         <x-primary-button>Open visit</x-primary-button>
