@@ -55,7 +55,7 @@
                                     <option value="1" @selected($admin->is_active)>Active</option>
                                     <option value="0" @selected(! $admin->is_active)>Inactive</option>
                                 </select>
-                                <input name="password" type="password" placeholder="New password (optional)" autocomplete="new-password" class="rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm shadow-none focus:outline-none">
+                                <x-text-input name="password" type="password" placeholder="New password (optional)" autocomplete="new-password" aria-label="New password for {{ $admin->name }}" class="w-56 text-sm" />
                                 <button class="text-sm font-semibold text-brand-700">Save</button>
                             </form>
                         </td>

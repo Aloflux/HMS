@@ -3,14 +3,10 @@
 namespace App\Notifications;
 
 use Illuminate\Auth\Notifications\VerifyEmail;
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 
-class VerifyEmailAddress extends VerifyEmail implements ShouldQueue
+class VerifyEmailAddress extends VerifyEmail
 {
-    use Queueable;
-
     /**
      * @param  string  $url
      */
