@@ -200,6 +200,7 @@ Route::middleware('auth')->group(function () {
         Route::delete('/wards/{ward}', [AdminWardController::class, 'destroy'])->name('admin.wards.destroy');
         Route::post('/wards/{ward}/beds', [AdminWardController::class, 'storeBeds'])->name('admin.wards.beds.store');
         Route::patch('/beds/{bed}', [AdminWardController::class, 'updateBed'])->name('admin.beds.update');
+        Route::patch('/beds/{bed}/name', [AdminWardController::class, 'renameBed'])->name('admin.beds.rename');
         Route::delete('/beds/{bed}', [AdminWardController::class, 'destroyBed'])->name('admin.beds.destroy');
         Route::get('/catalogue', [CatalogueController::class, 'index'])->name('admin.catalogue.index');
         Route::post('/catalogue/services', [CatalogueController::class, 'storeService'])->name('admin.services.store');

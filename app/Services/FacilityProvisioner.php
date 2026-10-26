@@ -112,7 +112,7 @@ class FacilityProvisioner
                     Bed::query()->create([
                         'facility_id' => $facility->id,
                         'ward_id' => $ward->id,
-                        'code' => $code.'-'.$number,
+                        'code' => 'Bed '.$number,
                         'status' => 'available',
                     ]);
                 }

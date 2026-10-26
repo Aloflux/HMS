@@ -29,7 +29,7 @@ test('administrators can add a ward with numbered beds and a ward store', functi
 
     $ward = wardNamed('PW', $facility->id);
 
-    expect($ward->beds()->orderBy('id')->pluck('code')->all())->toBe(['PW-1', 'PW-2', 'PW-3']);
+    expect($ward->beds()->orderBy('id')->pluck('code')->all())->toBe(['Bed 1', 'Bed 2', 'Bed 3']);
     expect(StockLocation::query()->where('facility_id', $facility->id)->where('name', 'Paediatric ward store')->value('kind'))->toBe('ward');
 });
 
@@ -51,7 +51,45 @@ test('adding beds continues numbering after the highest bed', function () {
         ->post(route('admin.wards.beds.store', $ward), ['count' => 2])
         ->assertRedirect();
 
-    expect($ward->beds()->orderBy('id')->pluck('code')->all())->toBe(['WF-1', 'WF-2', 'WF-3', 'WF-4', 'WF-5', 'WF-6']);
+    expect($ward->beds()->orderBy('id')->pluck('code')->all())->toBe(['Bed 1', 'Bed 2', 'Bed 3', 'Bed 4', 'Bed 5', 'Bed 6']);
+});
+
+test('adding beds to a ward with older or custom names continues from the highest number', function () {
+    [$facility, $admin] = provisionHospital();
+    $ward = wardNamed('WF', $facility->id);
+    $ward->beds()->orderBy('id')->get()->each(fn (Bed $bed, int $index) => $bed->update(['code' => 'WF-'.($index + 1)]));
+    $ward->beds()->orderByDesc('id')->first()->update(['code' => 'Side room']);
+
+    $this->actingAs($admin)
+        ->post(route('admin.wards.beds.store', $ward), ['count' => 1])
+        ->assertRedirect();
+
+    expect($ward->beds()->orderByDesc('id')->value('code'))->toBe('Bed 4');
+});
+
+test('administrators can rename a bed but not to a name already used in the same ward', function () {
+    [$facility, $admin] = provisionHospital();
+    $ward = wardNamed('WF', $facility->id);
+    [$first, $second] = $ward->beds()->orderBy('id')->take(2)->get()->all();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.beds.rename', $first), ['label' => 'Cot 3'])
+        ->assertRedirect()
+        ->assertSessionHasNoErrors();
+
+    expect($first->fresh()->code)->toBe('Cot 3');
+
+    $this->actingAs($admin)
+        ->patch(route('admin.beds.rename', $second), ['label' => 'Cot 3'])
+        ->assertSessionHasErrors('label');
+
+    expect($second->fresh()->code)->toBe('Bed 2');
+
+    $otherWardBed = wardNamed('WM', $facility->id)->beds()->orderBy('id')->first();
+
+    $this->actingAs($admin)
+        ->patch(route('admin.beds.rename', $otherWardBed), ['label' => 'Cot 3'])
+        ->assertSessionHasNoErrors();
 });
 
 test('administrators can rename a ward', function () {
@@ -161,5 +199,5 @@ test('only administrators can manage wards', function () {
         ->get(route('admin.wards.index'))
         ->assertOk()
         ->assertSee('Female ward')
-        ->assertSee('WF-1');
+        ->assertSee('Bed 1');
 });

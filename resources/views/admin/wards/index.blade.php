@@ -42,7 +42,7 @@
             </span>
             <div>
                 <h2 class="font-bold text-slate-900">Add a ward</h2>
-                <p class="text-sm text-slate-500">Beds are numbered from the ward code, for example PW-1, PW-2.</p>
+                <p class="text-sm text-slate-500">New beds are named Bed 1, Bed 2 and so on. You can rename any bed afterwards, for example Cot 3 or Side room.</p>
             </div>
         </div>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -52,7 +52,7 @@
                 <x-input-error :messages="$errors->get('name')" class="mt-1" />
             </div>
             <div>
-                <x-input-label for="ward_code" value="Code" />
+                <x-input-label for="ward_code" value="Short code" />
                 <x-text-input id="ward_code" name="code" class="mt-1 block w-full uppercase" :value="old('code')" placeholder="PW" maxlength="12" required />
                 <x-input-error :messages="$errors->get('code')" class="mt-1" />
             </div>
@@ -143,14 +143,34 @@
                 </form>
 
                 <div class="px-5">
-                    <ul class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    <ul class="grid gap-2 sm:grid-cols-2">
                         @forelse ($ward->beds as $bed)
-                            <li class="flex items-center justify-between gap-2 rounded-md px-3 py-2 text-sm {{ $bed->status === 'closed' ? 'bg-slate-100 text-slate-400' : 'bg-slate-50' }}">
+                            <li x-data="{ renaming: {{ $errors->has('label') && (string) old('bed_id') === (string) $bed->id ? 'true' : 'false' }} }" class="rounded-md px-3 py-2 text-sm {{ $bed->status === 'closed' ? 'bg-slate-100 text-slate-400' : 'bg-slate-50' }}">
+                                <form x-show="renaming" x-cloak method="POST" action="{{ route('admin.beds.rename', $bed) }}" class="flex items-center gap-2">
+                                    @csrf
+                                    @method('PATCH')
+                                    <input type="hidden" name="bed_id" value="{{ $bed->id }}">
+                                    <label for="bed-{{ $bed->id }}-code" class="sr-only">Bed name</label>
+                                    <x-text-input id="bed-{{ $bed->id }}-code" name="label" :value="(string) old('bed_id') === (string) $bed->id ? old('label') : $bed->code" maxlength="20" class="h-8 min-w-0 flex-1 text-sm" required />
+                                    <button type="submit" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand-700 text-white hover:bg-brand-800" aria-label="Save name">
+                                        <x-icon name="bx-check" class="text-lg" />
+                                    </button>
+                                    <button type="button" class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700" aria-label="Cancel" @click="renaming = false">
+                                        <x-icon name="bx-x" class="text-lg" />
+                                    </button>
+                                </form>
+                                @if ($errors->has('label') && (string) old('bed_id') === (string) $bed->id)
+                                    <p class="mt-1 text-xs text-red-700">{{ $errors->first('label') }}</p>
+                                @endif
+                                <div x-show="!renaming" class="flex items-center justify-between gap-2">
                                 <span class="min-w-0">
                                     <span class="block font-semibold {{ $bed->status === 'closed' ? 'text-slate-400 line-through' : 'text-slate-900' }}">{{ $bed->code }}</span>
                                     <x-status :value="$bed->status === 'available' ? 'free' : $bed->status" class="mt-1" />
                                 </span>
                                 <span class="flex shrink-0 items-center">
+                                    <button type="button" class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-200 hover:text-slate-700" aria-label="Rename {{ $bed->code }}" title="Rename" @click="renaming = true; $nextTick(() => $el.closest('li').querySelector('input[name=label]').focus())">
+                                        <x-icon name="bx-pencil" class="text-lg" />
+                                    </button>
                                     @if ($bed->status === 'closed')
                                         <form method="POST" action="{{ route('admin.beds.update', $bed) }}">
                                             @csrf
@@ -180,6 +200,7 @@
                                         </form>
                                     @endif
                                 </span>
+                                </div>
                             </li>
                         @empty
                             <li class="col-span-full rounded-md bg-slate-50 px-3 py-4 text-sm text-slate-500">No beds yet. Add some below.</li>
@@ -195,7 +216,7 @@
                     </div>
                     <x-secondary-button type="submit">
                         <x-icon name="bx-plus" class="text-lg" />
-                        Add to {{ $ward->code }}
+                        Add beds
                     </x-secondary-button>
                 </form>
             </section>

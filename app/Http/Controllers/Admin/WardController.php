@@ -140,6 +140,21 @@ class WardController extends Controller
         return back()->with('status', $bed->code.' reopened.');
     }
 
+    public function renameBed(Request $request, Bed $bed): RedirectResponse
+    {
+        $data = $request->validate([
+            'label' => ['required', 'string', 'max:20', Rule::unique('beds', 'code')->where('ward_id', $bed->ward_id)->ignore($bed->id)],
+        ], [
+            'label.unique' => 'Another bed in this ward already has that name.',
+        ]);
+
+        $previous = $bed->code;
+        $bed->update(['code' => $data['label']]);
+        AuditLogger::log('updated', $bed, ['before' => ['code' => $previous], 'after' => ['code' => $bed->code]]);
+
+        return back()->with('status', $previous.' renamed to '.$bed->code.'.');
+    }
+
     public function destroyBed(Bed $bed): RedirectResponse
     {
         if ($bed->status === 'occupied' || $bed->admissions()->exists()) {
@@ -155,21 +170,20 @@ class WardController extends Controller
     }
 
     /**
-     * Add beds numbered after the highest existing number in the ward, e.g. WF-5, WF-6.
+     * Add beds named "Bed N", numbered after the highest number already used in the ward.
      */
     private function addBeds(Ward $ward, int $count): int
     {
-        $prefix = $ward->code.'-';
         $highest = $ward->beds()
             ->lockForUpdate()
             ->pluck('code')
-            ->map(fn (string $code): int => str_starts_with($code, $prefix) && ctype_digit(substr($code, strlen($prefix))) ? (int) substr($code, strlen($prefix)) : 0)
+            ->map(fn (string $code): int => preg_match('/(\d+)$/', $code, $matches) ? (int) $matches[1] : 0)
             ->max() ?? 0;
 
         for ($number = $highest + 1; $number <= $highest + $count; $number++) {
             $ward->beds()->create([
                 'facility_id' => $ward->facility_id,
-                'code' => $prefix.$number,
+                'code' => 'Bed '.$number,
                 'status' => 'available',
             ]);
         }
