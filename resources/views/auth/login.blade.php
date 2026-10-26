@@ -11,7 +11,7 @@
                     <span class="text-xl font-semibold">AfyaDesk</span>
                 </a>
                 <p class="mt-8 max-w-md text-3xl font-semibold leading-tight lg:mt-16 lg:text-4xl">One record, from the queue to the receipt.</p>
-                <p class="mt-4 max-w-md text-sm leading-6 text-brand-100 lg:text-base">Sign in with the account issued for your station. You only see the screens that role is allowed to use.</p>
+                <p class="mt-4 max-w-md text-sm leading-6 text-brand-100 lg:text-base">Sign in with the account issued for your station. You only see the areas an administrator has opened for you.</p>
             </div>
 
             <ul class="relative mt-10 hidden gap-4 lg:grid">
@@ -79,7 +79,14 @@
                                     @foreach ($accounts as $account)
                                         @php
                                             [$station, $duty] = array_pad(explode(' · ', $account['role'], 2), 2, null);
-                                            $icon = $account['email'] === 'platform@afyadesk.test' ? 'bx-buildings' : 'bx-cog';
+                                            $icon = match (true) {
+                                                str_contains($account['email'], 'platform@') => 'bx-buildings',
+                                                str_contains($account['email'], 'front@') => 'bx-user',
+                                                str_contains($account['email'], 'doctor@') => 'bx-plus-medical',
+                                                str_contains($account['email'], 'diagnostics@') => 'bx-test-tube',
+                                                str_contains($account['email'], 'pharmacy@') => 'bx-capsule',
+                                                default => 'bx-cog',
+                                            };
                                         @endphp
                                         <button
                                             type="button"

@@ -36,13 +36,21 @@ return new class extends Migration
             $table->unique(['facility_id', 'code']);
         });
 
-        Schema::table('users', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
+            $table->id();
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
             $table->foreignId('facility_id')->nullable()->constrained()->nullOnDelete();
             $table->string('role', 40)->default('administrator');
+            $table->json('permissions')->nullable();
             $table->string('phone')->nullable();
             $table->foreignId('department_id')->nullable()->constrained()->nullOnDelete();
             $table->boolean('is_active')->default(true);
             $table->timestamp('last_login_at')->nullable();
+            $table->timestamps();
         });
 
         Schema::create('number_sequences', function (Blueprint $table) {
@@ -76,13 +84,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('audit_logs');
         Schema::dropIfExists('number_sequences');
-
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('department_id');
-            $table->dropConstrainedForeignId('facility_id');
-            $table->dropColumn(['role', 'phone', 'is_active', 'last_login_at']);
-        });
-
+        Schema::dropIfExists('users');
         Schema::dropIfExists('departments');
         Schema::dropIfExists('facilities');
     }

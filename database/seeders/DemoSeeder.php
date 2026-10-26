@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Authorization\RolePermissions;
 use App\Enums\BillingType;
 use App\Enums\Payer;
 use App\Enums\Priority;
@@ -46,7 +47,22 @@ class DemoSeeder extends Seeder
         ]);
 
         $this->catalogue($stMarys);
+        $this->stations($stMarys);
         $this->story($stMarys);
+
+        $provisioner->provision([
+            'name' => 'Hope Clinic',
+            'code' => 'HOPE',
+            'kind' => 'clinic',
+            'district' => 'Wakiso',
+            'address' => 'Entebbe Road',
+            'phone' => '0414000002',
+            'bed_capacity' => 12,
+        ], [
+            'name' => 'Peter Okello',
+            'email' => 'admin@hope.afyadesk.test',
+            'password' => 'password',
+        ]);
 
         FacilityContext::forget();
 
@@ -311,16 +327,17 @@ class DemoSeeder extends Seeder
         FacilityContext::set($facility->id);
         $registrar = app(PatientRegistrar::class);
         $encounters = app(EncounterService::class);
-        $admin = $this->administrator($facility);
+        $clerk = User::query()->where('email', 'front@stmarys.afyadesk.test')->firstOrFail();
+        $clinician = User::query()->where('email', 'doctor@stmarys.afyadesk.test')->firstOrFail();
 
-        Auth::login($admin);
+        Auth::login($clerk);
 
-        $amina = $registrar->register($facility, $admin, $this->person('Nakato', 'Amina', 'female', '1994-04-12', '0772000001', 'Kampala'));
-        $john = $registrar->register($facility, $admin, $this->person('Okello', 'John', 'male', '1988-11-02', '0703000002', 'Wakiso'));
+        $amina = $registrar->register($facility, $clerk, $this->person('Nakato', 'Amina', 'female', '1994-04-12', '0772000001', 'Kampala'));
+        $john = $registrar->register($facility, $clerk, $this->person('Okello', 'John', 'male', '1988-11-02', '0703000002', 'Wakiso'));
 
         $department = $facility->departments()->where('code', 'OPD')->first();
 
-        $aminaVisit = $encounters->openVisit($amina, $admin, [
+        $aminaVisit = $encounters->openVisit($amina, $clerk, [
             'visit_type' => VisitType::Outpatient,
             'priority' => Priority::Urgent,
             'payer' => Payer::Cash,
@@ -328,7 +345,8 @@ class DemoSeeder extends Seeder
             'chief_complaint' => 'Fever and headache',
         ]);
 
-        $encounters->recordTriage($aminaVisit, $admin, [
+        Auth::login($clinician);
+        $encounters->recordTriage($aminaVisit, $clinician, [
             'temperature' => 38.6,
             'pulse' => 104,
             'respiration' => 22,
@@ -339,7 +357,8 @@ class DemoSeeder extends Seeder
             'chief_complaint' => 'Fever and headache',
         ]);
 
-        $johnVisit = $encounters->openVisit($john, $admin, [
+        Auth::login($clerk);
+        $johnVisit = $encounters->openVisit($john, $clerk, [
             'visit_type' => VisitType::Outpatient,
             'priority' => Priority::Routine,
             'payer' => Payer::Cash,
@@ -347,7 +366,19 @@ class DemoSeeder extends Seeder
             'chief_complaint' => 'Cough',
         ]);
 
-        $encounters->recordConsultation($johnVisit, $admin, [
+        Auth::login($clinician);
+        $encounters->recordTriage($johnVisit, $clinician, [
+            'temperature' => 36.8,
+            'pulse' => 82,
+            'respiration' => 18,
+            'systolic' => 118,
+            'diastolic' => 76,
+            'spo2' => 99,
+            'priority' => Priority::Routine,
+            'chief_complaint' => 'Cough',
+        ]);
+
+        $encounters->recordConsultation($johnVisit, $clinician, [
             'history' => 'Cough for three days.',
             'examination' => 'Chest clear.',
             'plan' => 'Malaria test and paracetamol.',
@@ -355,10 +386,10 @@ class DemoSeeder extends Seeder
         ]);
 
         $test = LabTest::query()->where('code', 'MRDT')->firstOrFail();
-        $encounters->orderLabs($johnVisit, $admin, [$test->id], 'Rule out malaria');
+        $encounters->orderLabs($johnVisit, $clinician, [$test->id], 'Rule out malaria');
 
         $medicine = Item::query()->where('sku', 'PARA500')->firstOrFail();
-        $encounters->prescribe($johnVisit, $admin, [[
+        $encounters->prescribe($johnVisit, $clinician, [[
             'item_id' => $medicine->id,
             'dose' => '1g',
             'frequency' => 'TDS',
@@ -366,18 +397,18 @@ class DemoSeeder extends Seeder
             'quantity' => 9,
         ]]);
 
-        $encounters->recordConsultation($aminaVisit, $admin, [
+        $encounters->recordConsultation($aminaVisit, $clinician, [
             'history' => 'Fever and headache for two days.',
             'examination' => 'Febrile, chest clear, no neck stiffness.',
             'plan' => 'Malaria test, amoxicillin, and oral rehydration.',
             'icd10_codes' => ['R50.9'],
         ]);
 
-        $encounters->orderLabs($aminaVisit, $admin, [$test->id], 'Fever');
+        $encounters->orderLabs($aminaVisit, $clinician, [$test->id], 'Fever');
 
         $amoxicillin = Item::query()->where('sku', 'AMOX500')->firstOrFail();
         $ors = Item::query()->where('sku', 'ORS')->firstOrFail();
-        $encounters->prescribe($aminaVisit, $admin, [
+        $encounters->prescribe($aminaVisit, $clinician, [
             [
                 'item_id' => $amoxicillin->id,
                 'dose' => '500mg',
@@ -412,6 +443,34 @@ class DemoSeeder extends Seeder
             'next_of_kin_phone' => '0700000000',
             'confirm_duplicate' => false,
         ];
+    }
+
+    private function stations(Facility $facility): void
+    {
+        FacilityContext::set($facility->id);
+
+        $this->staff($facility, 'Achieng Auma', 'front@stmarys.afyadesk.test', ['reception'], 'CASH');
+        $this->staff($facility, 'Dr. Daniel Kato', 'doctor@stmarys.afyadesk.test', ['clinical'], 'OPD');
+        $this->staff($facility, 'Moses Okello', 'diagnostics@stmarys.afyadesk.test', ['laboratory', 'imaging'], 'LAB');
+        $this->staff($facility, 'Paul Mugisha', 'pharmacy@stmarys.afyadesk.test', ['pharmacy', 'stores'], 'PHARM');
+    }
+
+    /**
+     * @param  list<string>  $areas
+     */
+    private function staff(Facility $facility, string $name, string $email, array $areas, string $departmentCode): User
+    {
+        return User::query()->create([
+            'name' => $name,
+            'email' => $email,
+            'password' => 'password',
+            'facility_id' => $facility->id,
+            'role' => Role::Staff,
+            'permissions' => RolePermissions::permissionsForAreas($areas),
+            'department_id' => $facility->departments()->where('code', $departmentCode)->value('id'),
+            'is_active' => true,
+            'email_verified_at' => now(),
+        ]);
     }
 
     private function administrator(Facility $facility): User

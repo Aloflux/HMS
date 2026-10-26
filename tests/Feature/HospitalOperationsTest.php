@@ -34,6 +34,7 @@ test('sample accounts can be clicked into the login form when the demo flag is o
     $this->get(route('login'))
         ->assertOk()
         ->assertSee('data-demo-email="admin@stmarys.afyadesk.test"', false)
+        ->assertSee('data-demo-email="front@stmarys.afyadesk.test"', false)
         ->assertSee('data-demo-password="password"', false);
 });
 

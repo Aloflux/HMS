@@ -12,18 +12,15 @@ The product makes three promises: every service rendered is billed, every patien
 
 ## Users and roles
 
-Six roles. Each person sees only the screens their role allows, and every action is logged. A small hospital does not need a separate login for every job: the clinical duties are grouped, and several people can share one role.
+The administrator of a facility has every screen. Everyone else is a staff account. The administrator ticks the areas that person may use, or picks a department and the matching areas are ticked for them. Several people can share the same areas. Every action is logged.
 
-| Role | What it covers |
+| Account | What it covers |
 | --- | --- |
-| Front office | Reception and cashier: registration, appointments, queues, payments, and receipts |
-| Clinical team | Triage, consultation, wards, maternity, and theatre |
-| Diagnostics | Laboratory and imaging |
-| Pharmacy and stores | Dispensing, requisitions, purchase orders, goods received, batches, and expiry |
-| Administrator | Users, prices, insurance and claims, waivers, stock approvals, and reports |
+| Administrator | Every facility screen, including users, prices, insurance, waivers, and stock approvals |
+| Staff | Only the areas chosen: reception, clinical, laboratory, imaging, pharmacy, stores, reports |
 | Platform administrator | Opens and closes facilities, and does not see clinical records |
 
-Stock approval stays with the administrator, separate from the person who counts or requests stock. Waivers stay with the administrator, separate from the person who takes cash.
+Stock approval stays with the administrator, separate from the person who counts or requests stock. Waivers stay with the administrator, separate from the person who takes cash. A department records where someone works; it does not hide other departments' patients.
 
 ## Core modules in scope for version 1
 
