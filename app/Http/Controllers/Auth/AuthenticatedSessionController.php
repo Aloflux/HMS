@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
@@ -57,7 +56,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Active accounts in this database that still sign in with the shared development password.
      *
-     * @return list<array{facility: string, name: string, role: string, email: string, icon: string}>
+     * @return list<array{facility: string, name: string, role: string, email: string}>
      */
     private function sampleAccounts(): array
     {
@@ -90,21 +89,7 @@ class AuthenticatedSessionController extends Controller
                 'name' => $user->name,
                 'role' => $user->role->label(),
                 'email' => $user->email,
-                'icon' => $this->sampleIcon($user->role),
             ])
             ->all();
-    }
-
-    private function sampleIcon(Role $role): string
-    {
-        return match ($role) {
-            Role::PlatformAdmin => 'bx-buildings',
-            Role::FrontOffice => 'bx-user',
-            Role::Clinical => 'bx-plus-medical',
-            Role::Diagnostics => 'bx-test-tube',
-            Role::PharmacyStores => 'bx-capsule',
-            Role::Administrator => 'bx-cog',
-            Role::Staff => 'bx-user',
-        };
     }
 }

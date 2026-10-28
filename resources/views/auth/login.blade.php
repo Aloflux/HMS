@@ -72,30 +72,38 @@
                 </form>
 
                 @if ($demoAccounts !== [])
-                    <section class="flex flex-col gap-4 pt-6">
-                        <div>
+                    <section class="overflow-hidden rounded-lg bg-white shadow-sm">
+                        <div class="border-b border-slate-200 px-4 py-4">
                             <h2 class="text-sm font-semibold text-slate-900">Sample accounts</h2>
-                            <p class="mt-1 text-sm text-slate-600">Click an account to fill the email and password. These are accounts in this database that still sign in with {{ $demoPassword }}.</p>
+                            <p class="mt-1 text-sm leading-6 text-slate-600">Choose a person to fill the form. Each of these accounts still signs in with {{ $demoPassword }}.</p>
                         </div>
 
                         @foreach (collect($demoAccounts)->groupBy('facility') as $facility => $accounts)
-                            <div class="flex flex-col gap-2">
-                                <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ $facility }}</h3>
-                                <div class="grid gap-2">
+                            <div>
+                                <h3 class="bg-slate-50 px-4 py-2 text-xs font-medium uppercase tracking-wide text-slate-500">{{ $facility }}</h3>
+                                <div class="flex flex-col">
                                     @foreach ($accounts as $account)
+                                        @php
+                                            $initials = collect(preg_split('/\s+/', trim($account['name'])))
+                                                ->filter()
+                                                ->take(2)
+                                                ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+                                                ->implode('');
+                                        @endphp
                                         <button
                                             type="button"
-                                            class="flex items-start gap-3 rounded-md bg-slate-50 px-3 py-3 text-start transition hover:bg-brand-50 hover:shadow-card aria-pressed:bg-brand-50 aria-pressed:shadow-card"
+                                            class="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-start transition first:border-t-0 hover:bg-brand-50 aria-pressed:bg-brand-50"
                                             data-demo-email="{{ $account['email'] }}"
                                             data-demo-password="{{ $demoPassword }}"
                                             aria-pressed="false"
                                         >
-                                            <x-icon :name="$account['icon']" class="mt-0.5 text-xl text-brand-700" />
-                                            <span>
-                                                <span class="block text-sm font-medium text-slate-900">{{ $account['name'] }}</span>
-                                                <span class="block text-xs text-slate-500">{{ $account['role'] }}</span>
-                                                <span class="block text-xs text-brand-700">{{ $account['email'] }}</span>
+                                            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-xs font-semibold text-brand-800">{{ $initials }}</span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="block truncate text-sm font-semibold text-slate-900">{{ $account['name'] }}</span>
+                                                <span class="block truncate text-xs text-slate-500">{{ $account['role'] }}</span>
+                                                <span class="block truncate text-xs text-brand-700">{{ $account['email'] }}</span>
                                             </span>
+                                            <x-icon name="bx-chevron-right" class="shrink-0 text-xl text-slate-300" />
                                         </button>
                                     @endforeach
                                 </div>
