@@ -25,6 +25,7 @@
         },
     }">
     @csrf
+    {{ $slot }}
     <div class="grid gap-3 md:grid-cols-3">
         <div>
             <x-input-label for="requisition-store" value="For store" />

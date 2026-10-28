@@ -1,161 +1,246 @@
+@php
+    $user = auth()->user();
+    $canRestock = $store && $user->permits('inventory.requisition');
+    $canAddStock = $store && $user->permits('inventory.purchase');
+    $reopen = old('_modal');
+    $waiting = $items->filter(fn ($line) => $line->quantity - (int) $line->dispensations->sum('quantity') > 0)->count();
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <x-page-title icon="bx-capsule">Pharmacy</x-page-title>
-            <a class="inline-flex items-center gap-1 text-sm text-brand-700" href="{{ route('stock.levels') }}"><x-icon name="bx-layer" class="text-lg" />All stock levels and history</a>
+            <div class="flex flex-wrap items-center gap-2">
+                <x-secondary-button x-data x-on:click="$dispatch('open-modal', 'pharmacy-shelf')">
+                    <x-icon name="bx-grid-alt" class="text-lg" />
+                    Shelf
+                    <span class="rounded-full bg-slate-100 px-2 text-xs text-slate-600">{{ $onHand->count() }}</span>
+                </x-secondary-button>
+                @if ($canRestock)
+                    <x-secondary-button x-data x-on:click="$dispatch('open-modal', 'request-stock')">
+                        <x-icon name="bx-cart-add" class="text-lg" />
+                        Request stock
+                        @if ($suggestions->isNotEmpty())
+                            <span class="rounded-full bg-amber-100 px-2 text-xs text-amber-800">{{ $suggestions->count() }} low</span>
+                        @endif
+                    </x-secondary-button>
+                    <x-secondary-button x-data x-on:click="$dispatch('open-modal', 'return-stock')">
+                        <x-icon name="bx-undo" class="text-lg" />
+                        Return stock
+                    </x-secondary-button>
+                @endif
+                @if ($canAddStock)
+                    <x-secondary-button x-data x-on:click="$dispatch('open-modal', 'add-stock')">
+                        <x-icon name="bx-plus-circle" class="text-lg" />
+                        Add stock
+                    </x-secondary-button>
+                @endif
+                <a class="inline-flex items-center gap-1 px-2 text-sm text-brand-700" href="{{ route('stock.levels') }}"><x-icon name="bx-layer" class="text-lg" />Stock levels</a>
+            </div>
         </div>
     </x-slot>
 
     @if ($suggestions->isNotEmpty())
-        <section class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
-            <h2 class="font-bold">Running low on the pharmacy shelf</h2>
-            <ul class="mt-2 grid gap-1 sm:grid-cols-2">
-                @foreach ($suggestions as $row)
-                    <li>
-                        <a class="font-medium underline" href="{{ route('stock.levels.item', $row['item']) }}">{{ $row['item']->name }}</a>
-                        · {{ $row['on_hand'] }} left, reorder at {{ $row['item']->reorder_level }} · {{ $row['main_on_hand'] }} in the main store
-                    </li>
-                @endforeach
-            </ul>
-        </section>
-    @endif
-    <section class="rounded-lg bg-white p-5 shadow-card">
-        <h2 class="font-bold text-slate-900">Pharmacy shelf</h2>
-        <p class="mt-1 text-sm text-slate-500">Working stock in the pharmacy. The batch that expires sooner is used first. The rest stays in the main store until it is issued.</p>
-        <div class="mt-4 overflow-x-auto">
-            <table class="min-w-full text-left text-sm">
-                <thead class="text-xs uppercase tracking-wide text-slate-500">
-                    <tr>
-                        <th class="py-2 pe-4 font-medium">Medicine</th>
-                        <th class="py-2 pe-4 font-medium">Batch</th>
-                        <th class="py-2 pe-4 font-medium">Expiry</th>
-                        <th class="py-2 pe-4 font-medium">On hand</th>
-                        <th class="py-2 pe-4 font-medium">Unit price</th>
-                        <th class="py-2 font-medium">Reorder level</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($shelf as $batch)
-                        <tr class="border-t border-slate-100">
-                            <td class="py-2 pe-4 font-medium"><a class="text-brand-700" href="{{ route('stock.levels.item', ['item' => $batch->item, 'stock_location_id' => $batch->stock_location_id]) }}">{{ $batch->item->name }}</a></td>
-                            <td class="py-2 pe-4">{{ $batch->batch_number }}</td>
-                            <td class="py-2 pe-4">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
-                            <td class="py-2 pe-4">{{ $batch->quantity }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
-                            <td class="py-2 pe-4">{{ \App\Support\Money::format($batch->item->cash_price) }}</td>
-                            <td class="py-2">{{ $batch->item->reorder_level }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->item->reorder_level) }}</td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="py-3 text-slate-500">The pharmacy shelf is empty. Issue stock from the main store.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            <span>
+                <span class="font-semibold">{{ $suggestions->count() }} {{ \Illuminate\Support\Str::plural('medicine', $suggestions->count()) }} running low on the shelf:</span>
+                {{ $suggestions->take(3)->map(fn ($row) => $row['item']->name)->join(', ') }}{{ $suggestions->count() > 3 ? ' and '.($suggestions->count() - 3).' more' : '' }}
+            </span>
+            @if ($canRestock)
+                <button type="button" class="font-semibold underline" x-data x-on:click="$dispatch('open-modal', 'request-stock')">Review and restock</button>
+            @endif
         </div>
+    @endif
+
+    <section class="rounded-lg bg-white shadow-card">
+        <div class="flex flex-wrap items-baseline justify-between gap-2 border-b border-slate-100 px-5 py-4">
+            <h2 class="font-bold text-slate-900">Prescriptions</h2>
+            <p class="text-sm text-slate-500">{{ $waiting }} waiting to dispense · {{ $items->count() - $waiting }} waiting for collection</p>
+        </div>
+
+        <ul class="divide-y divide-slate-100">
+            @forelse ($items as $line)
+                @php
+                    $dispensed = (int) $line->dispensations->sum('quantity');
+                    $remaining = max(0, $line->quantity - $dispensed);
+                    $unit = $line->item->unit;
+                    $shelfQty = (int) ($onHand[$line->item_id] ?? 0);
+                    $visit = $line->prescription->visit;
+                @endphp
+                <li class="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
+                    <div>
+                        <p class="font-semibold text-slate-900">{{ $line->item->name }}</p>
+                        <p class="text-sm text-slate-500">{{ $line->dose }} · {{ $line->frequency }} · {{ $line->duration_days }} days</p>
+                    </div>
+                    <div class="text-sm">
+                        <a class="font-medium text-brand-700" href="{{ route('visits.show', $visit) }}">{{ $visit->patient->fullName() }}</a>
+                        <span class="text-slate-500">· Visit {{ $visit->visit_number }}</span>
+                        @if ($remaining > 0)
+                            <p class="{{ $shelfQty < $remaining ? 'font-medium text-red-700' : 'text-slate-500' }}">
+                                {{ $remaining }} of {{ $line->quantity }} {{ \Illuminate\Support\Str::plural($unit, $line->quantity) }} to dispense · {{ $shelfQty }} on the shelf
+                            </p>
+                        @else
+                            <p class="text-slate-500">All {{ $line->quantity }} dispensed</p>
+                        @endif
+                    </div>
+                    <div class="flex items-center gap-3 sm:justify-end">
+                        @if ($remaining > 0)
+                            <span class="inline-flex whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-800">{{ $dispensed > 0 ? 'Part dispensed' : 'Waiting' }}</span>
+                            @if ($user->permits('pharmacy.manage'))
+                                <x-primary-button type="button" x-data x-on:click="$dispatch('open-modal', 'dispense-{{ $line->id }}')">Dispense</x-primary-button>
+                            @endif
+                        @else
+                            <span class="inline-flex whitespace-nowrap rounded-full bg-sky-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-sky-800">Waiting for collection</span>
+                        @endif
+                    </div>
+                </li>
+
+                @if ($remaining > 0 && $user->permits('pharmacy.manage'))
+                    <x-modal :name="'dispense-'.$line->id" :show="$reopen === 'dispense-'.$line->id" focusable>
+                        <form method="POST" action="{{ route('pharmacy.dispense', $line) }}" class="p-6">
+                            @csrf
+                            <input type="hidden" name="_modal" value="dispense-{{ $line->id }}">
+                            <h2 class="text-lg font-bold text-slate-900">Dispense {{ $line->item->name }}</h2>
+                            <p class="text-sm text-slate-500">For {{ $visit->patient->fullName() }} · Visit {{ $visit->visit_number }}</p>
+                            @if ($visit->patient->allergies)
+                                <p class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">Allergies: {{ $visit->patient->allergies }}</p>
+                            @endif
+
+                            <dl class="mt-4 grid grid-cols-2 gap-3 rounded-md bg-slate-50 p-4 text-sm sm:grid-cols-3">
+                                <div><dt class="text-slate-500">Dose</dt><dd class="font-medium">{{ $line->dose }}</dd></div>
+                                <div><dt class="text-slate-500">Frequency</dt><dd class="font-medium">{{ $line->frequency }}</dd></div>
+                                <div><dt class="text-slate-500">Duration</dt><dd class="font-medium">{{ $line->duration_days }} days</dd></div>
+                                <div><dt class="text-slate-500">Prescribed</dt><dd class="font-medium">{{ $line->quantity }} {{ \Illuminate\Support\Str::plural($unit, $line->quantity) }}</dd></div>
+                                <div><dt class="text-slate-500">Already dispensed</dt><dd class="font-medium">{{ $dispensed }}</dd></div>
+                                <div><dt class="text-slate-500">On the shelf</dt><dd class="font-medium {{ $shelfQty < $remaining ? 'text-red-700' : '' }}">{{ $shelfQty }}</dd></div>
+                                <div><dt class="text-slate-500">Unit price</dt><dd class="font-medium">{{ \App\Support\Money::format($line->item->cash_price) }}</dd></div>
+                            </dl>
+
+                            <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                                <div>
+                                    <x-input-label :for="'quantity-'.$line->id" value="Quantity to dispense" />
+                                    <x-text-input :id="'quantity-'.$line->id" type="number" name="quantity" min="1" :max="$remaining" :value="$reopen === 'dispense-'.$line->id ? old('quantity') : $remaining" class="mt-1 block w-full" required />
+                                    <p class="mt-1 text-xs text-slate-500">In {{ $unit }}. Up to {{ $remaining }}.</p>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
+                                    <x-search-select :id="'substitute-'.$line->id" name="substitute_item_id" :options="$substitutes->reject(fn ($substitute) => $substitute->id === $line->item_id)->map(fn ($substitute) => ['value' => $substitute->id, 'label' => $substitute->name, 'hint' => $substitute->unit.' · '.\App\Support\Money::format($substitute->cash_price)])" :selected="$reopen === 'dispense-'.$line->id ? old('substitute_item_id') : null" :empty-label="'Dispense '.$line->item->name" placeholder="Search for a substitute" />
+                                </div>
+                            </div>
+                            @if ($reopen === 'dispense-'.$line->id)
+                                <x-input-error :messages="$errors->all()" class="mt-3" />
+                            @endif
+
+                            <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
+                                <button form="cancel-{{ $line->id }}" class="text-sm text-red-700" onclick="return confirm('Cancel this prescription line? It will not be dispensed.')">Cancel this prescription line</button>
+                                <div class="flex gap-3">
+                                    <x-secondary-button x-on:click="$dispatch('close')">Close</x-secondary-button>
+                                    <x-primary-button>Dispense</x-primary-button>
+                                </div>
+                            </div>
+                        </form>
+                        <form id="cancel-{{ $line->id }}" method="POST" action="{{ route('pharmacy.cancel', $line) }}">@csrf</form>
+                    </x-modal>
+                @endif
+            @empty
+                <li class="px-5 py-6 text-sm text-slate-500">No prescriptions are waiting to dispense or collect.</li>
+            @endforelse
+        </ul>
     </section>
 
-    @if ($store && auth()->user()->permits('inventory.requisition'))
-        <section class="mt-4 rounded-lg bg-white p-5 shadow-card" x-data="{ open: @js($errors->isNotEmpty() || $suggestions->isNotEmpty()) }">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+    <x-modal name="pharmacy-shelf" max-width="2xl">
+        <div class="p-6">
+            <div class="flex items-start justify-between gap-3">
                 <div>
-                    <h2 class="font-bold text-slate-900">Restock the pharmacy</h2>
-                    <p class="mt-1 text-sm text-slate-500">Ask the main store for stock, or send back what the pharmacy does not need. Low items are filled in for you.</p>
+                    <h2 class="text-lg font-bold text-slate-900">Pharmacy shelf</h2>
+                    <p class="text-sm text-slate-500">Working stock in the pharmacy. The batch that expires first is used first.</p>
                 </div>
-                <button type="button" class="text-sm font-semibold text-brand-700" @click="open = ! open" x-text="open ? 'Hide' : 'Show'"></button>
+                <button type="button" class="text-slate-400 hover:text-slate-600" x-on:click="$dispatch('close')" aria-label="Close"><x-icon name="bx-x" class="text-2xl" /></button>
             </div>
-            <div x-show="open" x-cloak>
-                <x-requisition-form :stores="collect([$store])" :items="$stockItems" :suggestions="[$store->id => $suggestions]" />
-                <h3 class="mt-6 text-sm font-semibold text-slate-900">Return to the main store</h3>
-                <x-return-stock-form :stores="collect([$store])" :items="$stockItems" />
+            <div class="mt-4 max-h-[60vh] overflow-auto" x-data="{ filter: '' }">
+                <input type="search" x-model="filter" placeholder="Filter medicines" class="mb-3 block w-full rounded-md border-transparent bg-slate-100/70 text-sm focus:border-brand-600 focus:bg-white focus:ring-0">
+                <table class="min-w-full text-left text-sm">
+                    <thead class="sticky top-0 bg-white text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th class="py-2 pe-4 font-medium">Medicine</th>
+                            <th class="py-2 pe-4 font-medium">Batch</th>
+                            <th class="py-2 pe-4 font-medium">Expiry</th>
+                            <th class="py-2 text-right font-medium">On hand</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($shelf as $batch)
+                            @php($expiresSoon = $batch->expiry_date && $batch->expiry_date->lte(now()->addDays(\App\Services\StockReport::EXPIRY_WARNING_DAYS)))
+                            <tr class="border-t border-slate-100" x-show="@js(\Illuminate\Support\Str::lower($batch->item->name)).includes(filter.toLowerCase())">
+                                <td class="py-2 pe-4 font-medium"><a class="text-brand-700" href="{{ route('stock.levels.item', ['item' => $batch->item, 'stock_location_id' => $batch->stock_location_id]) }}">{{ $batch->item->name }}</a></td>
+                                <td class="py-2 pe-4">{{ $batch->batch_number }}</td>
+                                <td class="py-2 pe-4 {{ $expiresSoon ? 'font-semibold text-red-700' : '' }}">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
+                                <td class="py-2 text-right tabular-nums">{{ number_format($batch->quantity) }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="4" class="py-3 text-slate-500">The pharmacy shelf is empty. Request stock from the main store.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
-        </section>
+        </div>
+    </x-modal>
+
+    @if ($canRestock)
+        <x-modal name="request-stock" :show="$reopen === 'request-stock'" max-width="2xl">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Request stock from the main store</h2>
+                        <p class="text-sm text-slate-500">Low items are filled in with enough to reach twice their reorder level. Change anything before sending.</p>
+                    </div>
+                    <button type="button" class="text-slate-400 hover:text-slate-600" x-on:click="$dispatch('close')" aria-label="Close"><x-icon name="bx-x" class="text-2xl" /></button>
+                </div>
+                @if ($suggestions->isNotEmpty())
+                    <ul class="mt-4 grid gap-1 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
+                        @foreach ($suggestions as $row)
+                            <li><span class="font-medium">{{ $row['item']->name }}</span> · {{ $row['on_hand'] }} left, reorder at {{ $row['item']->reorder_level }} · {{ $row['main_on_hand'] }} in the main store</li>
+                        @endforeach
+                    </ul>
+                @endif
+                <x-requisition-form :stores="collect([$store])" :items="$stockItems" :suggestions="[$store->id => $suggestions]">
+                    <input type="hidden" name="_modal" value="request-stock">
+                </x-requisition-form>
+            </div>
+        </x-modal>
     @endif
 
-    <div class="mt-4 grid gap-4">
-        @forelse ($items as $line)
-            @php
-                $dispensed = (int) $line->dispensations->sum('quantity');
-                $remaining = max(0, $line->quantity - $dispensed);
-                $unit = $line->item->unit;
-                $shelfQty = (int) ($onHand[$line->item_id] ?? 0);
-            @endphp
-            <article class="rounded-lg bg-white p-5 shadow-card">
-                <div class="grid gap-4 sm:grid-cols-2">
+    @if ($canAddStock)
+        <x-modal name="add-stock" :show="$reopen === 'add-stock'" max-width="2xl">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
                     <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Medicine</p>
-                        <p class="mt-1 text-lg font-semibold">{{ $line->item->name }}</p>
-                        <p class="text-sm text-slate-500">{{ $unit }}</p>
+                        <h2 class="text-lg font-bold text-slate-900">Add stock to the pharmacy</h2>
+                        <p class="text-sm text-slate-500">For a delivery or donation that comes straight to the pharmacy, or stock already on the shelf. To take stock from the main store, use Request stock instead.</p>
                     </div>
-                    <div>
-                        <p class="text-xs font-medium uppercase tracking-wide text-slate-500">Patient</p>
-                        <p class="mt-1 font-medium">
-                            <a class="text-brand-700" href="{{ route('visits.show', $line->prescription->visit) }}">{{ $line->prescription->visit->patient->fullName() }}</a>
-                        </p>
-                        <p class="text-sm text-slate-500">Visit {{ $line->prescription->visit->visit_number }}</p>
-                    </div>
+                    <button type="button" class="text-slate-400 hover:text-slate-600" x-on:click="$dispatch('close')" aria-label="Close"><x-icon name="bx-x" class="text-2xl" /></button>
                 </div>
+                <x-add-stock-form :stores="collect([$store])" :items="$stockItems" :default-store="$store">
+                    <input type="hidden" name="_modal" value="add-stock">
+                </x-add-stock-form>
+            </div>
+        </x-modal>
+    @endif
 
-                <dl class="mt-4 grid gap-3 border-t border-slate-100 pt-4 text-sm sm:grid-cols-3 lg:grid-cols-6">
+    @if ($canRestock)
+        <x-modal name="return-stock" :show="$reopen === 'return-stock'" max-width="2xl">
+            <div class="p-6">
+                <div class="flex items-start justify-between gap-3">
                     <div>
-                        <dt class="text-slate-500">Dose</dt>
-                        <dd class="font-medium">{{ $line->dose }}</dd>
+                        <h2 class="text-lg font-bold text-slate-900">Return stock to the main store</h2>
+                        <p class="text-sm text-slate-500">For stock the pharmacy does not need. The batch and expiry date go back with it.</p>
                     </div>
-                    <div>
-                        <dt class="text-slate-500">Frequency</dt>
-                        <dd class="font-medium">{{ $line->frequency }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Duration</dt>
-                        <dd class="font-medium">{{ $line->duration_days }} days</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Prescribed</dt>
-                        <dd class="font-medium">{{ $line->quantity }} {{ \Illuminate\Support\Str::plural($unit, $line->quantity) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Already dispensed</dt>
-                        <dd class="font-medium">{{ $dispensed }} {{ \Illuminate\Support\Str::plural($unit, $dispensed) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Still to dispense</dt>
-                        <dd class="font-medium">{{ $remaining }} {{ \Illuminate\Support\Str::plural($unit, $remaining) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">On the pharmacy shelf</dt>
-                        <dd class="font-medium">{{ $shelfQty }} {{ \Illuminate\Support\Str::plural($unit, $shelfQty) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Unit price</dt>
-                        <dd class="font-medium">{{ \App\Support\Money::format($line->item->cash_price) }}</dd>
-                    </div>
-                    <div>
-                        <dt class="text-slate-500">Status</dt>
-                        <dd class="font-medium">{{ $remaining > 0 ? 'Waiting to dispense' : 'Dispensed, waiting for collection' }}</dd>
-                    </div>
-                </dl>
-
-                @if ($remaining > 0 && auth()->user()->permits('pharmacy.manage'))
-                    <form method="POST" action="{{ route('pharmacy.dispense', $line) }}" class="mt-4 grid gap-3 border-t border-slate-100 pt-4 md:grid-cols-4 md:items-end">
-                        @csrf
-                        <div>
-                            <x-input-label :for="'quantity-'.$line->id" value="Quantity to dispense" />
-                            <x-text-input :id="'quantity-'.$line->id" type="number" name="quantity" min="1" :max="$remaining" :value="$remaining" class="mt-1 block w-full" required />
-                            <p class="mt-1 text-xs text-slate-500">In {{ $unit }}. Up to {{ $remaining }} still on this prescription.</p>
-                        </div>
-                        <div class="md:col-span-2">
-                            <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
-                            <x-search-select :id="'substitute-'.$line->id" name="substitute_item_id" :options="$substitutes->reject(fn ($substitute) => $substitute->id === $line->item_id)->map(fn ($substitute) => ['value' => $substitute->id, 'label' => $substitute->name, 'hint' => $substitute->unit.' · '.\App\Support\Money::format($substitute->cash_price)])" :empty-label="'Dispense '.$line->item->name" placeholder="Search for a substitute" />
-                        </div>
-                        <div class="flex flex-wrap items-center gap-3">
-                            <x-primary-button>Dispense</x-primary-button>
-                            <button form="cancel-{{ $line->id }}" class="text-sm text-red-700">Cancel line</button>
-                        </div>
-                    </form>
-                    <form id="cancel-{{ $line->id }}" method="POST" action="{{ route('pharmacy.cancel', $line) }}">@csrf</form>
-                @endif
-            </article>
-        @empty
-            <p class="text-sm text-slate-500">No prescriptions are waiting to dispense or collect.</p>
-        @endforelse
-    </div>
+                    <button type="button" class="text-slate-400 hover:text-slate-600" x-on:click="$dispatch('close')" aria-label="Close"><x-icon name="bx-x" class="text-2xl" /></button>
+                </div>
+                <x-return-stock-form :stores="collect([$store])" :items="$stockItems">
+                    <input type="hidden" name="_modal" value="return-stock">
+                </x-return-stock-form>
+            </div>
+        </x-modal>
+    @endif
 </x-app-layout>

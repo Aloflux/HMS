@@ -48,7 +48,7 @@
                         </div>
 
                         <div class="ms-auto flex items-center gap-3">
-                            @if (auth()->user()->permits('patients.manage'))
+                            @if (auth()->user()->permits('patients.manage') && request()->routeIs('dashboard', 'patients.index', 'patients.show', 'appointments.*', 'queues.*'))
                                 <a href="{{ route('patients.create') }}" class="hidden h-10 items-center gap-2 rounded-md bg-brand-700 px-4 text-sm font-semibold text-white shadow-brand transition hover:bg-brand-800 sm:inline-flex">
                                     <x-icon name="bx-plus" class="text-lg" />
                                     New registration

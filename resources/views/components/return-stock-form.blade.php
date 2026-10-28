@@ -2,6 +2,7 @@
 
 <form method="POST" action="{{ route('inventory.return') }}" class="mt-4 grid gap-3 md:grid-cols-4 md:items-end">
     @csrf
+    {{ $slot }}
     <div>
         <x-input-label for="return-store" value="From store" />
         <select id="return-store" name="stock_location_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">

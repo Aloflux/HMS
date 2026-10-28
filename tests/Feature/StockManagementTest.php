@@ -380,6 +380,58 @@ test('the pharmacy warns about a shelf item at its reorder level and offers a re
     $this->actingAs(userWithRole($facility, Role::PharmacyStores))
         ->get(route('pharmacy.index'))
         ->assertOk()
-        ->assertSeeInOrder(['Running low on the pharmacy shelf', 'Amoxicillin 500mg', '30 left, reorder at 50', '500 in the main store'])
-        ->assertSee('Restock the pharmacy');
+        ->assertSeeInOrder(['1 medicine running low on the shelf:', 'Amoxicillin 500mg', 'Review and restock'])
+        ->assertSeeInOrder(['Request stock from the main store', 'Amoxicillin 500mg', '30 left, reorder at 50', '500 in the main store']);
+});
+
+test('a dispense that fails validation reopens its dispense form', function () {
+    [$facility, $admin] = provisionHospital();
+    $item = stockItem($facility);
+    shelve($item, storeOfKind($facility, 'pharmacy'), 2);
+    $pharmacist = userWithRole($facility, Role::PharmacyStores);
+    $visit = openCashVisit($facility, $admin);
+    FacilityContext::set($facility->id);
+    $line = app(EncounterService::class)->prescribe($visit, $admin, [[
+        'item_id' => $item->id,
+        'dose' => '1g',
+        'frequency' => 'TDS',
+        'duration_days' => 3,
+        'quantity' => 6,
+    ]])->items()->first();
+    FacilityContext::forget();
+
+    $this->actingAs($pharmacist)
+        ->from(route('pharmacy.index'))
+        ->post(route('pharmacy.dispense', $line), ['quantity' => 6, '_modal' => 'dispense-'.$line->id])
+        ->assertSessionHasErrors('quantity');
+
+    $this->actingAs($pharmacist)
+        ->get(route('pharmacy.index'))
+        ->assertOk()
+        ->assertSee('show: true', false);
+});
+
+test('the pharmacy adds a direct delivery to its own shelf', function () {
+    [$facility] = provisionHospital();
+    $item = stockItem($facility);
+    $pharmacy = storeOfKind($facility, 'pharmacy');
+    $pharmacist = userWithRole($facility, Role::PharmacyStores);
+
+    $this->actingAs($pharmacist)
+        ->get(route('pharmacy.index'))
+        ->assertOk()
+        ->assertSee('Add stock to the pharmacy');
+
+    $this->actingAs($pharmacist)
+        ->post(route('inventory.stock.add'), [
+            'item_id' => $item->id,
+            'stock_location_id' => $pharmacy->id,
+            'reason' => 'purchase',
+            'quantity' => 60,
+            'notes' => 'Delivered by Joint Medical Stores',
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(StockBatch::query()->where('stock_location_id', $pharmacy->id)->sum('quantity'))->toEqual(60)
+        ->and(StockMovement::query()->sole()->reason)->toBe(StockReason::Purchase);
 });

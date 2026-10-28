@@ -794,3 +794,10 @@ test('the seeded visit page shows every order form and the full record', functio
         ->assertSee('Prescriptions')
         ->assertSee('dispensed');
 });
+
+test('the new registration shortcut shows on front desk pages only', function () {
+    [, $admin] = provisionHospital();
+
+    $this->actingAs($admin)->get(route('patients.index'))->assertOk()->assertSee('New registration');
+    $this->actingAs($admin)->get(route('pharmacy.index'))->assertOk()->assertDontSee('New registration');
+});

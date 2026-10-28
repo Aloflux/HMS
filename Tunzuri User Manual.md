@@ -207,34 +207,49 @@ Verifying releases the result to the clinician on the visit and sends the patien
 
 # Pharmacy
 
+The Pharmacy screen is the prescription queue. Everything else opens from the buttons at the top: **Shelf**, **Request stock**, **Return stock**, **Add stock** and **Stock levels**.
+
 ## Dispensing a prescription
 
-**Pharmacy** lists every prescription line waiting to be dispensed or collected. Each card shows the medicine, the patient, the dose, frequency and duration, how much was prescribed, already dispensed and still to dispense, and how much is on the pharmacy shelf.
+Each row shows the medicine, the dose, frequency and duration, the patient and visit, how much is still to dispense, and how much is on the pharmacy shelf. The shelf quantity turns red when there is not enough to fill the prescription.
 
-1. Check the quantity to dispense. It starts at the amount still owed on the prescription. You can dispense part now and the rest later.
-2. If you must give a different product, search for it under **Substitute medicine**. Leave it as *Dispense [medicine]* to give what was prescribed.
-3. Select **Dispense**.
+1. Select **Dispense** on the row. A form opens with the full prescription and the patient's allergies, if any.
+2. Check the quantity to dispense. It starts at the amount still owed on the prescription. You can dispense part now and the rest later.
+3. If you must give a different product, search for it under **Substitute medicine**. Leave it as *Dispense [medicine]* to give what was prescribed.
+4. Select **Dispense**.
 
-Dispensing takes stock from the pharmacy shelf, using the batch that expires first, and charges the patient at the price for their payer. A cash patient collects the medicine once the bill is paid at the cashier. Insured patients can collect straight away.
+Dispensing takes stock from the pharmacy shelf, using the batch that expires first, and charges the patient at the price for their payer. A cash patient collects the medicine once the bill is paid at the cashier; until then the row shows *Waiting for collection*. Insured patients can collect straight away.
 
-**Cancel line** removes a prescription line that will not be dispensed. A line that has already been dispensed cannot be cancelled.
+To drop a line that will not be dispensed, open **Dispense** and select **Cancel this prescription line**. A line that has already been dispensed cannot be cancelled.
+
+If something is wrong, for example more than the shelf holds, the form reopens with your entries and the message.
 
 ## Watching the pharmacy shelf
 
-- **Running low on the pharmacy shelf** (amber box at the top) lists every medicine at or below its reorder level, with how many are left and how many the main store holds.
-- **Pharmacy shelf** lists every batch on hand with its expiry date, quantity, price and reorder level. Select a medicine's name to open its full stock card.
-- **All stock levels and history** (top right) opens the Stock levels screen.
+- When medicines are at or below their reorder level, an amber bar at the top names them. Select **Review and restock** to open the request form.
+- **Shelf** opens every batch on hand with its expiry date and quantity. Type in the filter box to find a medicine. Expiry dates within 90 days are shown in red. Select a medicine's name to open its stock card.
+- **Stock levels** opens the full stock picture for every store.
 
 ## Restocking the pharmacy
 
-Under **Restock the pharmacy**:
+There are two ways to get stock onto the pharmacy shelf.
 
-1. The form is already filled with the low items and a suggested quantity, enough to bring each back to twice its reorder level. Change the quantities, remove lines, or select **Add another item**.
-2. Select **Send requisition**. The main store sees it on the Inventory screen and issues the stock.
+**From the main store (requisition).** Use this when the stock is already in the facility's main store.
 
-To send stock back, for example because it is overstocked or close to expiry, use **Return to the main store** below the requisition form. Enter the item, quantity and a reason. The batch and expiry date go back with the stock.
+1. Select **Request stock**. The form lists the low items and is already filled with a suggested quantity for each, enough to bring it back to twice its reorder level.
+2. Change the quantities, remove lines, or select **Add another item**.
+3. Select **Send requisition**. The main store sees it on the Inventory screen and issues the stock.
 
-You need the Stores area (or the Pharmacy and stores role) to send requisitions and returns.
+**Straight onto the shelf (add stock).** Use this when a supplier or donor delivers directly to the pharmacy, or to record stock already on the shelf.
+
+1. Select **Add stock**.
+2. Search for the item and choose where it came from: *Delivery without a purchase order*, *Donation* or *Opening balance*.
+3. Enter the quantity and, if you have them, the batch number, expiry date and unit cost. Put the supplier or delivery note number in **Notes**.
+4. Select **Add stock**. The stock is on the pharmacy shelf immediately, and the stock card records who added it and why.
+
+To send stock back, for example because it is overstocked or close to expiry, select **Return stock**. Enter the item, quantity and a reason. The batch and expiry date go back with the stock.
+
+You need the Stores area (or the Pharmacy and stores role) to see **Request stock**, **Return stock** and **Add stock**.
 
 # Cashier
 
@@ -312,7 +327,7 @@ Tunzuri keeps one stock ledger for the whole facility. Every unit that comes in 
 
 Each facility starts with these stores: **Main store**, **Pharmacy**, **Laboratory**, **Female ward store**, **Male ward store** and **Theatre store**. New wards can have their own store.
 
-1. Stock arrives in the **main store**, from a supplier delivery, a donation, or as an opening balance.
+1. Stock arrives in the **main store** from a supplier delivery, a donation, or as an opening balance. A department store, such as the pharmacy, can also receive a delivery directly with **Add stock**.
 2. Department stores **request** stock from the main store (a requisition), and the storekeeper **issues** it.
 3. Departments **use** stock: the pharmacy dispenses to patients, wards issue to inpatients, and the laboratory uses reagents for tests.
 4. Unwanted stock is **returned** to the main store. Losses, damage, expiry and count differences are **adjusted** with the administrator's approval.
@@ -534,7 +549,7 @@ The platform administrator runs Tunzuri for all facilities. They never see patie
 
 **I was signed out.** Tunzuri signs you out after 15 minutes without activity. Sign in again.
 
-**The pharmacy says there is not enough stock, but the main store has plenty.** Dispensing only uses stock on the pharmacy shelf. Send a requisition to the main store (*Restock the pharmacy*) and ask the storekeeper to issue it.
+**The pharmacy says there is not enough stock, but the main store has plenty.** Dispensing only uses stock on the pharmacy shelf. Select **Request stock** on the Pharmacy screen and ask the storekeeper to issue it.
 
 **A requisition shows "Partial".** The main store did not have enough. Once stock arrives, the storekeeper selects **Issue the rest**.
 
