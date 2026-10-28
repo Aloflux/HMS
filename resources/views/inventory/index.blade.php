@@ -1,7 +1,9 @@
 @php
     $user = auth()->user();
     $receivingStores = $locations->where('kind', '!=', 'main');
-    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit.($item->sku ? ' · '.$item->sku : '')]);
+    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unitLabel().($item->packLabel() ? ' · '.$item->packLabel() : '')]);
+    $itemMeta = $items->mapWithKeys(fn ($item) => [$item->id => $item->quantityMeta()]);
+    $formDefaults = collect($forms)->mapWithKeys(fn ($form) => [$form->value => $form->defaults()]);
 @endphp
 
 <x-app-layout>
@@ -45,28 +47,16 @@
             </div>
 
             <div x-show="tab === 'item'" x-cloak>
-                <form method="POST" action="{{ route('inventory.items.store') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ category: @js(old('category', 'medicine')) }">
+                <form method="POST" action="{{ route('inventory.items.store') }}" class="mt-4 grid gap-3 md:grid-cols-4"
+                    x-data="itemFields(@js(['form' => old('form', 'tablet'), 'unit' => old('unit'), 'unit_content' => old('unit_content'), 'pack_unit' => old('pack_unit'), 'pack_size' => old('pack_size'), 'category' => old('category', 'medicine')]), @js($formDefaults))">
                     @csrf
                     <input type="hidden" name="_tab" value="item">
-                    <div class="md:col-span-2">
-                        <x-input-label for="new-item-name" value="Name and strength" />
-                        <x-text-input id="new-item-name" name="name" class="mt-1 block w-full" :value="old('name')" placeholder="Amoxicillin 250mg" required />
-                        <x-input-error :messages="$errors->get('name')" class="mt-1" />
-                    </div>
-                    <div>
-                        <x-input-label for="new-item-unit" value="Counted in" />
-                        <x-text-input id="new-item-unit" name="unit" class="mt-1 block w-full" :value="old('unit')" placeholder="tablet, bottle, pair" required />
-                    </div>
-                    <div>
-                        <x-input-label for="new-item-sku" value="Code (optional)" />
-                        <x-text-input id="new-item-sku" name="sku" class="mt-1 block w-full" :value="old('sku')" placeholder="Made from the name" />
-                        <x-input-error :messages="$errors->get('sku')" class="mt-1" />
-                    </div>
+                    <x-item-fields :forms="$forms" prefix="new-item" />
                     <div>
                         <x-input-label for="new-item-category" value="Category" />
                         <select id="new-item-category" name="category" x-model="category" class="{{ $select }}">
                             <option value="medicine">Medicine</option>
-                            <option value="consumable">Consumable</option>
+                            <option value="consumable">Medical supply</option>
                             <option value="reagent">Lab reagent</option>
                         </select>
                     </div>
@@ -79,19 +69,13 @@
                         </select>
                     </div>
                     <div>
-                        <x-input-label for="new-item-price" value="Cash price to patient (UGX)" />
-                        <x-text-input id="new-item-price" name="cash_price" type="number" min="0" class="mt-1 block w-full" :value="old('cash_price', 0)" required />
-                    </div>
-                    <div>
-                        <x-input-label for="new-item-reorder" value="Reorder when stock falls to" />
-                        <x-text-input id="new-item-reorder" name="reorder_level" type="number" min="0" class="mt-1 block w-full" :value="old('reorder_level', 0)" required />
+                        <x-input-label for="new-item-sku" value="Code (optional)" />
+                        <x-text-input id="new-item-sku" name="sku" class="mt-1 block w-full" :value="old('sku')" placeholder="Made from the name" />
+                        <x-input-error :messages="$errors->get('sku')" class="mt-1" />
                     </div>
 
                     <p class="text-sm font-semibold text-slate-700 md:col-span-4">Opening stock <span class="font-normal text-slate-500">· optional, if you already have some</span></p>
-                    <div>
-                        <x-input-label for="new-item-quantity" value="Quantity on hand" />
-                        <x-text-input id="new-item-quantity" name="opening_quantity" type="number" min="1" class="mt-1 block w-full" :value="old('opening_quantity')" />
-                    </div>
+                    <x-quantity-field id="new-item-quantity" meta="meta" name="opening_quantity" :value="old('opening_quantity')" :count-in="old('count_in', 'unit')" cost-name="unit_cost" :cost-value="old('unit_cost')" />
                     <div>
                         <x-input-label for="new-item-store" value="In store" />
                         <select id="new-item-store" name="stock_location_id" class="{{ $select }}">
@@ -109,17 +93,13 @@
                         <x-text-input id="new-item-expiry" name="expiry_date" type="date" class="mt-1 block w-full" :value="old('expiry_date')" />
                         <x-input-error :messages="$errors->get('expiry_date')" class="mt-1" />
                     </div>
-                    <div>
-                        <x-input-label for="new-item-cost" value="Unit cost (UGX)" />
-                        <x-text-input id="new-item-cost" name="unit_cost" type="number" min="0" class="mt-1 block w-full" :value="old('unit_cost')" placeholder="0" />
-                    </div>
                     <div class="flex items-end md:col-span-3"><x-primary-button>Add item</x-primary-button></div>
                 </form>
             </div>
 
             <div x-show="tab === 'import'" x-cloak>
                 <div class="mt-4 text-sm text-slate-600">
-                    <p>Fill in the template in Excel or Google Sheets, save it as CSV, and upload it. Only <span class="font-medium">name</span> and <span class="font-medium">unit</span> are required. Add a <span class="font-medium">quantity</span> to record opening stock at the same time.</p>
+                    <p>Fill in the template in Excel or Google Sheets, save it as CSV, and upload it. Only <span class="font-medium">name</span> is required, plus either a <span class="font-medium">form</span> (such as tablet or oral_liquid) or a <span class="font-medium">unit</span>. Use <span class="font-medium">pack_unit</span> and <span class="font-medium">pack_size</span> for how you buy it, for example tin and 1000. Add a <span class="font-medium">quantity</span>, counted in dispensing units, to record opening stock at the same time.</p>
                     <p class="mt-1">An item that already exists is matched by its name or code, and only its stock is added. If any row has a mistake, nothing is saved and the rows to fix are listed.</p>
                     <a class="mt-2 inline-flex items-center gap-1 font-semibold text-brand-700" href="{{ route('inventory.items.template') }}"><x-icon name="bx-download" class="text-lg" />Download the template</a>
                 </div>
@@ -175,7 +155,7 @@
                                     <td class="py-2 pe-3 font-medium">{{ $batch->item->name }}</td>
                                     <td class="py-2 pe-3">{{ $batch->batch_number }}</td>
                                     <td class="py-2 pe-3 {{ $expiresSoon ? 'font-semibold text-red-700' : '' }}">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
-                                    <td class="py-2">{{ $batch->quantity }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
+                                    <td class="py-2">{{ $batch->item->describeQuantity($batch->quantity) }}</td>
                                 </tr>
                             @empty
                                 <tr><td colspan="4" class="py-2 text-slate-500">Nothing in this store.</td></tr>
@@ -190,7 +170,7 @@
     @if ($user->permits('inventory.purchase'))
         <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Purchase orders</h2>
-            <form method="POST" action="{{ route('inventory.order') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ newSupplier: @js($suppliers->isEmpty() || filled(old('supplier_name'))) }">
+            <form method="POST" action="{{ route('inventory.order') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ newSupplier: @js($suppliers->isEmpty() || filled(old('supplier_name'))), itemId: @js((string) old('item_id', '')), metas: @js($itemMeta) }">
                 @csrf
                 <div class="md:col-span-2">
                     <div class="flex items-center justify-between">
@@ -208,16 +188,9 @@
                 </div>
                 <div class="md:col-span-2">
                     <x-input-label for="order-item" value="Item" />
-                    <x-search-select id="order-item" name="item_id" :options="$itemOptions" :selected="old('item_id')" placeholder="Search items" required />
+                    <x-search-select id="order-item" name="item_id" model="itemId" :options="$itemOptions" placeholder="Search items" required />
                 </div>
-                <div>
-                    <x-input-label for="order-quantity" value="Quantity" />
-                    <x-text-input id="order-quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" :value="old('quantity')" required />
-                </div>
-                <div>
-                    <x-input-label for="order-cost" value="Unit cost (UGX)" />
-                    <x-text-input id="order-cost" name="unit_cost" type="number" min="0" class="mt-1 block w-full" :value="old('unit_cost')" required />
-                </div>
+                <x-quantity-field id="order-quantity" meta="metas[itemId]" :value="old('quantity')" packs-only cost-name="unit_cost" :cost-value="old('unit_cost')" />
                 <div class="flex items-end md:col-span-2"><x-primary-button>Send order</x-primary-button></div>
             </form>
 
@@ -230,8 +203,11 @@
                         </div>
                         @foreach ($order->lines as $line)
                             <div class="mt-3 border-t border-slate-100 pt-3">
-                                <p>{{ $line->item->name }} · received {{ $line->received_quantity }} of {{ $line->quantity }} {{ \Illuminate\Support\Str::plural($line->item->unit, $line->quantity) }}</p>
-                                @if ($line->received_quantity < $line->quantity)
+                                @php($ordered = $line->orderedItem())
+                                @php($outstanding = $line->quantity - $line->received_quantity)
+                                @php($wholePacks = $ordered->hasPacks() && $outstanding % $ordered->pack_size === 0)
+                                <p><span class="font-medium">{{ $line->item->name }}</span> · ordered {{ $ordered->describeQuantity($line->quantity) }} · received {{ $ordered->describeQuantity($line->received_quantity) }}</p>
+                                @if ($outstanding > 0)
                                     <form method="POST" action="{{ route('inventory.receive', $order) }}" class="mt-2 grid gap-3 md:grid-cols-4">
                                         @csrf
                                         <input type="hidden" name="purchase_order_line_id" value="{{ $line->id }}">
@@ -243,10 +219,7 @@
                                             <x-input-label :for="'expiry-'.$line->id" value="Expiry date" />
                                             <x-text-input :id="'expiry-'.$line->id" type="date" name="expiry_date" class="mt-1 block w-full" />
                                         </div>
-                                        <div>
-                                            <x-input-label :for="'received-'.$line->id" value="Quantity received" />
-                                            <x-text-input :id="'received-'.$line->id" name="quantity" type="number" min="1" :max="$line->quantity - $line->received_quantity" :value="$line->quantity - $line->received_quantity" class="mt-1 block w-full" required />
-                                        </div>
+                                        <x-quantity-field :id="'received-'.$line->id" :meta="\Illuminate\Support\Js::from($ordered->quantityMeta())->toHtml()" :value="$wholePacks ? intdiv($outstanding, $ordered->pack_size) : $outstanding" :count-in="$wholePacks ? 'pack' : 'unit'" />
                                         <div class="flex items-end"><x-primary-button>Receive</x-primary-button></div>
                                     </form>
                                 @endif
@@ -269,7 +242,7 @@
                 <li class="flex flex-wrap items-center justify-between gap-3 py-2">
                     <span>
                         <span class="font-medium">{{ $requisition->number }} → {{ $requisition->location->name }}</span>
-                        <span class="block text-xs text-slate-500">{{ $requisition->lines->map(fn ($line) => $line->item->name.' · issued '.$line->quantity_issued.' of '.$line->quantity_requested)->join(', ') }}</span>
+                        <span class="block text-xs text-slate-500">{{ $requisition->lines->map(fn ($line) => $line->item->name.' · issued '.number_format($line->quantity_issued).' of '.$line->item->describeQuantity($line->quantity_requested))->join(', ') }}</span>
                     </span>
                     <span class="flex items-center gap-3">
                         <x-status :value="$requisition->status" />
@@ -313,6 +286,7 @@
                 <div>
                     <x-input-label for="adjust-quantity" value="Change in quantity" />
                     <x-text-input id="adjust-quantity" name="quantity" type="number" class="mt-1 block w-full" placeholder="-5 to remove, 5 to add" required />
+                    <p class="mt-1 text-xs text-slate-500">In dispensing units: tablets, bottles, ml, not tins or cartons.</p>
                 </div>
                 <div>
                     <x-input-label for="adjust-reason" value="Reason" />
@@ -334,7 +308,7 @@
             @forelse ($adjustments as $adjustment)
                 <li class="flex flex-wrap items-center justify-between gap-3 py-2">
                     <span>
-                        <span class="font-medium">{{ $adjustment->item->name }} {{ $adjustment->quantity > 0 ? '+' : '' }}{{ $adjustment->quantity }}</span>
+                        <span class="font-medium">{{ $adjustment->item->name }} {{ $adjustment->quantity > 0 ? '+' : '−' }}{{ $adjustment->item->describeQuantity(abs($adjustment->quantity)) }}</span>
                         <span class="block text-xs text-slate-500">{{ $adjustment->location?->name }} · {{ ['expiry' => 'Expired', 'damage' => 'Damaged', 'loss' => 'Lost', 'count' => 'Count did not match'][$adjustment->reason_code] ?? $adjustment->reason_code }}{{ $adjustment->notes ? ' · '.$adjustment->notes : '' }}</span>
                     </span>
                     <span class="flex items-center gap-3">

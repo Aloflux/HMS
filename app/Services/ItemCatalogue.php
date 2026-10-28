@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\BillingType;
+use App\Enums\DosageForm;
 use App\Enums\StockReason;
 use App\Models\Item;
 use App\Models\StockBatch;
@@ -23,14 +24,16 @@ class ItemCatalogue
      * @var list<string>
      */
     public const IMPORT_COLUMNS = [
-        'name', 'unit', 'category', 'billing_type', 'cash_price', 'reorder_level', 'sku',
+        'name', 'form', 'unit', 'unit_content', 'pack_unit', 'pack_size', 'category', 'billing_type', 'cash_price', 'reorder_level', 'sku',
         'store', 'quantity', 'batch_number', 'expiry_date', 'unit_cost',
     ];
 
     public function __construct(private StockLedger $stock) {}
 
     /**
-     * @param  array{name: string, unit: string, category: string, billing_type?: ?string, cash_price?: ?int, reorder_level?: ?int, sku?: ?string}  $attributes
+     * Unit and pack fields left out are filled from the dosage form.
+     *
+     * @param  array{name: string, category: string, unit?: ?string, form?: ?string, unit_content?: ?string, pack_unit?: ?string, pack_size?: ?int, billing_type?: ?string, cash_price?: ?int, reorder_level?: ?int, sku?: ?string}  $attributes
      */
     public function create(int $facilityId, array $attributes): Item
     {
@@ -44,17 +47,64 @@ class ItemCatalogue
             ]);
         }
 
+        $chosenForm = filled($attributes['form'] ?? null);
+        $form = $chosenForm
+            ? DosageForm::from($attributes['form'])
+            : DosageForm::guess($attributes['category'], filled($attributes['unit'] ?? null) ? Str::lower(trim($attributes['unit'])) : null);
+        $defaults = $chosenForm || blank($attributes['unit'] ?? null)
+            ? $form->defaults()
+            : ['unit' => null, 'unit_content' => null, 'pack_unit' => null, 'pack_size' => 1];
+        $unit = filled($attributes['unit'] ?? null) ? trim($attributes['unit']) : ($defaults['unit'] ?? 'unit');
+        $packUnit = array_key_exists('pack_unit', $attributes) ? $attributes['pack_unit'] : $defaults['pack_unit'];
+        $packSize = array_key_exists('pack_size', $attributes) && filled($attributes['pack_size']) ? (int) $attributes['pack_size'] : $defaults['pack_size'];
+
         return Item::query()->create([
             'facility_id' => $facilityId,
             'sku' => $sku,
             'name' => trim($attributes['name']),
             'category' => $attributes['category'],
             'billing_type' => $attributes['billing_type'] ?? $this->defaultBillingType($attributes['category'])->value,
-            'unit' => trim($attributes['unit']),
+            'form' => $form,
+            'unit' => $unit,
+            'unit_content' => array_key_exists('unit_content', $attributes) ? (filled($attributes['unit_content']) ? trim($attributes['unit_content']) : null) : $defaults['unit_content'],
+            'pack_unit' => filled($packUnit) && $packSize > 1 ? trim($packUnit) : null,
+            'pack_size' => filled($packUnit) && $packSize > 1 ? $packSize : 1,
             'cash_price' => (int) ($attributes['cash_price'] ?? 0),
             'reorder_level' => (int) ($attributes['reorder_level'] ?? 0),
             'is_active' => true,
         ]);
+    }
+
+    /**
+     * Change an item's details. The dispensing unit is fixed once stock has moved, because every
+     * balance and movement is counted in it.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function update(Item $item, array $attributes): Item
+    {
+        if (isset($attributes['unit']) && trim($attributes['unit']) !== $item->unit && $item->batches()->exists()) {
+            throw ValidationException::withMessages([
+                'unit' => "Stock of {$item->name} is already counted in {$item->unit}s. Change the pack instead, or add a new item.",
+            ]);
+        }
+
+        $packSize = (int) ($attributes['pack_size'] ?? 1);
+        $packUnit = $attributes['pack_unit'] ?? null;
+
+        $item->update([
+            'name' => trim($attributes['name']),
+            'form' => $attributes['form'],
+            'unit' => trim($attributes['unit']),
+            'unit_content' => filled($attributes['unit_content'] ?? null) ? trim($attributes['unit_content']) : null,
+            'pack_unit' => filled($packUnit) && $packSize > 1 ? trim($packUnit) : null,
+            'pack_size' => filled($packUnit) && $packSize > 1 ? $packSize : 1,
+            'cash_price' => (int) $attributes['cash_price'],
+            'reorder_level' => (int) $attributes['reorder_level'],
+            'is_active' => (bool) ($attributes['is_active'] ?? true),
+        ]);
+
+        return $item;
     }
 
     /**
@@ -142,7 +192,11 @@ class ItemCatalogue
         foreach ($rows as $line => $row) {
             $validator = Validator::make($row, [
                 'name' => ['required', 'string', 'max:150'],
-                'unit' => ['required', 'string', 'max:30'],
+                'form' => ['nullable', Rule::enum(DosageForm::class)],
+                'unit' => ['required_without:form', 'nullable', 'string', 'max:30'],
+                'unit_content' => ['nullable', 'string', 'max:30'],
+                'pack_unit' => ['nullable', 'string', 'max:30'],
+                'pack_size' => ['nullable', 'integer', 'min:1'],
                 'category' => ['nullable', Rule::in(['medicine', 'consumable', 'reagent'])],
                 'billing_type' => ['nullable', Rule::enum(BillingType::class)],
                 'cash_price' => ['nullable', 'integer', 'min:0'],
@@ -155,6 +209,7 @@ class ItemCatalogue
                 'unit_cost' => ['nullable', 'integer', 'min:0'],
             ], [
                 'store.in' => 'The store must be one of: '.$stores->pluck('name')->join(', ').'.',
+                'unit.required_without' => 'Give either a unit (such as tablet or bottle) or a form (such as tablet or oral_liquid).',
             ]);
 
             foreach ($validator->errors()->all() as $message) {
@@ -183,15 +238,19 @@ class ItemCatalogue
                     ->first();
 
                 if (! $item) {
-                    $item = $this->create($facilityId, [
+                    $item = $this->create($facilityId, array_filter([
                         'name' => $row['name'],
-                        'unit' => $row['unit'],
+                        'form' => $row['form'] ?: null,
+                        'unit' => $row['unit'] ?: null,
+                        'unit_content' => $row['unit_content'] ?: null,
+                        'pack_unit' => $row['pack_unit'] ?: null,
+                        'pack_size' => $row['pack_size'] ?: null,
                         'category' => $row['category'] ?: 'medicine',
                         'billing_type' => $row['billing_type'] ?: null,
                         'cash_price' => (int) ($row['cash_price'] ?: 0),
                         'reorder_level' => (int) ($row['reorder_level'] ?: 0),
                         'sku' => $row['sku'] ?: null,
-                    ]);
+                    ], fn ($value): bool => $value !== null));
                     $created++;
                 }
 
@@ -223,7 +282,9 @@ class ItemCatalogue
     }
 
     /**
-     * @return list<array{sku: string, name: string, unit: string, category: string, billing_type: string, cash_price: int, reorder_level: int}>
+     * Common items with typical packs. Pack sizes vary by supplier, so facilities should check them.
+     *
+     * @return list<array{sku: string, name: string, form: string, unit: string, unit_content: ?string, pack_unit: ?string, pack_size: int, category: string, billing_type: string, cash_price: int, reorder_level: int}>
      */
     public static function starterItems(): array
     {
@@ -231,51 +292,61 @@ class ItemCatalogue
         $consumable = BillingType::BillableConsumable->value;
         $stock = BillingType::NonBillable->value;
 
+        // sku, name, form, unit, unit content, pack unit, pack size, category, billing, cash price per unit, reorder level in units
         $rows = [
-            ['PARA500', 'Paracetamol 500mg', 'tablet', 'medicine', $medicine, 500, 400],
-            ['AMOX500', 'Amoxicillin 500mg', 'capsule', 'medicine', $medicine, 800, 200],
-            ['AL20', 'Artemether-lumefantrine 20/120mg', 'tablet', 'medicine', $medicine, 1500, 150],
-            ['ARTSU60', 'Artesunate injection 60mg', 'vial', 'medicine', $medicine, 12000, 20],
-            ['ORS', 'Oral rehydration salts', 'sachet', 'medicine', $medicine, 500, 100],
-            ['ZINC20', 'Zinc sulphate 20mg', 'tablet', 'medicine', $medicine, 300, 100],
-            ['MET400', 'Metronidazole 400mg', 'tablet', 'medicine', $medicine, 400, 120],
-            ['IBU400', 'Ibuprofen 400mg', 'tablet', 'medicine', $medicine, 600, 80],
-            ['CIP500', 'Ciprofloxacin 500mg', 'tablet', 'medicine', $medicine, 1000, 60],
-            ['ALB400', 'Albendazole 400mg', 'tablet', 'medicine', $medicine, 1000, 40],
-            ['COT480', 'Cotrimoxazole 480mg', 'tablet', 'medicine', $medicine, 300, 100],
-            ['DIC50', 'Diclofenac 50mg', 'tablet', 'medicine', $medicine, 400, 50],
-            ['FEFOL', 'Ferrous sulphate + folic acid', 'tablet', 'medicine', $medicine, 200, 200],
-            ['OXY10', 'Oxytocin 10 IU', 'ampoule', 'medicine', $medicine, 2500, 20],
-            ['GENT80', 'Gentamicin 80mg/2ml', 'ampoule', 'medicine', $medicine, 1500, 20],
-            ['CEFTR1G', 'Ceftriaxone 1g injection', 'vial', 'medicine', $medicine, 5000, 30],
-            ['NS500', 'Sodium chloride 0.9% 500ml', 'bottle', 'medicine', $medicine, 5000, 40],
-            ['RL500', "Ringer's lactate 500ml", 'bottle', 'medicine', $medicine, 5000, 30],
-            ['D5W', 'Dextrose 5% 500ml', 'bottle', 'medicine', $medicine, 4500, 24],
-            ['GLOVE', 'Examination gloves', 'pair', 'consumable', $stock, 0, 80],
-            ['SGLOVE', 'Surgical gloves', 'pair', 'consumable', $stock, 0, 20],
-            ['CANN18', 'Cannula 18G', 'piece', 'consumable', $consumable, 2000, 30],
-            ['CANN22', 'Cannula 22G', 'piece', 'consumable', $consumable, 2000, 20],
-            ['GIVSET', 'Giving set', 'piece', 'consumable', $consumable, 1500, 30],
-            ['SYR5', 'Syringe 5ml', 'piece', 'consumable', $consumable, 300, 80],
-            ['SYR10', 'Syringe 10ml', 'piece', 'consumable', $consumable, 400, 40],
-            ['COTTON', 'Cotton wool', 'roll', 'consumable', $stock, 0, 12],
-            ['GAUZE', 'Gauze swabs', 'packet', 'consumable', $stock, 0, 20],
-            ['SPIRIT', 'Surgical spirit 100ml', 'bottle', 'consumable', $stock, 0, 12],
-            ['SUTURE', 'Vicryl 2-0 suture', 'piece', 'consumable', $consumable, 8000, 10],
-            ['RDT-KIT', 'Malaria RDT kit', 'test', 'reagent', $stock, 0, 40],
-            ['GLUSTR', 'Glucose test strips', 'strip', 'reagent', $stock, 0, 25],
-            ['UDIP', 'Urine dipsticks', 'strip', 'reagent', $stock, 0, 20],
-            ['EDTA', 'EDTA blood tube', 'piece', 'reagent', $stock, 0, 30],
+            ['PARA500', 'Paracetamol 500mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 500, 400],
+            ['PARASYR', 'Paracetamol 120mg/5ml syrup', 'oral_liquid', 'bottle', '100 ml', 'carton', 50, 'medicine', $medicine, 3000, 20],
+            ['AMOX500', 'Amoxicillin 500mg', 'capsule', 'capsule', null, 'tin', 500, 'medicine', $medicine, 800, 200],
+            ['AMOXSUS', 'Amoxicillin 125mg/5ml suspension', 'oral_liquid', 'bottle', '100 ml', 'carton', 50, 'medicine', $medicine, 4000, 20],
+            ['AL20', 'Artemether-lumefantrine 20/120mg', 'tablet', 'tablet', null, 'box', 720, 'medicine', $medicine, 1500, 150],
+            ['ARTSU60', 'Artesunate injection 60mg', 'injection', 'vial', null, 'box', 10, 'medicine', $medicine, 12000, 20],
+            ['ORS', 'Oral rehydration salts', 'powder', 'sachet', null, 'box', 100, 'medicine', $medicine, 500, 100],
+            ['ZINC20', 'Zinc sulphate 20mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 300, 100],
+            ['MET400', 'Metronidazole 400mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 400, 120],
+            ['IBU400', 'Ibuprofen 400mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 600, 80],
+            ['CIP500', 'Ciprofloxacin 500mg', 'tablet', 'tablet', null, 'box', 100, 'medicine', $medicine, 1000, 60],
+            ['ALB400', 'Albendazole 400mg', 'tablet', 'tablet', null, 'box', 100, 'medicine', $medicine, 1000, 40],
+            ['COT480', 'Cotrimoxazole 480mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 300, 100],
+            ['DIC50', 'Diclofenac 50mg', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 400, 50],
+            ['FEFOL', 'Ferrous sulphate + folic acid', 'tablet', 'tablet', null, 'tin', 1000, 'medicine', $medicine, 200, 200],
+            ['MAGTRI', 'Magnesium trisilicate mixture', 'bulk_liquid', 'ml', null, 'can', 5000, 'medicine', $medicine, 20, 1000],
+            ['OXY10', 'Oxytocin 10 IU', 'injection', 'ampoule', null, 'box', 10, 'medicine', $medicine, 2500, 20],
+            ['GENT80', 'Gentamicin 80mg/2ml', 'injection', 'ampoule', null, 'box', 100, 'medicine', $medicine, 1500, 20],
+            ['CEFTR1G', 'Ceftriaxone 1g injection', 'injection', 'vial', null, 'box', 10, 'medicine', $medicine, 5000, 30],
+            ['NS500', 'Sodium chloride 0.9%', 'infusion', 'bottle', '500 ml', 'carton', 20, 'medicine', $medicine, 5000, 40],
+            ['RL500', "Ringer's lactate", 'infusion', 'bottle', '500 ml', 'carton', 20, 'medicine', $medicine, 5000, 30],
+            ['D5W', 'Dextrose 5%', 'infusion', 'bottle', '500 ml', 'carton', 20, 'medicine', $medicine, 4500, 24],
+            ['TETEYE', 'Tetracycline 1% eye ointment', 'topical', 'tube', '5 g', 'box', 50, 'medicine', $medicine, 2000, 10],
+            ['CLOTRI', 'Clotrimazole 1% cream', 'topical', 'tube', '20 g', 'box', 12, 'medicine', $medicine, 3500, 10],
+            ['GLOVE', 'Examination gloves', 'consumable', 'pair', null, 'box', 50, 'consumable', $stock, 0, 80],
+            ['SGLOVE', 'Surgical gloves', 'consumable', 'pair', null, 'box', 50, 'consumable', $stock, 0, 20],
+            ['CANN18', 'Cannula 18G', 'consumable', 'piece', null, 'box', 50, 'consumable', $consumable, 2000, 30],
+            ['CANN22', 'Cannula 22G', 'consumable', 'piece', null, 'box', 50, 'consumable', $consumable, 2000, 20],
+            ['GIVSET', 'Giving set', 'consumable', 'piece', null, 'box', 25, 'consumable', $consumable, 1500, 30],
+            ['SYR5', 'Syringe 5ml', 'consumable', 'piece', null, 'box', 100, 'consumable', $consumable, 300, 80],
+            ['SYR10', 'Syringe 10ml', 'consumable', 'piece', null, 'box', 100, 'consumable', $consumable, 400, 40],
+            ['COTTON', 'Cotton wool', 'consumable', 'roll', '500 g', null, 1, 'consumable', $stock, 0, 12],
+            ['GAUZE', 'Gauze swabs', 'consumable', 'packet', null, 'carton', 50, 'consumable', $stock, 0, 20],
+            ['SPIRIT', 'Surgical spirit', 'consumable', 'bottle', '100 ml', 'carton', 24, 'consumable', $stock, 0, 12],
+            ['SUTURE', 'Vicryl 2-0 suture', 'consumable', 'piece', null, 'box', 12, 'consumable', $consumable, 8000, 10],
+            ['RDT-KIT', 'Malaria RDT', 'reagent', 'test', null, 'kit', 25, 'reagent', $stock, 0, 40],
+            ['GLUSTR', 'Glucose test strips', 'reagent', 'strip', null, 'tub', 50, 'reagent', $stock, 0, 25],
+            ['UDIP', 'Urine dipsticks', 'reagent', 'strip', null, 'tub', 100, 'reagent', $stock, 0, 20],
+            ['EDTA', 'EDTA blood tube', 'reagent', 'piece', null, 'box', 100, 'reagent', $stock, 0, 30],
         ];
 
         return array_map(fn (array $row): array => [
             'sku' => $row[0],
             'name' => $row[1],
-            'unit' => $row[2],
-            'category' => $row[3],
-            'billing_type' => $row[4],
-            'cash_price' => $row[5],
-            'reorder_level' => $row[6],
+            'form' => $row[2],
+            'unit' => $row[3],
+            'unit_content' => $row[4],
+            'pack_unit' => $row[5],
+            'pack_size' => $row[6],
+            'category' => $row[7],
+            'billing_type' => $row[8],
+            'cash_price' => $row[9],
+            'reorder_level' => $row[10],
         ], $rows);
     }
 
@@ -316,7 +387,7 @@ class ItemCatalogue
         }
 
         $header = array_map(fn ($column): string => Str::snake(trim(preg_replace('/^\xEF\xBB\xBF/', '', (string) $column))), $header);
-        $missing = array_diff(['name', 'unit'], $header);
+        $missing = array_diff(['name'], $header);
 
         if ($missing !== []) {
             fclose($handle);

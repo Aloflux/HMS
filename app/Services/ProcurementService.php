@@ -24,7 +24,10 @@ class ProcurementService
     ) {}
 
     /**
-     * @param  list<array{item_id: int, quantity: int, unit_cost: int}>  $lines
+     * Quantities and costs are in dispensing units. The pack size is kept on the line so the order
+     * still reads in packs if the item's pack changes later.
+     *
+     * @param  list<array{item_id: int, quantity: int, unit_cost: int, pack_size?: int}>  $lines
      */
     public function order(Supplier $supplier, User $actor, array $lines, ?string $notes = null): PurchaseOrder
     {
@@ -46,6 +49,7 @@ class ProcurementService
                     'facility_id' => $facility->id,
                     'item_id' => $line['item_id'],
                     'quantity' => $line['quantity'],
+                    'pack_size' => $line['pack_size'] ?? 1,
                     'unit_cost' => $line['unit_cost'],
                 ]);
             }

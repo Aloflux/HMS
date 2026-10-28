@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\DosageForm;
 use App\Enums\StockReason;
 use App\Models\Department;
 use App\Models\Item;
@@ -55,6 +56,8 @@ class StockController extends Controller
                 isset($data['end']) ? Carbon::parse($data['end']) : null,
             ),
             'locationId' => $locationId,
+            'forms' => DosageForm::cases(),
+            'formDefaults' => collect(DosageForm::cases())->mapWithKeys(fn (DosageForm $form): array => [$form->value => $form->defaults()]),
             'start' => $data['start'] ?? null,
             'end' => $data['end'] ?? null,
         ]);

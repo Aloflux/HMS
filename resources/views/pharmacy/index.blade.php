@@ -63,13 +63,16 @@
                 @php
                     $dispensed = (int) $line->dispensations->sum('quantity');
                     $remaining = max(0, $line->quantity - $dispensed);
-                    $unit = $line->item->unit;
+                    $medicine = $line->item;
                     $shelfQty = (int) ($onHand[$line->item_id] ?? 0);
                     $visit = $line->prescription->visit;
                 @endphp
                 <li class="grid gap-3 px-5 py-4 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
                     <div>
-                        <p class="font-semibold text-slate-900">{{ $line->item->name }}</p>
+                        <p class="flex flex-wrap items-center gap-2">
+                            <span class="font-semibold text-slate-900">{{ $medicine->name }}</span>
+                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">{{ $medicine->form->shortLabel() }}</span>
+                        </p>
                         <p class="text-sm text-slate-500">{{ $line->dose }} · {{ $line->frequency }} · {{ $line->duration_days }} days</p>
                     </div>
                     <div class="text-sm">
@@ -77,10 +80,10 @@
                         <span class="text-slate-500">· Visit {{ $visit->visit_number }}</span>
                         @if ($remaining > 0)
                             <p class="{{ $shelfQty < $remaining ? 'font-medium text-red-700' : 'text-slate-500' }}">
-                                {{ $remaining }} of {{ $line->quantity }} {{ \Illuminate\Support\Str::plural($unit, $line->quantity) }} to dispense · {{ $shelfQty }} on the shelf
+                                {{ number_format($remaining) }} of {{ number_format($line->quantity) }} {{ \Illuminate\Support\Str::plural($medicine->unit, $line->quantity) }}{{ $medicine->unit_content ? ' ('.$medicine->unit_content.')' : '' }} to dispense · {{ $medicine->describeQuantity($shelfQty) }} on the shelf
                             </p>
                         @else
-                            <p class="text-slate-500">All {{ $line->quantity }} dispensed</p>
+                            <p class="text-slate-500">All {{ $medicine->describeQuantity($line->quantity) }} dispensed</p>
                         @endif
                     </div>
                     <div class="flex items-center gap-3 sm:justify-end">
@@ -97,10 +100,27 @@
 
                 @if ($remaining > 0 && $user->permits('pharmacy.manage'))
                     <x-modal :name="'dispense-'.$line->id" :show="$reopen === 'dispense-'.$line->id" focusable>
-                        <form method="POST" action="{{ route('pharmacy.dispense', $line) }}" class="p-6">
+                        <form method="POST" action="{{ route('pharmacy.dispense', $line) }}" class="p-6"
+                            x-data="{
+                                qty: @js($reopen === 'dispense-'.$line->id ? old('quantity') : $remaining),
+                                handling: @js($medicine->form->handling()),
+                                unit: @js($medicine->unit),
+                                content: @js($medicine->unit_content),
+                                packUnit: @js($medicine->hasPacks() ? $medicine->pack_unit : null),
+                                get instruction() {
+                                    const q = Number(this.qty) || 0;
+                                    const units = window.pluralize(this.unit, q);
+                                    const source = this.packUnit ? ' from the ' + this.packUnit : '';
+
+                                    if (this.handling === 'count') return 'Count out ' + q.toLocaleString() + ' ' + units + source;
+                                    if (this.handling === 'measure') return 'Measure out ' + q.toLocaleString() + ' ' + this.unit + source;
+
+                                    return 'Hand over ' + q.toLocaleString() + ' ' + units + (this.content ? ' (' + this.content + (q > 1 ? ' each' : '') + ')' : '');
+                                },
+                            }">
                             @csrf
                             <input type="hidden" name="_modal" value="dispense-{{ $line->id }}">
-                            <h2 class="text-lg font-bold text-slate-900">Dispense {{ $line->item->name }}</h2>
+                            <h2 class="text-lg font-bold text-slate-900">Dispense {{ $medicine->name }}</h2>
                             <p class="text-sm text-slate-500">For {{ $visit->patient->fullName() }} · Visit {{ $visit->visit_number }}</p>
                             @if ($visit->patient->allergies)
                                 <p class="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-700">Allergies: {{ $visit->patient->allergies }}</p>
@@ -110,23 +130,28 @@
                                 <div><dt class="text-slate-500">Dose</dt><dd class="font-medium">{{ $line->dose }}</dd></div>
                                 <div><dt class="text-slate-500">Frequency</dt><dd class="font-medium">{{ $line->frequency }}</dd></div>
                                 <div><dt class="text-slate-500">Duration</dt><dd class="font-medium">{{ $line->duration_days }} days</dd></div>
-                                <div><dt class="text-slate-500">Prescribed</dt><dd class="font-medium">{{ $line->quantity }} {{ \Illuminate\Support\Str::plural($unit, $line->quantity) }}</dd></div>
-                                <div><dt class="text-slate-500">Already dispensed</dt><dd class="font-medium">{{ $dispensed }}</dd></div>
-                                <div><dt class="text-slate-500">On the shelf</dt><dd class="font-medium {{ $shelfQty < $remaining ? 'text-red-700' : '' }}">{{ $shelfQty }}</dd></div>
-                                <div><dt class="text-slate-500">Unit price</dt><dd class="font-medium">{{ \App\Support\Money::format($line->item->cash_price) }}</dd></div>
+                                <div><dt class="text-slate-500">Prescribed</dt><dd class="font-medium">{{ $medicine->describeQuantity($line->quantity) }}</dd></div>
+                                <div><dt class="text-slate-500">Already dispensed</dt><dd class="font-medium">{{ number_format($dispensed) }}</dd></div>
+                                <div><dt class="text-slate-500">On the shelf</dt><dd class="font-medium {{ $shelfQty < $remaining ? 'text-red-700' : '' }}">{{ $medicine->describeQuantity($shelfQty) }}</dd></div>
+                                <div><dt class="text-slate-500">Form</dt><dd class="font-medium">{{ $medicine->form->label() }}</dd></div>
+                                <div><dt class="text-slate-500">Price per {{ $medicine->unit }}</dt><dd class="font-medium">{{ \App\Support\Money::format($medicine->cash_price) }}</dd></div>
                             </dl>
 
                             <div class="mt-4 grid gap-4 sm:grid-cols-3">
                                 <div>
                                     <x-input-label :for="'quantity-'.$line->id" value="Quantity to dispense" />
-                                    <x-text-input :id="'quantity-'.$line->id" type="number" name="quantity" min="1" :max="$remaining" :value="$reopen === 'dispense-'.$line->id ? old('quantity') : $remaining" class="mt-1 block w-full" required />
-                                    <p class="mt-1 text-xs text-slate-500">In {{ $unit }}. Up to {{ $remaining }}.</p>
+                                    <x-text-input :id="'quantity-'.$line->id" type="number" name="quantity" min="1" :max="$remaining" x-model="qty" class="mt-1 block w-full" required />
+                                    <p class="mt-1 text-xs text-slate-500">In {{ \Illuminate\Support\Str::plural($medicine->unit) }}. Up to {{ number_format($remaining) }}.</p>
                                 </div>
                                 <div class="sm:col-span-2">
                                     <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
-                                    <x-search-select :id="'substitute-'.$line->id" name="substitute_item_id" :options="$substitutes->reject(fn ($substitute) => $substitute->id === $line->item_id)->map(fn ($substitute) => ['value' => $substitute->id, 'label' => $substitute->name, 'hint' => $substitute->unit.' · '.\App\Support\Money::format($substitute->cash_price)])" :selected="$reopen === 'dispense-'.$line->id ? old('substitute_item_id') : null" :empty-label="'Dispense '.$line->item->name" placeholder="Search for a substitute" />
+                                    <x-search-select :id="'substitute-'.$line->id" name="substitute_item_id" :options="$substitutes->reject(fn ($substitute) => $substitute->id === $line->item_id)->map(fn ($substitute) => ['value' => $substitute->id, 'label' => $substitute->name, 'hint' => $substitute->unitLabel().' · '.\App\Support\Money::format($substitute->cash_price)])" :selected="$reopen === 'dispense-'.$line->id ? old('substitute_item_id') : null" :empty-label="'Dispense '.$line->item->name" placeholder="Search for a substitute" />
                                 </div>
                             </div>
+                            <p class="mt-4 flex items-center gap-2 rounded-md bg-brand-50 px-4 py-3 text-sm font-semibold text-brand-800">
+                                <x-icon name="bx-info-circle" class="text-lg" />
+                                <span x-text="instruction"></span>
+                            </p>
                             @if ($reopen === 'dispense-'.$line->id)
                                 <x-input-error :messages="$errors->all()" class="mt-3" />
                             @endif
@@ -175,7 +200,7 @@
                                 <td class="py-2 pe-4 font-medium"><a class="text-brand-700" href="{{ route('stock.levels.item', ['item' => $batch->item, 'stock_location_id' => $batch->stock_location_id]) }}">{{ $batch->item->name }}</a></td>
                                 <td class="py-2 pe-4">{{ $batch->batch_number }}</td>
                                 <td class="py-2 pe-4 {{ $expiresSoon ? 'font-semibold text-red-700' : '' }}">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
-                                <td class="py-2 text-right tabular-nums">{{ number_format($batch->quantity) }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
+                                <td class="py-2 text-right tabular-nums">{{ $batch->item->describeQuantity($batch->quantity) }}</td>
                             </tr>
                         @empty
                             <tr><td colspan="4" class="py-3 text-slate-500">The pharmacy shelf is empty. Request stock from the main store.</td></tr>
@@ -199,7 +224,7 @@
                 @if ($suggestions->isNotEmpty())
                     <ul class="mt-4 grid gap-1 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
                         @foreach ($suggestions as $row)
-                            <li><span class="font-medium">{{ $row['item']->name }}</span> · {{ $row['on_hand'] }} left, reorder at {{ $row['item']->reorder_level }} · {{ $row['main_on_hand'] }} in the main store</li>
+                            <li><span class="font-medium">{{ $row['item']->name }}</span> · {{ number_format($row['on_hand']) }} left, reorder at {{ number_format($row['item']->reorder_level) }} · {{ $row['item']->describeQuantity($row['main_on_hand']) }} in the main store</li>
                         @endforeach
                     </ul>
                 @endif

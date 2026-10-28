@@ -31,7 +31,7 @@
     </form>
 
     <section class="rounded-lg bg-white p-5 shadow-card">
-        <p class="text-sm text-slate-500">Quantity on hand in each store. "Low" means the total is at or below the item's reorder level. "Expiring soon" means a batch expires within {{ \App\Services\StockReport::EXPIRY_WARNING_DAYS }} days. Open an item to see every movement in and out.</p>
+        <p class="text-sm text-slate-500">Quantity on hand in each store, counted in each item's dispensing unit (tablets, bottles, ml). "Low" means the total is at or below the item's reorder level. "Expiring soon" means a batch expires within {{ \App\Services\StockReport::EXPIRY_WARNING_DAYS }} days. Open an item to see every movement in and out.</p>
         <div class="mt-4 overflow-x-auto">
             <table class="min-w-full text-left text-sm">
                 <thead class="text-xs uppercase tracking-wide text-slate-400">
@@ -52,12 +52,17 @@
                         <tr class="border-t border-slate-100">
                             <td class="py-2 pe-4">
                                 <a class="font-medium text-brand-700" href="{{ route('stock.levels.item', $row['item']) }}">{{ $row['item']->name }}</a>
-                                <span class="block text-xs text-slate-500">{{ $row['item']->sku }} · {{ $row['item']->unit }}</span>
+                                <span class="block text-xs text-slate-500">{{ $row['item']->form->shortLabel() }} · {{ $row['item']->unitLabel() }}{{ $row['item']->packLabel() ? ' · '.$row['item']->packLabel() : '' }}</span>
                             </td>
                             @foreach ($locations as $location)
                                 <td class="py-2 pe-4 text-right tabular-nums {{ ($row['by_location'][$location->id] ?? 0) === 0 ? 'text-slate-300' : '' }}">{{ number_format($row['by_location'][$location->id] ?? 0) }}</td>
                             @endforeach
-                            <td class="py-2 pe-4 text-right font-semibold tabular-nums">{{ number_format($row['total']) }}</td>
+                            <td class="py-2 pe-4 text-right font-semibold tabular-nums">
+                                {{ number_format($row['total']) }}
+                                @if ($row['item']->hasPacks() && $row['total'] >= $row['item']->pack_size)
+                                    <span class="block text-xs font-normal text-slate-500">≈ {{ number_format($row['total'] / $row['item']->pack_size, 1) }} {{ \Illuminate\Support\Str::plural($row['item']->pack_unit) }}</span>
+                                @endif
+                            </td>
                             <td class="py-2 pe-4 text-right tabular-nums text-slate-500">{{ number_format($row['item']->reorder_level) }}</td>
                             <td class="py-2 pe-4 text-right tabular-nums">{{ number_format($row['used_30_days']) }}</td>
                             <td class="py-2 pe-4">{{ $row['nearest_expiry']?->format('d M Y') ?? '—' }}</td>

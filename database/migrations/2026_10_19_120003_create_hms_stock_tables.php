@@ -15,7 +15,11 @@ return new class extends Migration
             $table->string('name');
             $table->string('category', 30);
             $table->string('billing_type', 30);
+            $table->string('form', 30)->default('other');
             $table->string('unit', 30)->default('unit');
+            $table->string('unit_content', 30)->nullable();
+            $table->string('pack_unit', 30)->nullable();
+            $table->unsignedInteger('pack_size')->default(1);
             $table->unsignedInteger('cash_price')->default(0);
             $table->unsignedInteger('reorder_level')->default(0);
             $table->boolean('is_active')->default(true);
@@ -114,6 +118,7 @@ return new class extends Migration
             $table->foreignId('purchase_order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('item_id')->constrained();
             $table->unsignedInteger('quantity');
+            $table->unsignedInteger('pack_size')->default(1);
             $table->unsignedInteger('unit_cost');
             $table->unsignedInteger('received_quantity')->default(0);
             $table->timestamps();

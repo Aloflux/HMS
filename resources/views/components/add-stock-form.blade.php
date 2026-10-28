@@ -2,15 +2,16 @@
 
 @php
     $select = 'mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm';
-    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit.($item->sku ? ' · '.$item->sku : '')]);
+    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unitLabel().($item->packLabel() ? ' · '.$item->packLabel() : '')]);
+    $itemMeta = $items->mapWithKeys(fn ($item) => [$item->id => $item->quantityMeta()]);
 @endphp
 
-<form method="POST" action="{{ route('inventory.stock.add') }}" class="mt-4 grid gap-3 md:grid-cols-4">
+<form method="POST" action="{{ route('inventory.stock.add') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ itemId: @js((string) old('item_id', '')), metas: @js($itemMeta) }">
     @csrf
     {{ $slot }}
     <div class="md:col-span-2">
         <x-input-label for="stock-item" value="Item" />
-        <x-search-select id="stock-item" name="item_id" :options="$itemOptions" :selected="old('item_id')" placeholder="Search items" required />
+        <x-search-select id="stock-item" name="item_id" model="itemId" :options="$itemOptions" placeholder="Search items" required />
     </div>
     <div>
         <x-input-label for="stock-store" value="Into store" />
@@ -28,10 +29,7 @@
             <option value="opening" @selected(old('reason') === 'opening')>Opening balance (already on the shelf)</option>
         </select>
     </div>
-    <div>
-        <x-input-label for="stock-quantity" value="Quantity" />
-        <x-text-input id="stock-quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" :value="old('quantity')" required />
-    </div>
+    <x-quantity-field id="stock-quantity" meta="metas[itemId]" :value="old('quantity')" :count-in="old('count_in', 'pack')" cost-name="unit_cost" :cost-value="old('unit_cost')" />
     <div>
         <x-input-label for="stock-batch" value="Batch number" />
         <x-text-input id="stock-batch" name="batch_number" class="mt-1 block w-full" :value="old('batch_number')" placeholder="Optional" />
@@ -39,10 +37,6 @@
     <div>
         <x-input-label for="stock-expiry" value="Expiry date" />
         <x-text-input id="stock-expiry" name="expiry_date" type="date" class="mt-1 block w-full" :value="old('expiry_date')" />
-    </div>
-    <div>
-        <x-input-label for="stock-cost" value="Unit cost (UGX)" />
-        <x-text-input id="stock-cost" name="unit_cost" type="number" min="0" class="mt-1 block w-full" :value="old('unit_cost')" placeholder="0" />
     </div>
     <div class="md:col-span-3">
         <x-input-label for="stock-notes" value="Notes" />

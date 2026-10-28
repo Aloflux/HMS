@@ -1,7 +1,3 @@
-@php
-    $select = 'mt-1 block w-full rounded-md border-slate-300 text-sm';
-@endphp
-
 <x-app-layout>
     <x-slot name="header">
         <div>
@@ -30,26 +26,10 @@
 
         <section class="rounded-lg bg-white p-5 shadow-card">
             <h2 class="font-bold text-slate-900">Stock items</h2>
-            <form method="POST" action="{{ route('admin.items.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
-                @csrf
-                <div><x-input-label for="item-sku" value="Code (optional)" /><x-text-input id="item-sku" name="sku" class="mt-1 block w-full" placeholder="Made from the name if blank" /></div>
-                <div><x-input-label for="item-name" value="Name" /><x-text-input id="item-name" name="name" class="mt-1 block w-full" required /></div>
-                <div>
-                    <x-input-label for="item-category" value="Category" />
-                    <select id="item-category" name="category" class="{{ $select }}"><option value="medicine">Medicine</option><option value="consumable">Consumable</option><option value="reagent">Reagent</option></select>
-                </div>
-                <div>
-                    <x-input-label for="item-billing" value="Billing" />
-                    <select id="item-billing" name="billing_type" class="{{ $select }}">@foreach ($billingTypes as $type)<option value="{{ $type->value }}">{{ $type->label() }}</option>@endforeach</select>
-                </div>
-                <div><x-input-label for="item-unit" value="Unit" /><x-text-input id="item-unit" name="unit" class="mt-1 block w-full" placeholder="tablet, vial, pair" required /></div>
-                <div><x-input-label for="item-price" value="Cash price (UGX)" /><x-text-input id="item-price" name="cash_price" type="number" min="0" class="mt-1 block w-full" required /></div>
-                <div><x-input-label for="item-reorder" value="Reorder when main store falls to" /><x-text-input id="item-reorder" name="reorder_level" type="number" min="0" value="0" class="mt-1 block w-full" required /></div>
-                <div class="flex items-end"><x-primary-button>Add item</x-primary-button></div>
-            </form>
+            <p class="mt-1 text-sm text-slate-500">Prices are per dispensing unit. Add items, with their dosage form and pack, under <a class="text-brand-700" href="{{ route('inventory.index') }}">Inventory › Items and stock</a>. Select an item to change its price or pack.</p>
             <ul class="mt-4 max-h-64 divide-y divide-slate-100 overflow-y-auto border-t border-slate-100 text-sm">
                 @foreach ($items as $item)
-                    <li class="flex justify-between gap-3 py-2"><span><span class="font-medium">{{ $item->name }}</span> <span class="text-slate-500">{{ $item->unit }} · {{ $item->billing_type->label() }}</span></span><span>{{ \App\Support\Money::format($item->cash_price) }}</span></li>
+                    <li class="flex justify-between gap-3 py-2"><span><a class="font-medium text-brand-700" href="{{ route('stock.levels.item', $item) }}">{{ $item->name }}</a> <span class="text-slate-500">{{ $item->form->shortLabel() }} · {{ $item->unitLabel() }}{{ $item->packLabel() ? ' · '.$item->packLabel() : '' }} · {{ $item->billing_type->label() }}</span></span><span class="whitespace-nowrap">{{ \App\Support\Money::format($item->cash_price) }} / {{ $item->unit }}</span></li>
                 @endforeach
             </ul>
         </section>

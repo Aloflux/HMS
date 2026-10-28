@@ -18,6 +18,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Services\EncounterService;
 use App\Services\FacilityProvisioner;
+use App\Services\ItemCatalogue;
 use App\Services\PatientRegistrar;
 use App\Services\ProcurementService;
 use App\Support\FacilityContext;
@@ -78,15 +79,21 @@ class DemoSeeder extends Seeder
         ]);
 
         $items = [];
+        $packs = collect(ItemCatalogue::starterItems())->keyBy('sku');
 
         foreach ($this->itemRows() as $row) {
+            $pack = $packs->get($row['sku'], []);
             $items[$row['sku']] = Item::query()->create([
                 'facility_id' => $facility->id,
                 'sku' => $row['sku'],
                 'name' => $row['name'],
                 'category' => $row['category'],
                 'billing_type' => $row['billing'],
+                'form' => $pack['form'] ?? 'other',
                 'unit' => $row['unit'],
+                'unit_content' => $pack['unit_content'] ?? null,
+                'pack_unit' => $pack['pack_unit'] ?? null,
+                'pack_size' => $pack['pack_size'] ?? 1,
                 'cash_price' => $row['price'],
                 'reorder_level' => $row['reorder'],
                 'is_active' => true,
@@ -212,6 +219,7 @@ class DemoSeeder extends Seeder
             fn (array $row): array => [
                 'item_id' => $items[$row['sku']]->id,
                 'quantity' => array_sum(array_column($row['batches'], 2)),
+                'pack_size' => $items[$row['sku']]->hasPacks() ? $items[$row['sku']]->pack_size : 1,
                 'unit_cost' => $row['cost'],
             ],
             $rows,

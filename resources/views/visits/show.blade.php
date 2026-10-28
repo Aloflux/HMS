@@ -260,7 +260,7 @@
                             method="POST"
                             action="{{ route('visits.prescribe', $visit) }}"
                             class="mt-4 border-t border-slate-100 pt-4"
-                            x-data="{ lines: [{ key: 1 }], next: 2 }"
+                            x-data="{ lines: [{ key: 1, item_id: '' }], next: 2, metas: @js($medicines->mapWithKeys(fn ($medicine) => [$medicine->id => ['units' => \Illuminate\Support\Str::plural($medicine->unit), 'content' => $medicine->unit_content, 'form' => $medicine->form->label()]])) }"
                         >
                             @csrf
                             <h3 class="text-sm font-semibold">Prescribe</h3>
@@ -268,7 +268,7 @@
                                 <div class="mt-3 grid gap-3 rounded-md bg-slate-50 p-3 sm:grid-cols-6">
                                     <div class="sm:col-span-6">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-item-' + line.key">Medicine</label>
-                                        <x-search-select x-id="'rx-item-' + line.key" x-name="'lines[' + index + '][item_id]'" :options="$medicines->map(fn ($medicine) => ['value' => $medicine->id, 'label' => $medicine->name, 'hint' => $medicine->unit.' · '.\App\Support\Money::format($medicine->cash_price).' each'])" placeholder="Search medicines" required />
+                                        <x-search-select x-id="'rx-item-' + line.key" x-name="'lines[' + index + '][item_id]'" model="line.item_id" :options="$medicines->map(fn ($medicine) => ['value' => $medicine->id, 'label' => $medicine->name, 'hint' => $medicine->form->shortLabel().' · '.$medicine->unitLabel().' · '.\App\Support\Money::format($medicine->cash_price).' each'])" placeholder="Search medicines" required />
                                     </div>
                                     <div class="sm:col-span-2">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-dose-' + line.key">Dose</label>
@@ -285,6 +285,7 @@
                                     <div>
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-qty-' + line.key">Quantity</label>
                                         <input :id="'rx-qty-' + line.key" :name="'lines[' + index + '][quantity]'" type="number" min="1" max="1000" value="1" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
+                                        <p class="mt-1 text-xs text-slate-500" x-show="metas[line.item_id]" x-text="metas[line.item_id] ? 'In ' + metas[line.item_id].units + (metas[line.item_id].content ? ' of ' + metas[line.item_id].content : '') : ''"></p>
                                     </div>
                                     <div class="sm:col-span-6" x-show="lines.length > 1">
                                         <button type="button" class="text-xs text-red-700" @click="lines.splice(index, 1)">Remove this medicine</button>
@@ -292,7 +293,7 @@
                                 </div>
                             </template>
                             <div class="mt-3 flex flex-wrap items-center gap-4">
-                                <button type="button" class="text-sm font-semibold text-brand-700" @click="lines.push({ key: next++ })">+ Add another medicine</button>
+                                <button type="button" class="text-sm font-semibold text-brand-700" @click="lines.push({ key: next++, item_id: '' })">+ Add another medicine</button>
                                 <x-primary-button>Prescribe</x-primary-button>
                             </div>
                             <p class="mt-2 text-xs text-slate-500">Prescribing does not move stock. The pharmacist dispenses it.</p>

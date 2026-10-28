@@ -6,6 +6,7 @@ use App\Enums\Role;
 use App\Enums\StockReason;
 use App\Models\Facility;
 use App\Models\Item;
+use App\Models\PurchaseOrderLine;
 use App\Models\Requisition;
 use App\Models\StockBatch;
 use App\Models\StockLocation;
@@ -13,6 +14,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\EncounterService;
 use App\Services\ProcurementService;
+use App\Services\StockReport;
 use App\Support\FacilityContext;
 use Illuminate\Http\UploadedFile;
 
@@ -258,7 +260,7 @@ test('the usage report totals use and cost by department and by employee', funct
     expect($csv)->toContain('"Grace Pharmacist","Paracetamol 500mg",tablet,6,900');
 });
 
-test('stores staff add an item with opening stock and a generated code', function () {
+test('stores staff add an item with its pack and opening stock counted in packs', function () {
     [$facility] = provisionHospital();
     $keeper = userWithRole($facility, Role::PharmacyStores);
     $pharmacy = storeOfKind($facility, 'pharmacy');
@@ -266,22 +268,153 @@ test('stores staff add an item with opening stock and a generated code', functio
     $this->actingAs($keeper)
         ->post(route('inventory.items.store'), [
             'name' => 'Ceftriaxone 1g',
+            'form' => 'injection',
             'unit' => 'vial',
+            'pack_unit' => 'box',
+            'pack_size' => 10,
             'category' => 'medicine',
             'billing_type' => 'billable_medicine',
             'cash_price' => 5000,
             'reorder_level' => 10,
-            'opening_quantity' => 40,
+            'opening_quantity' => 4,
+            'count_in' => 'pack',
             'stock_location_id' => $pharmacy->id,
             'expiry_date' => now()->addYear()->toDateString(),
-            'unit_cost' => 3000,
+            'unit_cost' => 30000,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', 'Ceftriaxone 1g added with 40 vials (4 boxes) in stock.');
+
+    $item = Item::query()->where('facility_id', $facility->id)->sole();
+    $batch = StockBatch::query()->where('item_id', $item->id)->where('stock_location_id', $pharmacy->id)->sole();
+    expect($item->sku)->toBe('CEFTRIAX')
+        ->and($item->packLabel())->toBe('box of 10 vials')
+        ->and($batch->quantity)->toBe(40)
+        ->and($batch->unit_cost)->toBe(3000)
+        ->and(StockMovement::query()->where('item_id', $item->id)->sole()->reason)->toBe(StockReason::Opening);
+});
+
+test('a syrup is ordered and received in cartons and stocked in bottles', function () {
+    [$facility, $admin] = provisionHospital();
+    $syrup = Item::query()->create([
+        'facility_id' => $facility->id,
+        'sku' => 'AMOXSUS',
+        'name' => 'Amoxicillin 125mg/5ml suspension',
+        'category' => 'medicine',
+        'billing_type' => BillingType::BillableMedicine,
+        'form' => 'oral_liquid',
+        'unit' => 'bottle',
+        'unit_content' => '100 ml',
+        'pack_unit' => 'carton',
+        'pack_size' => 50,
+        'cash_price' => 4000,
+        'reorder_level' => 20,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($admin)
+        ->post(route('inventory.order'), [
+            'supplier_name' => 'Joint Medical Stores',
+            'item_id' => $syrup->id,
+            'quantity' => 3,
+            'unit_cost' => 125000,
+        ])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', 'Purchase order sent for 150 bottles (3 cartons).');
+
+    $line = PurchaseOrderLine::query()->sole();
+    expect($line->quantity)->toBe(150)
+        ->and($line->pack_size)->toBe(50)
+        ->and($line->unit_cost)->toBe(2500);
+
+    $this->actingAs($admin)
+        ->post(route('inventory.receive', $line->purchase_order_id), [
+            'purchase_order_line_id' => $line->id,
+            'batch_number' => 'AX-1',
+            'quantity' => 2,
+            'count_in' => 'pack',
         ])
         ->assertSessionHasNoErrors();
 
-    $item = Item::query()->where('facility_id', $facility->id)->sole();
-    expect($item->sku)->toBe('CEFTRIAX')
-        ->and(StockBatch::query()->where('item_id', $item->id)->where('stock_location_id', $pharmacy->id)->value('quantity'))->toBe(40)
-        ->and(StockMovement::query()->where('item_id', $item->id)->sole()->reason)->toBe(StockReason::Opening);
+    expect(StockBatch::query()->where('batch_number', 'AX-1')->value('quantity'))->toBe(100)
+        ->and($line->fresh()->received_quantity)->toBe(100);
+});
+
+test('a requisition counted in packs moves whole packs of units', function () {
+    [$facility, $admin] = provisionHospital();
+    $tablets = stockItem($facility);
+    $tablets->update(['form' => 'tablet', 'pack_unit' => 'tin', 'pack_size' => 1000]);
+    $main = storeOfKind($facility, 'main');
+    $pharmacy = storeOfKind($facility, 'pharmacy');
+    shelve($tablets, $main, 5000);
+
+    $this->actingAs($admin)
+        ->post(route('inventory.requisition'), [
+            'stock_location_id' => $pharmacy->id,
+            'lines' => [['item_id' => $tablets->id, 'quantity' => 2, 'count_in' => 'pack']],
+        ])
+        ->assertSessionHasNoErrors();
+
+    expect(Requisition::query()->sole()->lines()->sole()->quantity_requested)->toBe(2000);
+});
+
+test('restock suggestions round up to whole packs', function () {
+    [$facility] = provisionHospital();
+    $tablets = stockItem($facility, 'Paracetamol 500mg', reorderLevel: 400);
+    $tablets->update(['form' => 'tablet', 'pack_unit' => 'tin', 'pack_size' => 1000]);
+    $pharmacy = storeOfKind($facility, 'pharmacy');
+    shelve($tablets, $pharmacy, 150);
+
+    FacilityContext::set($facility->id);
+    $suggestion = app(StockReport::class)->restockSuggestions($pharmacy)->sole();
+    FacilityContext::forget();
+
+    expect($suggestion['suggested_packs'])->toBe(1)
+        ->and($suggestion['suggested'])->toBe(1000);
+});
+
+test('the dispensing instruction says whether to count, measure, or hand over whole', function (array $attributes, int $quantity, string $instruction) {
+    $item = new Item([
+        'name' => 'Medicine',
+        'unit_content' => null,
+        'pack_unit' => null,
+        'pack_size' => 1,
+        ...$attributes,
+    ]);
+
+    expect($item->dispensingInstruction($quantity))->toBe($instruction);
+})->with([
+    'tablets from a tin' => [['form' => 'tablet', 'unit' => 'tablet', 'pack_unit' => 'tin', 'pack_size' => 1000], 21, 'Count out 21 tablets from the tin'],
+    'a whole syrup bottle' => [['form' => 'oral_liquid', 'unit' => 'bottle', 'unit_content' => '100 ml'], 1, 'Hand over 1 bottle (100 ml)'],
+    'two syrup bottles' => [['form' => 'oral_liquid', 'unit' => 'bottle', 'unit_content' => '100 ml'], 2, 'Hand over 2 bottles (100 ml each)'],
+    'a mixture from a can' => [['form' => 'bulk_liquid', 'unit' => 'ml', 'pack_unit' => 'can', 'pack_size' => 5000], 200, 'Measure out 200 ml from the can'],
+]);
+
+test('an item unit cannot change once it has stock but its pack can', function () {
+    [$facility, $admin] = provisionHospital();
+    $item = stockItem($facility);
+    shelve($item, storeOfKind($facility, 'main'), 50);
+    $details = [
+        'name' => $item->name,
+        'form' => 'tablet',
+        'unit' => 'tablet',
+        'pack_unit' => 'tin',
+        'pack_size' => 1000,
+        'cash_price' => 600,
+        'reorder_level' => 100,
+        'is_active' => 1,
+    ];
+
+    $this->actingAs($admin)
+        ->patch(route('inventory.items.update', $item), [...$details, 'unit' => 'strip'])
+        ->assertSessionHasErrors(['unit' => 'Stock of Paracetamol 500mg is already counted in tablets. Change the pack instead, or add a new item.']);
+
+    $this->actingAs($admin)
+        ->patch(route('inventory.items.update', $item), $details)
+        ->assertSessionHasNoErrors();
+
+    expect($item->fresh()->packLabel())->toBe('tin of 1,000 tablets')
+        ->and($item->fresh()->cash_price)->toBe(600);
 });
 
 test('clinical staff cannot add items or stock', function () {
@@ -344,7 +477,7 @@ test('a csv import with a bad row saves nothing and names the row', function () 
         ->post(route('inventory.items.import'), [
             'file' => UploadedFile::fake()->createWithContent('items.csv', $csv),
         ])
-        ->assertSessionHasErrors(['file' => 'Row 3: The unit field is required.']);
+        ->assertSessionHasErrors(['file' => 'Row 3: Give either a unit (such as tablet or bottle) or a form (such as tablet or oral_liquid).']);
 
     expect(Item::query()->where('facility_id', $facility->id)->count())->toBe(0);
 });
@@ -381,7 +514,7 @@ test('the pharmacy warns about a shelf item at its reorder level and offers a re
         ->get(route('pharmacy.index'))
         ->assertOk()
         ->assertSeeInOrder(['1 medicine running low on the shelf:', 'Amoxicillin 500mg', 'Review and restock'])
-        ->assertSeeInOrder(['Request stock from the main store', 'Amoxicillin 500mg', '30 left, reorder at 50', '500 in the main store']);
+        ->assertSeeInOrder(['Request stock from the main store', 'Amoxicillin 500mg', '30 left, reorder at 50', '500 tablets in the main store']);
 });
 
 test('a dispense that fails validation reopens its dispense form', function () {

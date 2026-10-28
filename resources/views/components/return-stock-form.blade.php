@@ -1,6 +1,8 @@
 @props(['stores', 'items'])
 
-<form method="POST" action="{{ route('inventory.return') }}" class="mt-4 grid gap-3 md:grid-cols-4 md:items-end">
+@php($itemMeta = $items->mapWithKeys(fn ($item) => [$item->id => $item->quantityMeta()]))
+
+<form method="POST" action="{{ route('inventory.return') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ itemId: @js((string) old('item_id', '')), metas: @js($itemMeta) }">
     @csrf
     {{ $slot }}
     <div>
@@ -13,12 +15,9 @@
     </div>
     <div>
         <x-input-label for="return-item" value="Item" />
-        <x-search-select id="return-item" name="item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit])" :selected="old('item_id')" placeholder="Search items" required />
+        <x-search-select id="return-item" name="item_id" model="itemId" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unitLabel()])" placeholder="Search items" required />
     </div>
-    <div>
-        <x-input-label for="return-quantity" value="Quantity" />
-        <x-text-input id="return-quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" required />
-    </div>
+    <x-quantity-field id="return-quantity" meta="metas[itemId]" :count-in="old('count_in', 'unit')" />
     <div>
         <x-input-label for="return-notes" value="Reason" />
         <x-text-input id="return-notes" name="notes" class="mt-1 block w-full" placeholder="Overstocked, near expiry…" required />

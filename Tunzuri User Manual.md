@@ -211,12 +211,19 @@ The Pharmacy screen is the prescription queue. Everything else opens from the bu
 
 ## Dispensing a prescription
 
-Each row shows the medicine, the dose, frequency and duration, the patient and visit, how much is still to dispense, and how much is on the pharmacy shelf. The shelf quantity turns red when there is not enough to fill the prescription.
+Each row shows the medicine with a label for its form (*Tablet*, *Syrup*, *Injection*, *Topical*…), the dose, frequency and duration, the patient and visit, how much is still to dispense, and how much is on the pharmacy shelf. The shelf quantity turns red when there is not enough to fill the prescription.
 
 1. Select **Dispense** on the row. A form opens with the full prescription and the patient's allergies, if any.
-2. Check the quantity to dispense. It starts at the amount still owed on the prescription. You can dispense part now and the rest later.
-3. If you must give a different product, search for it under **Substitute medicine**. Leave it as *Dispense [medicine]* to give what was prescribed.
-4. Select **Dispense**.
+2. Check the quantity to dispense. It is counted in the medicine's dispensing unit (tablets, bottles, tubes, ml) and starts at the amount still owed on the prescription. You can dispense part now and the rest later.
+3. Read the green instruction under the form. It tells you exactly what to hand over, and changes as you change the quantity (see the table below).
+4. If you must give a different product, search for it under **Substitute medicine**. Leave it as *Dispense [medicine]* to give what was prescribed.
+5. Select **Dispense**.
+
+| Kind of medicine | Example instruction |
+| --- | --- |
+| Tablets and capsules | *Count out 21 tablets from the tin* |
+| Syrups, creams, drops, IV fluids and other whole items | *Hand over 1 bottle (100 ml)* |
+| Mixtures kept in bulk | *Measure out 200 ml from the can* |
 
 Dispensing takes stock from the pharmacy shelf, using the batch that expires first, and charges the patient at the price for their payer. A cash patient collects the medicine once the bill is paid at the cashier; until then the row shows *Waiting for collection*. Insured patients can collect straight away.
 
@@ -236,7 +243,7 @@ There are two ways to get stock onto the pharmacy shelf.
 
 **From the main store (requisition).** Use this when the stock is already in the facility's main store.
 
-1. Select **Request stock**. The form lists the low items and is already filled with a suggested quantity for each, enough to bring it back to twice its reorder level.
+1. Select **Request stock**. The form lists the low items and is already filled with a suggested quantity for each: enough to bring it back to twice its reorder level, rounded up to whole packs (for example *1 tin* rather than 850 tablets). Each line can be counted in packs or in units.
 2. Change the quantities, remove lines, or select **Add another item**.
 3. Select **Send requisition**. The main store sees it on the Inventory screen and issues the stock.
 
@@ -244,7 +251,7 @@ There are two ways to get stock onto the pharmacy shelf.
 
 1. Select **Add stock**.
 2. Search for the item and choose where it came from: *Delivery without a purchase order*, *Donation* or *Opening balance*.
-3. Enter the quantity and, if you have them, the batch number, expiry date and unit cost. Put the supplier or delivery note number in **Notes**.
+3. Enter the quantity, and choose whether you are counting packs (for example cartons) or units (bottles). Add the batch number, expiry date and cost per pack or unit if you have them. Put the supplier or delivery note number in **Notes**.
 4. Select **Add stock**. The stock is on the pharmacy shelf immediately, and the stock card records who added it and why.
 
 To send stock back, for example because it is overstocked or close to expiry, select **Return stock**. Enter the item, quantity and a reason. The batch and expiry date go back with the stock.
@@ -332,25 +339,58 @@ Each facility starts with these stores: **Main store**, **Pharmacy**, **Laborato
 3. Departments **use** stock: the pharmacy dispenses to patients, wards issue to inpatients, and the laboratory uses reagents for tests.
 4. Unwanted stock is **returned** to the main store. Losses, damage, expiry and count differences are **adjusted** with the administrator's approval.
 
+## Dosage forms, units and packs
+
+Medicines come in many forms, and what you buy is rarely what you hand out. A pharmacy buys paracetamol in a tin of 1,000 tablets but dispenses a few tablets at a time. It buys amoxicillin suspension in cartons of 50 bottles but sells one whole bottle. Tunzuri keeps these details for every item:
+
+| What | Meaning | Examples |
+| --- | --- | --- |
+| Dosage form | What kind of product it is, which decides how it is handed out | Tablet, capsule, syrup or suspension, mixture measured out, injection, IV fluid, cream or ointment, drops, inhaler, powder, suppository, medical supply, lab reagent |
+| Dispensing unit | The smallest amount you hand out. All stock, prices, prescriptions and reorder levels are counted in it | tablet, capsule, bottle, tube, vial, ampoule, sachet, ml, pair, piece, test |
+| Each one contains | Optional. What one dispensing unit holds | 100 ml (a syrup bottle), 20 g (a cream tube), 500 ml (an IV bottle), 400 g (a tin of powder) |
+| Purchase pack | Optional. How you buy it, and how many dispensing units are in one | tin of 1,000 tablets, carton of 50 bottles, box of 10 vials, can of 5,000 ml |
+
+Common patterns:
+
+| Product | Dispensing unit | Purchase pack | At the counter |
+| --- | --- | --- | --- |
+| Tablets or capsules from a tin | tablet | tin of 1,000 | Count out tablets |
+| Syrup or suspension | bottle (100 ml) | carton of 50 | Hand over whole bottles |
+| Cream, ointment, eye ointment | tube (15 g) | box of 12 | Hand over whole tubes |
+| Injection | vial or ampoule | box of 10 | Hand over vials |
+| IV fluid | bottle (500 ml) | carton of 20 | Hand over bottles |
+| Mixture kept in a large container | ml | can of 5,000 ml | Measure out ml |
+| Powder in a tin | tin (400 g) | carton of 24 | Hand over whole tins |
+| Gloves, syringes, cannulas | pair or piece | box of 50 or 100 | Hand over pieces |
+
+Choosing a dosage form fills in the usual unit and pack for it. Always change the pack to match what your supplier actually delivers. Pack sizes differ between suppliers and over time.
+
+Wherever you enter stock (purchase orders, receiving, requisitions, adding stock, returns) you can count in packs or in units, and Tunzuri shows the conversion as you type, for example *= 2,000 tablets*. The stock is always stored in dispensing units, and lists show both, for example *2,150 tablets (2 tins + 150)*.
+
+**Changing an item.** Open the item's stock card and select **Edit item** to change its name, form, contents, pack, price, reorder level, or to make it inactive. Once an item has stock, its dispensing unit cannot change, because every balance and movement is counted in it. If you start dispensing it differently, for example by the strip instead of by the tablet, add a new item.
+
 ## Setting up your items
 
 A new facility has no stock items. There are three ways to add them, all under **Inventory → Items and stock**.
 
-**Starter list (fastest).** Open the **Starter list** tab and select **Load the starter list**. Tunzuri adds about 35 medicines, supplies and lab reagents that most facilities stock, with suggested prices and reorder levels. Items you already have are skipped, so it is safe to run again. Check the prices afterwards under **Price list**.
+**Starter list (fastest).** Open the **Starter list** tab and select **Load the starter list**. Tunzuri adds about 40 medicines, supplies and lab reagents that most facilities stock, including tablets in tins, syrups and suspensions by the bottle, creams and eye ointment by the tube, IV fluids, and a mixture measured in ml. Each comes with a typical pack, a suggested price and a reorder level. The packs are common examples, not official figures, so check them against your supplier. Items you already have are skipped, so it is safe to run again. Check the prices afterwards under **Price list**.
 
 **One item at a time.** Open the **New item** tab:
 
 | Field | Meaning |
 | --- | --- |
-| Name and strength | For example *Amoxicillin 250mg* |
-| Counted in | The unit you count and dispense: tablet, bottle, vial, pair |
-| Code (optional) | Leave blank and Tunzuri makes one from the name |
-| Category | Medicine, Consumable or Lab reagent |
+| Name and strength | For example *Amoxicillin 125mg/5ml suspension* |
+| Dosage form | Fills in the usual unit and pack (see *Dosage forms, units and packs*) |
+| Dispensed and counted in | The dispensing unit: tablet, bottle, tube, ml, pair |
+| Each one contains | Optional, for example 100 ml |
+| Bought in / How many in each | The purchase pack, for example *tin* and *1000*. Leave blank if you buy by the unit |
+| Price to patient per unit | The price a cash patient pays per dispensing unit |
+| Reorder when stock falls to | In dispensing units, the level at which the item shows as low |
+| Category | Medicine, Medical supply or Lab reagent |
 | Billing | Billable medicine, billable consumable, or non-billable (a department cost). Set automatically from the category; change it if needed |
-| Cash price to patient | The price a cash patient pays per unit |
-| Reorder when stock falls to | The level at which the item shows as low |
+| Code (optional) | Leave blank and Tunzuri makes one from the name |
 
-If you already have some on the shelf, fill in **Opening stock** on the same form: quantity, store, batch number, expiry date and unit cost.
+If you already have some on the shelf, fill in **Opening stock** on the same form: quantity (in packs or units), cost, store, batch number and expiry date.
 
 **Import from a spreadsheet (best for a long list).** Open the **Import from CSV** tab.
 
@@ -361,17 +401,21 @@ If you already have some on the shelf, fill in **Opening stock** on the same for
 | Column | Required | Notes |
 | --- | --- | --- |
 | name | Yes | Name and strength |
-| unit | Yes | tablet, bottle, pair… |
+| form | One of form or unit | tablet, capsule, oral_liquid, bulk_liquid, injection, infusion, topical, drops, inhaler, powder, suppository, consumable, reagent, other |
+| unit | One of form or unit | The dispensing unit: tablet, bottle, ml, pair… |
+| unit_content | No | What one unit holds, for example 100 ml |
+| pack_unit | No | How you buy it, for example tin, carton, box |
+| pack_size | No | Dispensing units in one pack, for example 1000 |
 | category | No | medicine, consumable or reagent (default medicine) |
 | billing_type | No | billable_medicine, billable_consumable or non_billable |
 | cash_price | No | Price per unit in UGX |
 | reorder_level | No | Low-stock level |
 | sku | No | Your own code; made from the name if blank |
 | store | No | Store name exactly as in Tunzuri; default Main store |
-| quantity | No | Opening stock. Leave blank to add the item only |
+| quantity | No | Opening stock, counted in dispensing units (tablets, not tins). Leave blank to add the item only |
 | batch_number | No | Made up automatically if blank |
 | expiry_date | No | Written as YYYY-MM-DD, for example 2027-06-30 |
-| unit_cost | No | What you paid per unit, in UGX |
+| unit_cost | No | What you paid per dispensing unit, in UGX |
 
 An item that already exists, matched by name or code, is not created again; only its stock is added. So you can also use an import for a large stock top-up. If any row has a mistake, nothing is saved and Tunzuri lists the rows to fix, for example *Row 3: The unit field is required.* Fix the file and upload it again.
 
@@ -381,7 +425,7 @@ Open the **Add stock** tab when stock arrives outside the purchase-order process
 
 1. Search for the item and choose the store.
 2. Under **Where it came from**, choose *Opening balance*, *Delivery without a purchase order* or *Donation*.
-3. Enter the quantity and, if you have them, the batch number, expiry date and unit cost.
+3. Enter the quantity in packs or units, and the cost per pack or unit. Add the batch number and expiry date if you have them.
 4. Use **Notes** for the supplier, donor or delivery note number.
 5. Select **Add stock**.
 
@@ -390,18 +434,18 @@ Open the **Add stock** tab when stock arrives outside the purchase-order process
 **Placing a purchase order**
 
 1. Under **Purchase orders**, search for the supplier, or select **Add a new supplier** and type the name.
-2. Search for the item, enter the quantity and unit cost, and select **Send order**.
+2. Search for the item, enter the **number of packs** (tins, cartons, boxes) and the **cost per pack**, and select **Send order**. Tunzuri shows how many dispensing units that is, and keeps the pack size on the order so it still reads correctly if the item's pack changes later.
 
 **Receiving goods**
 
-When the delivery arrives, find the order and, for each line, enter the batch number, expiry date and quantity received. Select **Receive**. The stock goes into the main store. If only part of an order arrives, receive what came. The order stays open until everything is received.
+When the delivery arrives, find the order and, for each line, enter the batch number, expiry date and quantity received, in packs or units. Select **Receive**. The stock goes into the main store. If only part of an order arrives, receive what came. The order stays open until everything is received.
 
 ## Requisitions: moving stock to a department
 
 Any department store can ask the main store for stock.
 
 1. Under **Requisitions from the main store**, choose the store the stock is for.
-2. Select **Fill from reorder levels** to add every item that store is low on, with suggested quantities. Or search for items yourself, using **Add another item** for each one.
+2. Select **Fill from reorder levels** to add every item that store is low on, with suggested quantities rounded up to whole packs. Or search for items yourself, using **Add another item** for each one. Each line can be counted in packs or units.
 3. Select **Send requisition**.
 
 The storekeeper sees open requisitions at the top of the list, with *issued X of Y* for each line, and selects **Issue**.
@@ -421,7 +465,7 @@ Use **Return stock to the main store** for stock a department no longer needs. C
 When stock on the shelf does not match Tunzuri:
 
 1. Under **Stock adjustments**, choose the store and item.
-2. Enter the **Change in quantity**: a minus number to remove (for example −5), a plus number to add.
+2. Enter the **Change in quantity** in dispensing units: a minus number to remove (for example −5 tablets), a plus number to add.
 3. Choose the reason (*Expired*, *Damaged*, *Lost*, *Count did not match*) and add notes.
 4. Select **Request adjustment**.
 
@@ -568,6 +612,9 @@ The platform administrator runs Tunzuri for all facilities. They never see patie
 | Term | Meaning |
 | --- | --- |
 | Batch | One lot of stock with its own batch number, expiry date and cost |
+| Dispensing unit | The smallest amount handed out (tablet, bottle, ml). All stock is counted in it |
+| Dosage form | The kind of product (tablet, syrup, injection…), which decides how it is handed out |
+| Purchase pack | How an item is bought (tin, carton, box) and how many dispensing units it holds |
 | Billable / non-billable | Whether using an item charges the patient or is a department cost |
 | Opening balance | Stock already on the shelf when you start using Tunzuri |
 | Payer | Who pays for a visit: cash, insurance or corporate |

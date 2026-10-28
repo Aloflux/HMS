@@ -91,9 +91,9 @@ class StockReport
 
     /**
      * Items this store has stocked before that are now at or below their reorder level.
-     * The suggestion brings the store back up to twice the reorder level.
+     * The suggestion brings the store back up to twice the reorder level, rounded up to whole packs.
      *
-     * @return Collection<int, array{item: Item, on_hand: int, main_on_hand: int, suggested: int}>
+     * @return Collection<int, array{item: Item, on_hand: int, main_on_hand: int, suggested: int, suggested_packs: ?int}>
      */
     public function restockSuggestions(StockLocation $location): Collection
     {
@@ -122,12 +122,18 @@ class StockReport
             ->whereIn('id', $onHand->keys())
             ->orderBy('name')
             ->get()
-            ->map(fn (Item $item): array => [
-                'item' => $item,
-                'on_hand' => (int) $onHand->get($item->id, 0),
-                'main_on_hand' => (int) $mainOnHand->get($item->id, 0),
-                'suggested' => ($item->reorder_level * 2) - (int) $onHand->get($item->id, 0),
-            ])
+            ->map(function (Item $item) use ($onHand, $mainOnHand): array {
+                $needed = max(1, ($item->reorder_level * 2) - (int) $onHand->get($item->id, 0));
+                $packs = $item->hasPacks() ? (int) ceil($needed / $item->pack_size) : null;
+
+                return [
+                    'item' => $item,
+                    'on_hand' => (int) $onHand->get($item->id, 0),
+                    'main_on_hand' => (int) $mainOnHand->get($item->id, 0),
+                    'suggested' => $packs ? $packs * $item->pack_size : $needed,
+                    'suggested_packs' => $packs,
+                ];
+            })
             ->filter(fn (array $row): bool => $row['on_hand'] <= $row['item']->reorder_level)
             ->values();
     }

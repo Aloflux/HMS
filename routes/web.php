@@ -194,6 +194,7 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
     Route::post('/inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approve'])->middleware('permission:inventory.approve')->name('inventory.approve');
     Route::middleware('permission:inventory.purchase')->group(function () {
         Route::post('/inventory/items', [InventoryController::class, 'storeItem'])->name('inventory.items.store');
+        Route::patch('/inventory/items/{item}', [InventoryController::class, 'updateItem'])->name('inventory.items.update');
         Route::post('/inventory/items/import', [InventoryController::class, 'importItems'])->name('inventory.items.import');
         Route::get('/inventory/items/template', [InventoryController::class, 'importTemplate'])->name('inventory.items.template');
         Route::post('/inventory/items/starter', [InventoryController::class, 'loadStarterList'])->name('inventory.items.starter');
@@ -233,7 +234,6 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
         Route::delete('/beds/{bed}', [AdminWardController::class, 'destroyBed'])->name('admin.beds.destroy');
         Route::get('/catalogue', [CatalogueController::class, 'index'])->name('admin.catalogue.index');
         Route::post('/catalogue/services', [CatalogueController::class, 'storeService'])->name('admin.services.store');
-        Route::post('/catalogue/items', [CatalogueController::class, 'storeItem'])->name('admin.items.store');
         Route::post('/catalogue/lab-tests', [CatalogueController::class, 'storeLabTest'])->name('admin.lab-tests.store');
         Route::post('/catalogue/studies', [CatalogueController::class, 'storeStudy'])->name('admin.studies.store');
         Route::get('/audit', [AuditController::class, 'index'])->name('admin.audit.index');

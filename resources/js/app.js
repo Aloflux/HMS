@@ -79,6 +79,63 @@ Alpine.data('searchSelect', ({ options = [], value = '', emptyLabel = null } = {
     },
 }));
 
+/**
+ * Plural of a unit name, e.g. box → boxes, tablet → tablets. Measures such as ml and g stay as they are.
+ */
+window.pluralize = (word, count = 2) => {
+    if (! word || Number(count) === 1 || ['ml', 'g', 'kg', 'l', 'mg', 'iu'].includes(word.toLowerCase())) {
+        return word ?? '';
+    }
+
+    return /(s|x|z|ch|sh)$/i.test(word) ? `${word}es` : `${word}s`;
+};
+
+/**
+ * The fields that describe a stock item: dosage form, dispensing unit and purchase pack.
+ * Choosing a form fills in the unit and pack that form usually comes in.
+ */
+Alpine.data('itemFields', (initial = {}, defaults = {}) => ({
+    form: initial.form ?? 'tablet',
+    unit: initial.unit ?? '',
+    content: initial.unit_content ?? '',
+    packUnit: initial.pack_unit ?? '',
+    packSize: initial.pack_size ?? '',
+    category: initial.category ?? 'medicine',
+    defaults,
+
+    init() {
+        if (! this.unit) {
+            this.applyDefaults();
+        }
+    },
+
+    applyDefaults() {
+        const preset = this.defaults[this.form];
+
+        if (! preset) {
+            return;
+        }
+
+        this.unit = preset.unit;
+        this.content = preset.unit_content ?? '';
+        this.packUnit = preset.pack_unit ?? '';
+        this.packSize = preset.pack_size > 1 ? preset.pack_size : '';
+    },
+
+    get meta() {
+        const size = Number(this.packSize) || 1;
+        const hasPacks = this.packUnit && size > 1;
+
+        return {
+            unit: this.unit || 'unit',
+            units: window.pluralize(this.unit || 'unit'),
+            pack_unit: hasPacks ? this.packUnit : null,
+            pack_units: hasPacks ? window.pluralize(this.packUnit) : null,
+            pack_size: hasPacks ? size : 1,
+        };
+    },
+}));
+
 Alpine.start();
 
 document.addEventListener('click', (event) => {
