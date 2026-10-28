@@ -22,7 +22,7 @@ class StockLedger
         Item $item,
         int $quantity,
         StockReason $reason,
-        Model $reference,
+        ?Model $reference,
         ?int $patientId = null,
         ?int $approvedBy = null,
         ?string $notes = null,
@@ -68,7 +68,7 @@ class StockLedger
             $batch->quantity -= $slice;
             $batch->save();
 
-            $this->move($batch, -$slice, $reason, $reference, $patientId, $approvedBy, $notes);
+            $this->move($location, $batch, -$slice, $reason, $reference, $patientId, $approvedBy, $notes);
 
             $taken[] = ['batch' => $batch, 'quantity' => $slice];
             $remaining -= $slice;
@@ -85,7 +85,7 @@ class StockLedger
         int $quantity,
         int $unitCost,
         StockReason $reason,
-        Model $reference,
+        ?Model $reference,
         ?int $patientId = null,
         ?int $approvedBy = null,
         ?string $notes = null,
@@ -113,13 +113,21 @@ class StockLedger
         $batch->quantity += $quantity;
         $batch->save();
 
-        $this->move($batch, $quantity, $reason, $reference, $patientId, $approvedBy, $notes);
+        $this->move($location, $batch, $quantity, $reason, $reference, $patientId, $approvedBy, $notes);
 
         return $batch;
     }
 
-    public function transfer(StockLocation $from, StockLocation $to, Item $item, int $quantity, Model $reference): void
-    {
+    public function transfer(
+        StockLocation $from,
+        StockLocation $to,
+        Item $item,
+        int $quantity,
+        ?Model $reference,
+        StockReason $outReason = StockReason::TransferOut,
+        StockReason $inReason = StockReason::TransferIn,
+        ?string $notes = null,
+    ): void {
         if ($from->id === $to->id) {
             throw ValidationException::withMessages([
                 'stock_location_id' => 'Choose a different receiving store.',
@@ -132,7 +140,7 @@ class StockLedger
             ]);
         }
 
-        $taken = $this->consume($from, $item, $quantity, StockReason::TransferOut, $reference);
+        $taken = $this->consume($from, $item, $quantity, $outReason, $reference, null, null, $notes);
 
         foreach ($taken as $row) {
             $this->receive(
@@ -142,8 +150,11 @@ class StockLedger
                 $row['batch']->expiry_date,
                 $row['quantity'],
                 (int) $row['batch']->unit_cost,
-                StockReason::TransferIn,
+                $inReason,
                 $reference,
+                null,
+                null,
+                $notes,
             );
         }
     }
@@ -157,10 +168,11 @@ class StockLedger
     }
 
     private function move(
+        StockLocation $location,
         StockBatch $batch,
         int $quantity,
         StockReason $reason,
-        Model $reference,
+        ?Model $reference,
         ?int $patientId,
         ?int $approvedBy,
         ?string $notes,
@@ -172,9 +184,10 @@ class StockLedger
             'stock_location_id' => $batch->stock_location_id,
             'quantity' => $quantity,
             'reason' => $reason,
-            'reference_type' => $reference->getMorphClass(),
-            'reference_id' => $reference->getKey(),
+            'reference_type' => $reference?->getMorphClass(),
+            'reference_id' => $reference?->getKey(),
             'patient_id' => $patientId,
+            'department_id' => $location->department_id,
             'notes' => $notes,
             'performed_by' => Auth::id(),
             'approved_by' => $approvedBy,

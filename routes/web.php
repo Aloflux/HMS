@@ -23,6 +23,7 @@ use App\Http\Controllers\QueueController;
 use App\Http\Controllers\RadiologyController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\StockController;
 use App\Http\Controllers\TheatreController;
 use App\Http\Controllers\VisitController;
 use App\Http\Controllers\WardController;
@@ -191,6 +192,23 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
     Route::post('/inventory/requisitions/{requisition}/issue', [InventoryController::class, 'issue'])->middleware('permission:inventory.purchase')->name('inventory.issue');
     Route::post('/inventory/adjustments', [InventoryController::class, 'adjust'])->middleware('permission:inventory.adjust')->name('inventory.adjust');
     Route::post('/inventory/adjustments/{adjustment}/approve', [InventoryController::class, 'approve'])->middleware('permission:inventory.approve')->name('inventory.approve');
+    Route::middleware('permission:inventory.purchase')->group(function () {
+        Route::post('/inventory/items', [InventoryController::class, 'storeItem'])->name('inventory.items.store');
+        Route::post('/inventory/items/import', [InventoryController::class, 'importItems'])->name('inventory.items.import');
+        Route::get('/inventory/items/template', [InventoryController::class, 'importTemplate'])->name('inventory.items.template');
+        Route::post('/inventory/items/starter', [InventoryController::class, 'loadStarterList'])->name('inventory.items.starter');
+        Route::post('/inventory/stock', [InventoryController::class, 'addStock'])->name('inventory.stock.add');
+    });
+    Route::post('/inventory/returns', [InventoryController::class, 'returnStock'])->middleware('permission:inventory.requisition')->name('inventory.return');
+
+    Route::middleware('permission:inventory.view,pharmacy.view')->group(function () {
+        Route::get('/stock', [StockController::class, 'index'])->name('stock.levels');
+        Route::get('/stock/items/{item}', [StockController::class, 'show'])->name('stock.levels.item');
+    });
+    Route::middleware('permission:inventory.view,reports.view')->group(function () {
+        Route::get('/stock/usage', [StockController::class, 'usage'])->name('stock.usage');
+        Route::get('/stock/usage/export', [StockController::class, 'export'])->name('stock.usage.export');
+    });
 
     Route::middleware('permission:reports.view')->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');

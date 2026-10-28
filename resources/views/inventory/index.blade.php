@@ -4,7 +4,199 @@
 @endphp
 
 <x-app-layout>
-    <x-slot name="header"><x-page-title>Inventory</x-page-title></x-slot>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <x-page-title icon="bx-package">Inventory</x-page-title>
+            <span class="flex flex-wrap gap-4 text-sm">
+                <a class="inline-flex items-center gap-1 text-brand-700" href="{{ route('stock.levels') }}"><x-icon name="bx-layer" class="text-lg" />Stock levels</a>
+                <a class="inline-flex items-center gap-1 text-brand-700" href="{{ route('stock.usage') }}"><x-icon name="bx-line-chart-down" class="text-lg" />Usage by department</a>
+            </span>
+        </div>
+    </x-slot>
+
+    @php($select = 'mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm')
+    @php($activeStores = $locations->where('is_active', true))
+    @php($mainStore = $activeStores->firstWhere('kind', 'main'))
+
+    @if ($user->permits('inventory.purchase'))
+        <section class="mb-6 rounded-lg bg-white p-5 shadow-card" x-data="{ tab: @js(old('_tab', $items->isEmpty() ? 'starter' : 'stock')) }">
+            <h2 class="font-bold text-slate-900">Items and stock</h2>
+            @if ($items->isEmpty())
+                <p class="mt-1 text-sm text-amber-800">There are no items yet. Load the starter list, import your own list, or add items one at a time.</p>
+            @else
+                <p class="mt-1 text-sm text-slate-500">Add new items, or put stock on a shelf without a purchase order: an opening balance, a delivery, or a donation.</p>
+            @endif
+
+            <div class="mt-4 flex flex-wrap gap-2 border-b border-slate-100 text-sm">
+                @foreach (['stock' => 'Add stock', 'item' => 'New item', 'import' => 'Import from CSV', 'starter' => 'Starter list'] as $key => $label)
+                    <button type="button" class="-mb-px border-b-2 px-3 py-2 font-medium" :class="tab === '{{ $key }}' ? 'border-brand-600 text-brand-700' : 'border-transparent text-slate-500'" @click="tab = '{{ $key }}'">{{ $label }}</button>
+                @endforeach
+            </div>
+
+            <div x-show="tab === 'stock'" x-cloak>
+                @if ($items->isEmpty())
+                    <p class="mt-4 text-sm text-slate-500">Add an item first.</p>
+                @else
+                    <form method="POST" action="{{ route('inventory.stock.add') }}" class="mt-4 grid gap-3 md:grid-cols-4">
+                        @csrf
+                        <input type="hidden" name="_tab" value="stock">
+                        <div class="md:col-span-2">
+                            <x-input-label for="stock-item" value="Item" />
+                            <select id="stock-item" name="item_id" class="{{ $select }}">
+                                @foreach ($items as $item)
+                                    <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} ({{ $item->unit }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="stock-store" value="Into store" />
+                            <select id="stock-store" name="stock_location_id" class="{{ $select }}">
+                                @foreach ($activeStores as $location)
+                                    <option value="{{ $location->id }}" @selected((string) old('stock_location_id', $mainStore?->id) === (string) $location->id)>{{ $location->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="stock-reason" value="Where it came from" />
+                            <select id="stock-reason" name="reason" class="{{ $select }}">
+                                <option value="opening" @selected(old('reason') === 'opening')>Opening balance (already on the shelf)</option>
+                                <option value="purchase" @selected(old('reason') === 'purchase')>Delivery without a purchase order</option>
+                                <option value="donation" @selected(old('reason') === 'donation')>Donation</option>
+                            </select>
+                        </div>
+                        <div>
+                            <x-input-label for="stock-quantity" value="Quantity" />
+                            <x-text-input id="stock-quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" :value="old('quantity')" required />
+                        </div>
+                        <div>
+                            <x-input-label for="stock-batch" value="Batch number" />
+                            <x-text-input id="stock-batch" name="batch_number" class="mt-1 block w-full" :value="old('batch_number')" placeholder="Optional" />
+                        </div>
+                        <div>
+                            <x-input-label for="stock-expiry" value="Expiry date" />
+                            <x-text-input id="stock-expiry" name="expiry_date" type="date" class="mt-1 block w-full" :value="old('expiry_date')" />
+                        </div>
+                        <div>
+                            <x-input-label for="stock-cost" value="Unit cost (UGX)" />
+                            <x-text-input id="stock-cost" name="unit_cost" type="number" min="0" class="mt-1 block w-full" :value="old('unit_cost')" placeholder="0" />
+                        </div>
+                        <div class="md:col-span-3">
+                            <x-input-label for="stock-notes" value="Notes" />
+                            <x-text-input id="stock-notes" name="notes" class="mt-1 block w-full" :value="old('notes')" placeholder="Supplier, donor, delivery note number" />
+                        </div>
+                        <div class="flex items-end"><x-primary-button>Add stock</x-primary-button></div>
+                    </form>
+                @endif
+            </div>
+
+            <div x-show="tab === 'item'" x-cloak>
+                <form method="POST" action="{{ route('inventory.items.store') }}" class="mt-4 grid gap-3 md:grid-cols-4" x-data="{ category: @js(old('category', 'medicine')) }">
+                    @csrf
+                    <input type="hidden" name="_tab" value="item">
+                    <div class="md:col-span-2">
+                        <x-input-label for="new-item-name" value="Name and strength" />
+                        <x-text-input id="new-item-name" name="name" class="mt-1 block w-full" :value="old('name')" placeholder="Amoxicillin 250mg" required />
+                        <x-input-error :messages="$errors->get('name')" class="mt-1" />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-unit" value="Counted in" />
+                        <x-text-input id="new-item-unit" name="unit" class="mt-1 block w-full" :value="old('unit')" placeholder="tablet, bottle, pair" required />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-sku" value="Code (optional)" />
+                        <x-text-input id="new-item-sku" name="sku" class="mt-1 block w-full" :value="old('sku')" placeholder="Made from the name" />
+                        <x-input-error :messages="$errors->get('sku')" class="mt-1" />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-category" value="Category" />
+                        <select id="new-item-category" name="category" x-model="category" class="{{ $select }}">
+                            <option value="medicine">Medicine</option>
+                            <option value="consumable">Consumable</option>
+                            <option value="reagent">Lab reagent</option>
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-billing" value="Billing" />
+                        <select id="new-item-billing" name="billing_type" class="{{ $select }}" x-effect="$el.value = category === 'medicine' ? 'billable_medicine' : (category === 'consumable' ? 'billable_consumable' : 'non_billable')">
+                            @foreach ($billingTypes as $type)
+                                <option value="{{ $type->value }}" @selected(old('billing_type') === $type->value)>{{ $type->label() }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-price" value="Cash price to patient (UGX)" />
+                        <x-text-input id="new-item-price" name="cash_price" type="number" min="0" class="mt-1 block w-full" :value="old('cash_price', 0)" required />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-reorder" value="Reorder when stock falls to" />
+                        <x-text-input id="new-item-reorder" name="reorder_level" type="number" min="0" class="mt-1 block w-full" :value="old('reorder_level', 0)" required />
+                    </div>
+
+                    <p class="text-sm font-semibold text-slate-700 md:col-span-4">Opening stock <span class="font-normal text-slate-500">· optional, if you already have some</span></p>
+                    <div>
+                        <x-input-label for="new-item-quantity" value="Quantity on hand" />
+                        <x-text-input id="new-item-quantity" name="opening_quantity" type="number" min="1" class="mt-1 block w-full" :value="old('opening_quantity')" />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-store" value="In store" />
+                        <select id="new-item-store" name="stock_location_id" class="{{ $select }}">
+                            @foreach ($activeStores as $location)
+                                <option value="{{ $location->id }}" @selected((string) old('stock_location_id', $mainStore?->id) === (string) $location->id)>{{ $location->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-batch" value="Batch number" />
+                        <x-text-input id="new-item-batch" name="batch_number" class="mt-1 block w-full" :value="old('batch_number')" />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-expiry" value="Expiry date" />
+                        <x-text-input id="new-item-expiry" name="expiry_date" type="date" class="mt-1 block w-full" :value="old('expiry_date')" />
+                        <x-input-error :messages="$errors->get('expiry_date')" class="mt-1" />
+                    </div>
+                    <div>
+                        <x-input-label for="new-item-cost" value="Unit cost (UGX)" />
+                        <x-text-input id="new-item-cost" name="unit_cost" type="number" min="0" class="mt-1 block w-full" :value="old('unit_cost')" placeholder="0" />
+                    </div>
+                    <div class="flex items-end md:col-span-3"><x-primary-button>Add item</x-primary-button></div>
+                </form>
+            </div>
+
+            <div x-show="tab === 'import'" x-cloak>
+                <div class="mt-4 text-sm text-slate-600">
+                    <p>Fill in the template in Excel or Google Sheets, save it as CSV, and upload it. Only <span class="font-medium">name</span> and <span class="font-medium">unit</span> are required. Add a <span class="font-medium">quantity</span> to record opening stock at the same time.</p>
+                    <p class="mt-1">An item that already exists is matched by its name or code, and only its stock is added. If any row has a mistake, nothing is saved and the rows to fix are listed.</p>
+                    <a class="mt-2 inline-flex items-center gap-1 font-semibold text-brand-700" href="{{ route('inventory.items.template') }}"><x-icon name="bx-download" class="text-lg" />Download the template</a>
+                </div>
+                <form method="POST" action="{{ route('inventory.items.import') }}" enctype="multipart/form-data" class="mt-4 flex flex-wrap items-end gap-3">
+                    @csrf
+                    <input type="hidden" name="_tab" value="import">
+                    <div>
+                        <x-input-label for="import-file" value="CSV file" />
+                        <input id="import-file" name="file" type="file" accept=".csv,text/csv" required class="mt-1 block text-sm">
+                    </div>
+                    <x-primary-button>Import</x-primary-button>
+                </form>
+                <x-input-error :messages="$errors->get('file')" class="mt-3" />
+            </div>
+
+            <div x-show="tab === 'starter'" x-cloak>
+                <p class="mt-4 text-sm text-slate-600">Adds {{ count(\App\Services\ItemCatalogue::starterItems()) }} medicines, supplies, and lab reagents that most facilities stock, with suggested prices and reorder levels. Items you already have are skipped. You can change prices afterwards in the price list.</p>
+                <details class="mt-2 text-sm">
+                    <summary class="cursor-pointer text-brand-700">See the list</summary>
+                    <ul class="mt-2 grid gap-1 text-slate-600 sm:grid-cols-2 lg:grid-cols-3">
+                        @foreach (\App\Services\ItemCatalogue::starterItems() as $starter)
+                            <li>{{ $starter['name'] }} · {{ $starter['unit'] }}</li>
+                        @endforeach
+                    </ul>
+                </details>
+                <form method="POST" action="{{ route('inventory.items.starter') }}" class="mt-4">
+                    @csrf
+                    <x-primary-button>Load the starter list</x-primary-button>
+                </form>
+            </div>
+        </section>
+    @endif
 
     <div class="grid gap-4 lg:grid-cols-2">
         @foreach ($locations as $location)
@@ -121,43 +313,21 @@
 
     <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Requisitions from the main store</h2>
+        <p class="mt-1 text-sm text-slate-500">A store asks the main store for stock. If the main store is short, the storekeeper issues what is there and the rest stays open.</p>
         @if ($user->permits('inventory.requisition'))
-            <form method="POST" action="{{ route('inventory.requisition') }}" class="mt-4 grid gap-3 md:grid-cols-4">
-                @csrf
-                <div>
-                    <x-input-label for="requisition-store" value="For store" />
-                    <select id="requisition-store" name="stock_location_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                        @foreach ($receivingStores as $location)
-                            <option value="{{ $location->id }}">{{ $location->name }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <x-input-label for="requisition-item" value="Item" />
-                    <select id="requisition-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                        @foreach ($items as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }} ({{ $item->unit }})</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <x-input-label for="requisition-quantity" value="Quantity" />
-                    <x-text-input id="requisition-quantity" name="quantity" type="number" min="1" class="mt-1 block w-full" required />
-                </div>
-                <div class="flex items-end"><x-primary-button>Request</x-primary-button></div>
-            </form>
+            <x-requisition-form :stores="$receivingStores->where('is_active', true)" :items="$items" :suggestions="$suggestions" />
         @endif
         <ul class="mt-4 divide-y divide-slate-100 text-sm">
             @forelse ($requisitions as $requisition)
                 <li class="flex flex-wrap items-center justify-between gap-3 py-2">
                     <span>
                         <span class="font-medium">{{ $requisition->number }} → {{ $requisition->location->name }}</span>
-                        <span class="block text-xs text-slate-500">{{ $requisition->lines->map(fn ($line) => $line->item->name.' × '.$line->quantity)->join(', ') }}</span>
+                        <span class="block text-xs text-slate-500">{{ $requisition->lines->map(fn ($line) => $line->item->name.' · issued '.$line->quantity_issued.' of '.$line->quantity_requested)->join(', ') }}</span>
                     </span>
                     <span class="flex items-center gap-3">
                         <x-status :value="$requisition->status" />
-                        @if ($requisition->status === 'submitted' && $user->permits('inventory.purchase'))
-                            <form method="POST" action="{{ route('inventory.issue', $requisition) }}">@csrf<button class="text-sm font-semibold text-brand-700">Issue</button></form>
+                        @if (in_array($requisition->status, ['submitted', 'partial'], true) && $user->permits('inventory.purchase'))
+                            <form method="POST" action="{{ route('inventory.issue', $requisition) }}">@csrf<button class="text-sm font-semibold text-brand-700">{{ $requisition->status === 'partial' ? 'Issue the rest' : 'Issue' }}</button></form>
                         @endif
                     </span>
                 </li>
@@ -166,6 +336,14 @@
             @endforelse
         </ul>
     </section>
+
+    @if ($user->permits('inventory.requisition'))
+        <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
+            <h2 class="font-bold text-slate-900">Return stock to the main store</h2>
+            <p class="mt-1 text-sm text-slate-500">For stock a store no longer needs. Batches and expiry dates move back with it.</p>
+            <x-return-stock-form :stores="$receivingStores" :items="$items" />
+        </section>
+    @endif
 
     <section class="mt-6 rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Stock adjustments</h2>

@@ -1,5 +1,24 @@
 <x-app-layout>
-    <x-slot name="header"><x-page-title icon="bx-capsule">Pharmacy</x-page-title></x-slot>
+    <x-slot name="header">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <x-page-title icon="bx-capsule">Pharmacy</x-page-title>
+            <a class="inline-flex items-center gap-1 text-sm text-brand-700" href="{{ route('stock.levels') }}"><x-icon name="bx-layer" class="text-lg" />All stock levels and history</a>
+        </div>
+    </x-slot>
+
+    @if ($suggestions->isNotEmpty())
+        <section class="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">
+            <h2 class="font-bold">Running low on the pharmacy shelf</h2>
+            <ul class="mt-2 grid gap-1 sm:grid-cols-2">
+                @foreach ($suggestions as $row)
+                    <li>
+                        <a class="font-medium underline" href="{{ route('stock.levels.item', $row['item']) }}">{{ $row['item']->name }}</a>
+                        · {{ $row['on_hand'] }} left, reorder at {{ $row['item']->reorder_level }} · {{ $row['main_on_hand'] }} in the main store
+                    </li>
+                @endforeach
+            </ul>
+        </section>
+    @endif
     <section class="rounded-lg bg-white p-5 shadow-card">
         <h2 class="font-bold text-slate-900">Pharmacy shelf</h2>
         <p class="mt-1 text-sm text-slate-500">Working stock in the pharmacy. The batch that expires sooner is used first. The rest stays in the main store until it is issued.</p>
@@ -18,7 +37,7 @@
                 <tbody>
                     @forelse ($shelf as $batch)
                         <tr class="border-t border-slate-100">
-                            <td class="py-2 pe-4 font-medium">{{ $batch->item->name }}</td>
+                            <td class="py-2 pe-4 font-medium"><a class="text-brand-700" href="{{ route('stock.levels.item', ['item' => $batch->item, 'stock_location_id' => $batch->stock_location_id]) }}">{{ $batch->item->name }}</a></td>
                             <td class="py-2 pe-4">{{ $batch->batch_number }}</td>
                             <td class="py-2 pe-4">{{ $batch->expiry_date?->format('d M Y') ?? 'No expiry' }}</td>
                             <td class="py-2 pe-4">{{ $batch->quantity }} {{ \Illuminate\Support\Str::plural($batch->item->unit, $batch->quantity) }}</td>
@@ -34,6 +53,23 @@
             </table>
         </div>
     </section>
+
+    @if ($store && auth()->user()->permits('inventory.requisition'))
+        <section class="mt-4 rounded-lg bg-white p-5 shadow-card" x-data="{ open: @js($errors->isNotEmpty() || $suggestions->isNotEmpty()) }">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <h2 class="font-bold text-slate-900">Restock the pharmacy</h2>
+                    <p class="mt-1 text-sm text-slate-500">Ask the main store for stock, or send back what the pharmacy does not need. Low items are filled in for you.</p>
+                </div>
+                <button type="button" class="text-sm font-semibold text-brand-700" @click="open = ! open" x-text="open ? 'Hide' : 'Show'"></button>
+            </div>
+            <div x-show="open" x-cloak>
+                <x-requisition-form :stores="collect([$store])" :items="$stockItems" :suggestions="[$store->id => $suggestions]" />
+                <h3 class="mt-6 text-sm font-semibold text-slate-900">Return to the main store</h3>
+                <x-return-stock-form :stores="collect([$store])" :items="$stockItems" />
+            </div>
+        </section>
+    @endif
 
     <div class="mt-4 grid gap-4">
         @forelse ($items as $line)

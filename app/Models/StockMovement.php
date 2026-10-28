@@ -6,6 +6,7 @@ use App\Enums\StockReason;
 use App\Models\Concerns\BelongsToFacility;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class StockMovement extends Model
 {
@@ -54,5 +55,47 @@ class StockMovement extends Model
     public function location(): BelongsTo
     {
         return $this->belongsTo(StockLocation::class, 'stock_location_id');
+    }
+
+    public function patient(): BelongsTo
+    {
+        return $this->belongsTo(Patient::class);
+    }
+
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
+    public function performer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'performed_by');
+    }
+
+    public function approver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function reference(): MorphTo
+    {
+        return $this->morphTo();
+    }
+
+    /**
+     * A short name for the document that caused this movement.
+     */
+    public function referenceLabel(): string
+    {
+        $reference = $this->reference;
+
+        return match (true) {
+            $reference === null => '—',
+            filled($reference->getAttribute('number')) => (string) $reference->getAttribute('number'),
+            $reference instanceof PrescriptionItem => 'Prescription',
+            $reference instanceof Admission => 'Admission',
+            $reference instanceof StockAdjustment => 'Adjustment #'.$reference->getKey(),
+            default => class_basename($reference).' #'.$reference->getKey(),
+        };
     }
 }

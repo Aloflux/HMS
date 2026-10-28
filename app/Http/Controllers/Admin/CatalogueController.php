@@ -8,6 +8,7 @@ use App\Models\ImagingStudy;
 use App\Models\Item;
 use App\Models\LabTest;
 use App\Models\Service;
+use App\Services\ItemCatalogue;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -44,10 +45,10 @@ class CatalogueController extends Controller
         return back()->with('status', 'Service added to the price list.');
     }
 
-    public function storeItem(Request $request): RedirectResponse
+    public function storeItem(Request $request, ItemCatalogue $catalogue): RedirectResponse
     {
         $data = $request->validate([
-            'sku' => ['required', 'string', 'max:30'],
+            'sku' => ['nullable', 'string', 'max:30'],
             'name' => ['required', 'string', 'max:150'],
             'category' => ['required', Rule::in(['medicine', 'consumable', 'reagent'])],
             'billing_type' => ['required', Rule::enum(BillingType::class)],
@@ -56,11 +57,7 @@ class CatalogueController extends Controller
             'reorder_level' => ['required', 'integer', 'min:0'],
         ]);
 
-        Item::query()->create([
-            ...$data,
-            'facility_id' => $request->user()->facility_id,
-            'is_active' => true,
-        ]);
+        $catalogue->create($request->user()->facility_id, $data);
 
         return back()->with('status', 'Item added.');
     }

@@ -153,35 +153,61 @@ class ProcurementService
         });
     }
 
+    /**
+     * Issue what the main store can spare. A line the store cannot fully cover stays open
+     * so the rest can be issued once new stock arrives.
+     */
     public function issueRequisition(Requisition $requisition, User $actor): void
     {
         DB::transaction(function () use ($requisition, $actor): void {
-            if ($requisition->status !== 'submitted') {
+            $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
+
+            if (! in_array($requisition->status, ['submitted', 'partial'], true)) {
                 throw ValidationException::withMessages([
-                    'requisition' => 'Only a submitted requisition can be issued.',
+                    'requisition' => 'Only a submitted or part-issued requisition can be issued.',
                 ]);
             }
 
-            $main = StockLocation::query()
-                ->where('facility_id', $requisition->facility_id)
-                ->where('kind', 'main')
-                ->first();
+            $main = $this->mainStore($requisition->facility_id, 'requisition');
+            $issuedNow = 0;
 
-            if (! $main) {
+            foreach ($requisition->lines()->with('item')->get() as $line) {
+                $outstanding = $line->quantity_requested - $line->quantity_issued;
+                $quantity = min($outstanding, $this->stock->onHand($line->item, $main));
+
+                if ($quantity < 1) {
+                    continue;
+                }
+
+                $this->stock->transfer($main, $requisition->location, $line->item, $quantity, $requisition);
+                $line->increment('quantity_issued', $quantity);
+                $issuedNow += $quantity;
+            }
+
+            if ($issuedNow === 0) {
                 throw ValidationException::withMessages([
-                    'requisition' => 'This facility has no main store.',
+                    'requisition' => 'The main store has none of the requested items in stock.',
                 ]);
             }
 
-            foreach ($requisition->lines as $line) {
-                $this->stock->transfer($main, $requisition->location, $line->item, (int) $line->quantity_requested, $requisition);
-                $line->update(['quantity_issued' => $line->quantity_requested]);
-            }
+            $complete = $requisition->lines()->whereColumn('quantity_issued', '<', 'quantity_requested')->doesntExist();
 
             $requisition->update([
-                'status' => 'issued',
+                'status' => $complete ? 'issued' : 'partial',
                 'issued_by' => $actor->id,
             ]);
+        });
+    }
+
+    /**
+     * Send unused or unwanted stock from a department store back to the main store.
+     */
+    public function returnToMainStore(StockLocation $from, Item $item, int $quantity, ?string $notes = null): void
+    {
+        DB::transaction(function () use ($from, $item, $quantity, $notes): void {
+            $main = $this->mainStore($from->facility_id, 'stock_location_id');
+
+            $this->stock->transfer($from, $main, $item, $quantity, null, StockReason::Return, StockReason::Return, $notes);
         });
     }
 
@@ -256,5 +282,21 @@ class ProcurementService
                 'approved_by' => $approver->id,
             ]);
         });
+    }
+
+    private function mainStore(int $facilityId, string $errorKey): StockLocation
+    {
+        $main = StockLocation::query()
+            ->where('facility_id', $facilityId)
+            ->where('kind', 'main')
+            ->first();
+
+        if (! $main) {
+            throw ValidationException::withMessages([
+                $errorKey => 'This facility has no main store.',
+            ]);
+        }
+
+        return $main;
     }
 }

@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Item;
 use App\Models\PrescriptionItem;
 use App\Models\StockBatch;
+use App\Models\StockLocation;
 use App\Services\DispensingService;
+use App\Services\StockReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -13,8 +15,10 @@ use Illuminate\View\View;
 
 class PharmacyController extends Controller
 {
-    public function index(): View
+    public function index(StockReport $reports): View
     {
+        $store = StockLocation::query()->where('kind', 'pharmacy')->first();
+
         $shelf = StockBatch::query()
             ->with(['item', 'location'])
             ->where('quantity', '>', 0)
@@ -38,6 +42,9 @@ class PharmacyController extends Controller
                 })
                 ->latest()
                 ->get(),
+            'store' => $store,
+            'suggestions' => $store ? $reports->restockSuggestions($store) : collect(),
+            'stockItems' => Item::query()->where('is_active', true)->orderBy('name')->get(),
             'substitutes' => Item::query()->where('billing_type', 'billable_medicine')->where('is_active', true)->orderBy('name')->get(),
         ]);
     }

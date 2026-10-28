@@ -32,7 +32,7 @@
             <h2 class="font-bold text-slate-900">Stock items</h2>
             <form method="POST" action="{{ route('admin.items.store') }}" class="mt-3 grid gap-3 sm:grid-cols-2">
                 @csrf
-                <div><x-input-label for="item-sku" value="SKU" /><x-text-input id="item-sku" name="sku" class="mt-1 block w-full" required /></div>
+                <div><x-input-label for="item-sku" value="Code (optional)" /><x-text-input id="item-sku" name="sku" class="mt-1 block w-full" placeholder="Made from the name if blank" /></div>
                 <div><x-input-label for="item-name" value="Name" /><x-text-input id="item-name" name="name" class="mt-1 block w-full" required /></div>
                 <div>
                     <x-input-label for="item-category" value="Category" />
