@@ -74,8 +74,8 @@
                 @if ($demoAccounts !== [])
                     <section class="flex flex-col gap-4 pt-6">
                         <div>
-                            <h2 class="text-sm font-semibold text-slate-900">Sample stations</h2>
-                            <p class="mt-1 text-sm text-slate-600">Click a station to fill the email and password. The shared password is {{ $demoPassword }}.</p>
+                            <h2 class="text-sm font-semibold text-slate-900">Sample accounts</h2>
+                            <p class="mt-1 text-sm text-slate-600">Click an account to fill the email and password. These are accounts in this database that still sign in with {{ $demoPassword }}.</p>
                         </div>
 
                         @foreach (collect($demoAccounts)->groupBy('facility') as $facility => $accounts)
@@ -83,17 +83,6 @@
                                 <h3 class="text-xs font-medium uppercase tracking-wide text-slate-500">{{ $facility }}</h3>
                                 <div class="grid gap-2">
                                     @foreach ($accounts as $account)
-                                        @php
-                                            [$station, $duty] = array_pad(explode(' · ', $account['role'], 2), 2, null);
-                                            $icon = match (true) {
-                                                str_contains($account['email'], 'platform@') => 'bx-buildings',
-                                                str_contains($account['email'], 'front@') => 'bx-user',
-                                                str_contains($account['email'], 'doctor@') => 'bx-plus-medical',
-                                                str_contains($account['email'], 'diagnostics@') => 'bx-test-tube',
-                                                str_contains($account['email'], 'pharmacy@') => 'bx-capsule',
-                                                default => 'bx-cog',
-                                            };
-                                        @endphp
                                         <button
                                             type="button"
                                             class="flex items-start gap-3 rounded-md bg-slate-50 px-3 py-3 text-start transition hover:bg-brand-50 hover:shadow-card aria-pressed:bg-brand-50 aria-pressed:shadow-card"
@@ -101,12 +90,10 @@
                                             data-demo-password="{{ $demoPassword }}"
                                             aria-pressed="false"
                                         >
-                                            <x-icon :name="$icon" class="mt-0.5 text-xl text-brand-700" />
+                                            <x-icon :name="$account['icon']" class="mt-0.5 text-xl text-brand-700" />
                                             <span>
-                                                <span class="block text-sm font-medium text-slate-900">{{ $station }}</span>
-                                                @if ($duty)
-                                                    <span class="block text-xs text-slate-500">{{ ucfirst($duty) }}</span>
-                                                @endif
+                                                <span class="block text-sm font-medium text-slate-900">{{ $account['name'] }}</span>
+                                                <span class="block text-xs text-slate-500">{{ $account['role'] }}</span>
                                                 <span class="block text-xs text-brand-700">{{ $account['email'] }}</span>
                                             </span>
                                         </button>

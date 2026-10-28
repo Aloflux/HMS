@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthenticatedSessionController extends Controller
@@ -16,11 +20,11 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        $samples = app()->environment('local', 'development');
+        $samples = $this->sampleAccounts();
 
         return view('auth.login', [
-            'demoAccounts' => $samples ? config('hms.demo_accounts') : [],
-            'demoPassword' => $samples ? config('hms.demo_password') : null,
+            'demoAccounts' => $samples,
+            'demoPassword' => $samples === [] ? null : config('hms.demo_password'),
         ]);
     }
 
@@ -48,5 +52,59 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Active accounts in this database that still sign in with the shared development password.
+     *
+     * @return list<array{facility: string, name: string, role: string, email: string, icon: string}>
+     */
+    private function sampleAccounts(): array
+    {
+        if (! app()->environment('local', 'development')) {
+            return [];
+        }
+
+        $password = (string) config('hms.demo_password');
+
+        if ($password === '') {
+            return [];
+        }
+
+        return User::query()
+            ->with('facility:id,name,is_active')
+            ->where('is_active', true)
+            ->where(function (Builder $query): void {
+                $query->whereNull('facility_id')
+                    ->orWhereHas('facility', function (Builder $facility): void {
+                        $facility->where('is_active', true);
+                    });
+            })
+            ->orderBy('name')
+            ->get()
+            ->filter(fn (User $user): bool => Hash::check($password, $user->password))
+            ->sortBy(fn (User $user): string => mb_strtolower(($user->facility?->name ?? '').' '.$user->name))
+            ->values()
+            ->map(fn (User $user): array => [
+                'facility' => $user->facility?->name ?? 'Tunzuri platform',
+                'name' => $user->name,
+                'role' => $user->role->label(),
+                'email' => $user->email,
+                'icon' => $this->sampleIcon($user->role),
+            ])
+            ->all();
+    }
+
+    private function sampleIcon(Role $role): string
+    {
+        return match ($role) {
+            Role::PlatformAdmin => 'bx-buildings',
+            Role::FrontOffice => 'bx-user',
+            Role::Clinical => 'bx-plus-medical',
+            Role::Diagnostics => 'bx-test-tube',
+            Role::PharmacyStores => 'bx-capsule',
+            Role::Administrator => 'bx-cog',
+            Role::Staff => 'bx-user',
+        };
     }
 }

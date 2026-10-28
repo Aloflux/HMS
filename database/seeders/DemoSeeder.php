@@ -315,12 +315,12 @@ class DemoSeeder extends Seeder
 
         Auth::login($admin);
 
-        $amina = $registrar->register($facility, $admin, $this->person('Nakato', 'Amina', 'female', '1994-04-12', '0772000001', 'Kampala'));
+        $emma = $registrar->register($facility, $admin, $this->person('Clarke', 'Emma', 'female', '1994-04-12', '0772000001', 'Kampala'));
         $john = $registrar->register($facility, $admin, $this->person('Okello', 'John', 'male', '1988-11-02', '0703000002', 'Wakiso'));
 
         $department = $facility->departments()->where('code', 'OPD')->first();
 
-        $aminaVisit = $encounters->openVisit($amina, $admin, [
+        $emmaVisit = $encounters->openVisit($emma, $admin, [
             'visit_type' => VisitType::Outpatient,
             'priority' => Priority::Urgent,
             'payer' => Payer::Cash,
@@ -328,7 +328,7 @@ class DemoSeeder extends Seeder
             'chief_complaint' => 'Fever and headache',
         ]);
 
-        $encounters->recordTriage($aminaVisit, $admin, [
+        $encounters->recordTriage($emmaVisit, $admin, [
             'temperature' => 38.6,
             'pulse' => 104,
             'respiration' => 22,
@@ -377,18 +377,18 @@ class DemoSeeder extends Seeder
             'quantity' => 9,
         ]]);
 
-        $encounters->recordConsultation($aminaVisit, $admin, [
+        $encounters->recordConsultation($emmaVisit, $admin, [
             'history' => 'Fever and headache for two days.',
             'examination' => 'Febrile, chest clear, no neck stiffness.',
             'plan' => 'Malaria test, amoxicillin, and oral rehydration.',
             'icd10_codes' => ['R50.9'],
         ]);
 
-        $encounters->orderLabs($aminaVisit, $admin, [$test->id], 'Fever');
+        $encounters->orderLabs($emmaVisit, $admin, [$test->id], 'Fever');
 
         $amoxicillin = Item::query()->where('sku', 'AMOX500')->firstOrFail();
         $ors = Item::query()->where('sku', 'ORS')->firstOrFail();
-        $encounters->prescribe($aminaVisit, $admin, [
+        $encounters->prescribe($emmaVisit, $admin, [
             [
                 'item_id' => $amoxicillin->id,
                 'dose' => '500mg',

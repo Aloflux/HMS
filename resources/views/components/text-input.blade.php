@@ -1,6 +1,6 @@
 @props(['disabled' => false])
 
-@php($fieldClasses = 'rounded-md border-transparent bg-slate-100/70 shadow-none focus:border-brand-600 focus:bg-white focus:ring-0 focus:outline-none')
+@php($fieldClasses = 'rounded-md border border-gray-300 bg-white shadow-none focus:border-brand-600 focus:ring-0 focus:outline-none')
 
 @if ($attributes->get('type') === 'password')
     {{-- Layout classes (margins, width) go on the wrapper so the reveal button sits inside the field. --}}

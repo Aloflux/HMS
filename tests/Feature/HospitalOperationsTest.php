@@ -28,25 +28,65 @@ use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Icd10Seeder;
 use Illuminate\Support\Facades\Hash;
 
-test('sample stations are shown in development', function (string $environment) {
+test('sample accounts are the database users that still use the shared password', function (string $environment) {
     $this->app->detectEnvironment(fn () => $environment);
     config(['hms.demo_password' => 'password']);
 
+    $platform = User::factory()->platformAdmin()->create([
+        'name' => 'Platform Operator',
+        'email' => 'platform@tunzuri.test',
+    ]);
+    [$facility, $admin] = provisionHospital();
+    $changed = User::factory()->create([
+        'facility_id' => $facility->id,
+        'name' => 'Changed Clerk',
+        'email' => 'changed@example.test',
+        'password' => 'not-the-demo-password',
+    ]);
+    $inactive = User::factory()->create([
+        'facility_id' => $facility->id,
+        'name' => 'Inactive Clerk',
+        'email' => 'inactive@example.test',
+        'is_active' => false,
+    ]);
+
     $this->get(route('login'))
         ->assertOk()
-        ->assertSee('Sample stations', false)
-        ->assertSee('data-demo-email="platform@tunzuri.test"', false)
-        ->assertSee('data-demo-email="admin@stmarys.tunzuri.test"', false)
-        ->assertDontSee('data-demo-email="front@stmarys.tunzuri.test"', false)
-        ->assertSee('data-demo-password="password"', false);
+        ->assertSee('Sample accounts', false)
+        ->assertSee($platform->name, false)
+        ->assertSee('data-demo-email="'.$platform->email.'"', false)
+        ->assertSee($admin->name, false)
+        ->assertSee('data-demo-email="'.$admin->email.'"', false)
+        ->assertSee('data-demo-password="password"', false)
+        ->assertDontSee('data-demo-email="'.$changed->email.'"', false)
+        ->assertDontSee('data-demo-email="'.$inactive->email.'"', false);
 })->with(['local', 'development']);
 
-test('sample stations are hidden in production', function () {
-    $this->app->detectEnvironment(fn () => 'production');
+test('sample accounts are hidden when none still use the shared password', function () {
+    $this->app->detectEnvironment(fn () => 'local');
+    config(['hms.demo_password' => 'password']);
+
+    User::factory()->create([
+        'email' => 'changed@example.test',
+        'password' => 'not-the-demo-password',
+    ]);
 
     $this->get(route('login'))
         ->assertOk()
-        ->assertDontSee('Sample stations', false)
+        ->assertDontSee('Sample accounts', false)
+        ->assertDontSee('data-demo-email', false);
+});
+
+test('sample accounts are hidden in production', function () {
+    $this->app->detectEnvironment(fn () => 'production');
+
+    User::factory()->platformAdmin()->create([
+        'email' => 'platform@tunzuri.test',
+    ]);
+
+    $this->get(route('login'))
+        ->assertOk()
+        ->assertDontSee('Sample accounts', false)
         ->assertDontSee('data-demo-email', false);
 });
 

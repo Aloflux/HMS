@@ -51,9 +51,17 @@
                         <span class="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">Outpatient</span>
                     </div>
                     <div class="mt-4 flex items-center gap-3">
-                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brand-700 text-sm font-semibold text-white">AN</span>
+                        @php
+                            $samplePatient = 'Emma Clarke';
+                            $sampleInitials = collect(preg_split('/\s+/', trim($samplePatient)))
+                                ->filter()
+                                ->take(2)
+                                ->map(fn (string $part): string => mb_strtoupper(mb_substr($part, 0, 1)))
+                                ->implode('');
+                        @endphp
+                        <span class="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-brand-700 text-sm font-semibold text-white">{{ $sampleInitials }}</span>
                         <div>
-                            <p class="font-semibold text-slate-900">Amina Nakato</p>
+                            <p class="font-semibold text-slate-900">{{ $samplePatient }}</p>
                             <p class="text-sm text-slate-500">Fever and headache · OPD</p>
                         </div>
                     </div>

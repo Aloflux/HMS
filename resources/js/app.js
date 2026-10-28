@@ -23,19 +23,40 @@ document.addEventListener('click', (event) => {
 
     const email = document.getElementById('email');
     const password = document.getElementById('password');
+    const emailValue = button.getAttribute('data-demo-email') ?? '';
+    const passwordValue = button.getAttribute('data-demo-password') ?? '';
 
     if (email) {
-        email.value = button.dataset.demoEmail ?? '';
-        email.dispatchEvent(new Event('input', { bubbles: true }));
+        email.setAttribute('autocomplete', 'off');
+        writeField(email, emailValue);
     }
 
-    if (password) {
-        password.value = button.dataset.demoPassword ?? '';
-        password.dispatchEvent(new Event('input', { bubbles: true }));
-    }
+    // Browsers clear a password field after the email changes. Write it again once that settles.
+    const applyPassword = () => {
+        if (! password) {
+            return;
+        }
 
-    email?.focus();
+        password.setAttribute('autocomplete', 'off');
+        writeField(password, passwordValue);
+    };
+
+    applyPassword();
+    requestAnimationFrame(applyPassword);
+    window.setTimeout(applyPassword, 50);
 });
+
+function writeField(input, value) {
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+
+    if (setter) {
+        setter.call(input, value);
+    } else {
+        input.value = value;
+    }
+
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+}
 
 const idleMinutes = Number(document.querySelector('meta[name="idle-timeout"]')?.content ?? 0);
 
