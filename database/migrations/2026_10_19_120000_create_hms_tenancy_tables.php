@@ -21,6 +21,7 @@ return new class extends Migration
             $table->unsignedSmallInteger('bed_capacity')->default(0);
             $table->string('moh_code')->nullable();
             $table->boolean('is_active')->default(true);
+            $table->timestamp('onboarded_at')->nullable();
             $table->timestamps();
         });
 

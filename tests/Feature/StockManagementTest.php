@@ -360,3 +360,26 @@ test('the starter list adds common items once', function () {
     expect($count)->toBeGreaterThan(20)
         ->and(Item::query()->where('facility_id', $facility->id)->count())->toBe($count);
 });
+
+test('a facility without items is pointed to the starter list on the inventory page', function () {
+    [, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->get(route('inventory.index'))
+        ->assertOk()
+        ->assertSee('There are no items yet.')
+        ->assertSee('Load the starter list');
+});
+
+test('the pharmacy warns about a shelf item at its reorder level and offers a restock', function () {
+    [$facility] = provisionHospital();
+    $item = stockItem($facility, 'Amoxicillin 500mg', reorderLevel: 50);
+    shelve($item, storeOfKind($facility, 'pharmacy'), 30);
+    shelve($item, storeOfKind($facility, 'main'), 500, 'M-1');
+
+    $this->actingAs(userWithRole($facility, Role::PharmacyStores))
+        ->get(route('pharmacy.index'))
+        ->assertOk()
+        ->assertSeeInOrder(['Running low on the pharmacy shelf', 'Amoxicillin 500mg', '30 left, reorder at 50', '500 in the main store'])
+        ->assertSee('Restock the pharmacy');
+});

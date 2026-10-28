@@ -225,11 +225,7 @@
                                 <p class="mt-2 text-sm text-slate-500">No imaging studies are on the price list yet. An administrator adds them under Price list.</p>
                             @else
                                 <x-input-label for="imaging-study" value="Study" class="mt-2" />
-                                <select id="imaging-study" name="imaging_study_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                                    @foreach ($studies as $study)
-                                        <option value="{{ $study->id }}">{{ $study->name }} · {{ \App\Support\Money::format($study->service?->cash_price ?? 0) }}</option>
-                                    @endforeach
-                                </select>
+                                <x-search-select id="imaging-study" name="imaging_study_id" :options="$studies->map(fn ($study) => ['value' => $study->id, 'label' => $study->name, 'hint' => \App\Support\Money::format($study->service?->cash_price ?? 0)])" placeholder="Search studies" required />
                                 <x-input-label for="imaging-notes" value="Clinical notes" class="mt-2" />
                                 <x-text-input id="imaging-notes" name="clinical_notes" class="mt-1 block w-full" />
                                 <div class="mt-3"><x-primary-button>Order imaging</x-primary-button></div>
@@ -272,11 +268,7 @@
                                 <div class="mt-3 grid gap-3 rounded-md bg-slate-50 p-3 sm:grid-cols-6">
                                     <div class="sm:col-span-6">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-item-' + line.key">Medicine</label>
-                                        <select :id="'rx-item-' + line.key" :name="'lines[' + index + '][item_id]'" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                                            @foreach ($medicines as $medicine)
-                                                <option value="{{ $medicine->id }}">{{ $medicine->name }} · {{ $medicine->unit }} · {{ \App\Support\Money::format($medicine->cash_price) }} each</option>
-                                            @endforeach
-                                        </select>
+                                        <x-search-select x-id="'rx-item-' + line.key" x-name="'lines[' + index + '][item_id]'" :options="$medicines->map(fn ($medicine) => ['value' => $medicine->id, 'label' => $medicine->name, 'hint' => $medicine->unit.' · '.\App\Support\Money::format($medicine->cash_price).' each'])" placeholder="Search medicines" required />
                                     </div>
                                     <div class="sm:col-span-2">
                                         <label class="block text-sm font-medium text-slate-700" :for="'rx-dose-' + line.key">Dose</label>
@@ -359,15 +351,7 @@
                             @csrf
                             <div>
                                 <x-input-label for="admit-bed" value="Bed" />
-                                <select id="admit-bed" name="bed_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" required>
-                                    @foreach ($beds->groupBy(fn ($bed) => $bed->ward->name) as $ward => $wardBeds)
-                                        <optgroup label="{{ $ward }}">
-                                            @foreach ($wardBeds as $bed)
-                                                <option value="{{ $bed->id }}">{{ $bed->code }}</option>
-                                            @endforeach
-                                        </optgroup>
-                                    @endforeach
-                                </select>
+                                <x-search-select id="admit-bed" name="bed_id" :options="$beds->map(fn ($bed) => ['value' => $bed->id, 'label' => $bed->code, 'group' => $bed->ward->name])" placeholder="Search by ward or bed" required />
                             </div>
                             <div>
                                 <x-input-label for="admit-diagnosis" value="Working diagnosis" />

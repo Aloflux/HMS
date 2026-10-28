@@ -5,6 +5,7 @@
         'item_id' => (string) $row['item']->id,
         'quantity' => (string) max(1, $row['suggested']),
     ])->values());
+    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit]);
     $initialStore = (string) (old('stock_location_id') ?? $stores->first()?->id);
     $initialLines = old('lines')
         ? array_values(old('lines'))
@@ -43,12 +44,7 @@
         <div class="grid gap-3 md:grid-cols-[1fr_10rem_auto] md:items-end">
             <div>
                 <label class="block text-sm font-medium text-slate-700" :for="'requisition-item-' + index">Item</label>
-                <select :id="'requisition-item-' + index" :name="'lines[' + index + '][item_id]'" x-model="line.item_id" required class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                    <option value="">Choose an item</option>
-                    @foreach ($items as $item)
-                        <option value="{{ $item->id }}">{{ $item->name }} ({{ $item->unit }})</option>
-                    @endforeach
-                </select>
+                <x-search-select x-id="'requisition-item-' + index" x-name="'lines[' + index + '][item_id]'" model="line.item_id" :options="$itemOptions" placeholder="Search items" required />
             </div>
             <div>
                 <label class="block text-sm font-medium text-slate-700" :for="'requisition-quantity-' + index">Quantity</label>

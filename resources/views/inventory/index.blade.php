@@ -1,6 +1,7 @@
 @php
     $user = auth()->user();
     $receivingStores = $locations->where('kind', '!=', 'main');
+    $itemOptions = $items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit.($item->sku ? ' · '.$item->sku : '')]);
 @endphp
 
 <x-app-layout>
@@ -42,11 +43,7 @@
                         <input type="hidden" name="_tab" value="stock">
                         <div class="md:col-span-2">
                             <x-input-label for="stock-item" value="Item" />
-                            <select id="stock-item" name="item_id" class="{{ $select }}">
-                                @foreach ($items as $item)
-                                    <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} ({{ $item->unit }})</option>
-                                @endforeach
-                            </select>
+                            <x-search-select id="stock-item" name="item_id" :options="$itemOptions" :selected="old('item_id')" placeholder="Search items" required />
                         </div>
                         <div>
                             <x-input-label for="stock-store" value="Into store" />
@@ -245,11 +242,7 @@
                         @endif
                     </div>
                     <template x-if="! newSupplier">
-                        <select id="supplier" name="supplier_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm" required>
-                            @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" @selected((string) old('supplier_id') === (string) $supplier->id)>{{ $supplier->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-search-select id="supplier" name="supplier_id" :options="$suppliers->map(fn ($supplier) => ['value' => $supplier->id, 'label' => $supplier->name, 'hint' => $supplier->phone])" :selected="old('supplier_id')" placeholder="Search suppliers" required />
                     </template>
                     <template x-if="newSupplier">
                         <x-text-input id="supplier" name="supplier_name" class="mt-1 block w-full" :value="old('supplier_name')" placeholder="New supplier's name" required />
@@ -257,11 +250,7 @@
                 </div>
                 <div class="md:col-span-2">
                     <x-input-label for="order-item" value="Item" />
-                    <select id="order-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                        @foreach ($items as $item)
-                            <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} ({{ $item->unit }})</option>
-                        @endforeach
-                    </select>
+                    <x-search-select id="order-item" name="item_id" :options="$itemOptions" :selected="old('item_id')" placeholder="Search items" required />
                 </div>
                 <div>
                     <x-input-label for="order-quantity" value="Quantity" />
@@ -361,11 +350,7 @@
                 </div>
                 <div>
                     <x-input-label for="adjust-item" value="Item" />
-                    <select id="adjust-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                        @foreach ($items as $item)
-                            <option value="{{ $item->id }}">{{ $item->name }} ({{ $item->unit }})</option>
-                        @endforeach
-                    </select>
+                    <x-search-select id="adjust-item" name="item_id" :options="$itemOptions" placeholder="Search items" required />
                 </div>
                 <div>
                     <x-input-label for="adjust-quantity" value="Change in quantity" />

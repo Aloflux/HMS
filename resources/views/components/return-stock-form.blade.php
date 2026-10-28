@@ -12,11 +12,7 @@
     </div>
     <div>
         <x-input-label for="return-item" value="Item" />
-        <select id="return-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-            @foreach ($items as $item)
-                <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} ({{ $item->unit }})</option>
-            @endforeach
-        </select>
+        <x-search-select id="return-item" name="item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit])" :selected="old('item_id')" placeholder="Search items" required />
     </div>
     <div>
         <x-input-label for="return-quantity" value="Quantity" />

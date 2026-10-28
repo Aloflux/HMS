@@ -58,21 +58,11 @@
         </div>
         <div>
             <x-input-label for="usage-employee" value="Employee" />
-            <select id="usage-employee" name="performed_by" class="{{ $select }}">
-                <option value="">All employees</option>
-                @foreach ($employees as $employee)
-                    <option value="{{ $employee->id }}" @selected($filters['performed_by'] === $employee->id)>{{ $employee->name }}</option>
-                @endforeach
-            </select>
+            <x-search-select id="usage-employee" name="performed_by" :options="$employees->map(fn ($employee) => ['value' => $employee->id, 'label' => $employee->name])" :selected="$filters['performed_by']" empty-label="All employees" placeholder="Search employees" />
         </div>
         <div>
             <x-input-label for="usage-item" value="Item" />
-            <select id="usage-item" name="item_id" class="{{ $select }}">
-                <option value="">All items</option>
-                @foreach ($items as $item)
-                    <option value="{{ $item->id }}" @selected($filters['item_id'] === $item->id)>{{ $item->name }}</option>
-                @endforeach
-            </select>
+            <x-search-select id="usage-item" name="item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit])" :selected="$filters['item_id']" empty-label="All items" placeholder="Search items" />
         </div>
         <div class="flex items-end"><x-primary-button>Update</x-primary-button></div>
     </form>

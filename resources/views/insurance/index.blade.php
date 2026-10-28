@@ -52,11 +52,7 @@
                     @csrf
                     <div>
                         <x-input-label for="preauth-visit" value="Visit" />
-                        <select id="preauth-visit" name="visit_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                            @foreach ($visits as $visit)
-                                <option value="{{ $visit->id }}">{{ $visit->visit_number }} · {{ $visit->patient->fullName() }}</option>
-                            @endforeach
-                        </select>
+                        <x-search-select id="preauth-visit" name="visit_id" :options="$visits->map(fn ($visit) => ['value' => $visit->id, 'label' => $visit->patient->fullName(), 'hint' => $visit->visit_number])" placeholder="Search by patient or visit number" required />
                     </div>
                     <div>
                         <x-input-label for="preauth-service" value="Service" />

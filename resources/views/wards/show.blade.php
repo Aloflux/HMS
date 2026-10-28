@@ -51,11 +51,7 @@
                     @csrf
                     <div class="sm:col-span-3">
                         <x-input-label for="medication-item" value="Medicine" />
-                        <select id="medication-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                            @foreach ($items as $item)
-                                <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }}</option>
-                            @endforeach
-                        </select>
+                        <x-search-select id="medication-item" name="item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit])" :selected="old('item_id')" placeholder="Search medicines" required />
                     </div>
                     <div>
                         <x-input-label for="medication-dose" value="Dose" />
@@ -110,11 +106,7 @@
                         </div>
                         <div class="sm:col-span-2">
                             <x-input-label for="issue-item" value="Item" />
-                            <select id="issue-item" name="item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                                @foreach ($items as $item)
-                                    <option value="{{ $item->id }}" @selected((string) old('item_id') === (string) $item->id)>{{ $item->name }} · {{ $item->billing_type->label() }}</option>
-                                @endforeach
-                            </select>
+                            <x-search-select id="issue-item" name="item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->billing_type->label()])" :selected="old('item_id')" placeholder="Search items" required />
                         </div>
                         <div class="sm:col-span-2"><x-primary-button>Issue</x-primary-button></div>
                     </form>

@@ -144,13 +144,7 @@
                         </div>
                         <div class="md:col-span-2">
                             <x-input-label :for="'substitute-'.$line->id" value="Substitute medicine" />
-                            <select id="substitute-{{ $line->id }}" name="substitute_item_id" class="mt-1 block w-full rounded-md border-transparent bg-slate-100/70 focus:border-brand-600 focus:bg-white focus:ring-0 text-sm">
-                                <option value="">Dispense {{ $line->item->name }}</option>
-                                @foreach ($substitutes as $substitute)
-                                    @continue($substitute->id === $line->item_id)
-                                    <option value="{{ $substitute->id }}">{{ $substitute->name }} · {{ $substitute->unit }} · {{ \App\Support\Money::format($substitute->cash_price) }}</option>
-                                @endforeach
-                            </select>
+                            <x-search-select :id="'substitute-'.$line->id" name="substitute_item_id" :options="$substitutes->reject(fn ($substitute) => $substitute->id === $line->item_id)->map(fn ($substitute) => ['value' => $substitute->id, 'label' => $substitute->name, 'hint' => $substitute->unit.' · '.\App\Support\Money::format($substitute->cash_price)])" :empty-label="'Dispense '.$line->item->name" placeholder="Search for a substitute" />
                         </div>
                         <div class="flex flex-wrap items-center gap-3">
                             <x-primary-button>Dispense</x-primary-button>

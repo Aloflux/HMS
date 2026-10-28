@@ -4,6 +4,81 @@ import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
 
+/**
+ * A dropdown you can type into. Options are {value, label, hint?, group?}.
+ * The chosen value sits in a hidden input; the text box always shows the chosen label.
+ */
+Alpine.data('searchSelect', ({ options = [], value = '', emptyLabel = null } = {}) => ({
+    options: emptyLabel === null ? options : [{ value: '', label: emptyLabel }, ...options],
+    value: value === null ? '' : String(value),
+    query: '',
+    isOpen: false,
+    active: 0,
+
+    init() {
+        this.query = this.labelFor(this.value);
+        this.$watch('value', (current) => {
+            if (! this.isOpen) {
+                this.query = this.labelFor(current);
+            }
+        });
+    },
+
+    labelFor(current) {
+        return this.options.find((option) => String(option.value) === String(current))?.label ?? '';
+    },
+
+    get filtered() {
+        const typed = this.query.trim().toLowerCase();
+
+        if (typed === '' || typed === this.labelFor(this.value).toLowerCase()) {
+            return this.options.slice(0, 200);
+        }
+
+        const terms = typed.split(/\s+/);
+
+        return this.options
+            .filter((option) => {
+                const text = [option.label, option.hint, option.group].filter(Boolean).join(' ').toLowerCase();
+
+                return terms.every((term) => text.includes(term));
+            })
+            .slice(0, 200);
+    },
+
+    open() {
+        this.isOpen = true;
+    },
+
+    close() {
+        this.isOpen = false;
+        this.active = 0;
+        this.query = this.labelFor(this.value);
+    },
+
+    move(step) {
+        this.open();
+        const count = this.filtered.length;
+
+        if (count === 0) {
+            return;
+        }
+
+        this.active = (this.active + step + count) % count;
+        this.$nextTick(() => this.$refs.list?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' }));
+    },
+
+    choose(option) {
+        if (! option) {
+            return;
+        }
+
+        this.value = String(option.value);
+        this.close();
+        this.$nextTick(() => this.$refs.hidden?.dispatchEvent(new Event('change', { bubbles: true })));
+    },
+}));
+
 Alpine.start();
 
 document.addEventListener('click', (event) => {

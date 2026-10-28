@@ -65,14 +65,14 @@
                     <div><x-input-label for="test-name" value="Name" /><x-text-input id="test-name" name="name" class="mt-1 block w-full" required /></div>
                     <div>
                         <x-input-label for="test-service" value="Priced as service" />
-                        <select id="test-service" name="service_id" class="{{ $select }}">@foreach ($services as $service)<option value="{{ $service->id }}">{{ $service->name }} · {{ \App\Support\Money::format($service->cash_price) }}</option>@endforeach</select>
+                        <x-search-select id="test-service" name="service_id" :options="$services->map(fn ($service) => ['value' => $service->id, 'label' => $service->name, 'hint' => \App\Support\Money::format($service->cash_price)])" placeholder="Search services" required />
                     </div>
                     <div><x-input-label for="test-specimen" value="Specimen" /><x-text-input id="test-specimen" name="specimen" class="mt-1 block w-full" placeholder="Blood, urine" /></div>
                     <div><x-input-label for="test-unit" value="Result unit" /><x-text-input id="test-unit" name="unit" class="mt-1 block w-full" placeholder="g/dL" /></div>
                     <div><x-input-label for="test-reference" value="Reference range" /><x-text-input id="test-reference" name="reference_text" class="mt-1 block w-full" placeholder="12–16" /></div>
                     <div>
                         <x-input-label for="test-reagent" value="Reagent used" />
-                        <select id="test-reagent" name="reagent_item_id" class="{{ $select }}"><option value="">None</option>@foreach ($items as $item)<option value="{{ $item->id }}">{{ $item->name }}</option>@endforeach</select>
+                        <x-search-select id="test-reagent" name="reagent_item_id" :options="$items->map(fn ($item) => ['value' => $item->id, 'label' => $item->name, 'hint' => $item->unit])" empty-label="None" selected="" placeholder="Search items" />
                     </div>
                     <div><x-input-label for="test-reagent-qty" value="Reagent per test" /><x-text-input id="test-reagent-qty" name="reagent_quantity" type="number" min="1" value="1" class="mt-1 block w-full" /></div>
                     <div class="sm:col-span-2"><x-primary-button>Add test</x-primary-button></div>
@@ -96,7 +96,7 @@
                     <div><x-input-label for="study-name" value="Name" /><x-text-input id="study-name" name="name" class="mt-1 block w-full" required /></div>
                     <div class="sm:col-span-2">
                         <x-input-label for="study-service" value="Priced as service" />
-                        <select id="study-service" name="service_id" class="{{ $select }}">@foreach ($services as $service)<option value="{{ $service->id }}">{{ $service->name }} · {{ \App\Support\Money::format($service->cash_price) }}</option>@endforeach</select>
+                        <x-search-select id="study-service" name="service_id" :options="$services->map(fn ($service) => ['value' => $service->id, 'label' => $service->name, 'hint' => \App\Support\Money::format($service->cash_price)])" placeholder="Search services" required />
                     </div>
                     <div class="sm:col-span-2"><x-primary-button>Add study</x-primary-button></div>
                 </form>

@@ -23,7 +23,7 @@ class InsuranceController extends Controller
             'schemes' => InsuranceScheme::query()->orderBy('name')->get(),
             'preauthorisations' => Preauthorisation::query()->with(['visit.patient', 'scheme'])->latest()->limit(30)->get(),
             'claims' => Claim::query()->with('scheme')->latest()->limit(20)->get(),
-            'visits' => Visit::query()->with('patient')->whereNotNull('insurance_scheme_id')->latest('opened_at')->limit(30)->get(),
+            'visits' => Visit::query()->with('patient')->whereNotNull('insurance_scheme_id')->latest('opened_at')->limit(300)->get(),
         ]);
     }
 
