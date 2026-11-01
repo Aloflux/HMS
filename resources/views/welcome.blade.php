@@ -7,6 +7,7 @@
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('layouts.analytics')
     </head>
     <body class="min-h-screen bg-slate-100 font-sans text-slate-900 antialiased">
         <header class="sticky top-0 z-10 border-b border-slate-200 bg-white/95">

@@ -13,7 +13,7 @@
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-        <script defer src="https://analytics.aloflux.com/tracker.js" data-site="tunzuri.aloflux.com"></script>
+        @include('layouts.analytics')
     </head>
     <body class="font-sans antialiased bg-slate-100 text-slate-900">
         <div x-data="{ sidebar: false }" class="min-h-screen">

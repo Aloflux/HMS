@@ -13,6 +13,7 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @include('layouts.analytics')
     </head>
     <body class="bg-slate-100 font-sans text-slate-900 antialiased">
         @if ($plain)
