@@ -28,9 +28,9 @@ class Department extends Model
         ];
     }
 
-    public function users(): HasMany
+    public function memberships(): HasMany
     {
-        return $this->hasMany(User::class);
+        return $this->hasMany(Membership::class);
     }
 
     public function stockLocations(): HasMany

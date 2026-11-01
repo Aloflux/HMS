@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
 use App\Models\User;
@@ -67,10 +66,7 @@ class RegisteredUserController extends Controller
 
         FacilityContext::forget();
 
-        $owner = User::query()
-            ->where('facility_id', $facility->id)
-            ->where('role', Role::Administrator)
-            ->firstOrFail();
+        $owner = $facility->firstAdministrator();
 
         event(new Registered($owner));
 

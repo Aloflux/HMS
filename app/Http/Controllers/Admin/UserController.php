@@ -6,14 +6,21 @@ use App\Authorization\RolePermissions;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use App\Models\Membership;
 use App\Models\User;
+use App\Notifications\MembershipInvitation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rule;
-use Illuminate\Validation\Rules\Password;
 use Illuminate\View\View;
 
+/**
+ * An administrator manages who works at their facility. Whether an email already has a Tunzuri account
+ * elsewhere is never revealed: adding anyone who is not already a member here always sends an invitation.
+ */
 class UserController extends Controller
 {
     public function index(Request $request): View
@@ -21,16 +28,20 @@ class UserController extends Controller
         $search = $request->string('q')->trim()->toString();
 
         return view('admin.users.index', [
-            'users' => User::query()
+            'memberships' => Membership::query()
                 ->where('facility_id', $request->user()->facility_id)
                 ->when($search !== '', function ($query) use ($search): void {
                     $query->where(function ($inner) use ($search): void {
-                        $inner->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
+                        $inner->where('invited_name', 'like', "%{$search}%")
+                            ->orWhereHas('user', fn ($user) => $user->where('email', 'like', "%{$search}%"))
+                            ->orWhere(fn ($accepted) => $accepted->whereNotNull('accepted_at')->whereHas('user', fn ($user) => $user->where('name', 'like', "%{$search}%")));
                     });
                 })
-                ->with('department')
-                ->orderBy('name')
+                ->with(['user', 'department'])
+                ->join('users', 'users.id', '=', 'memberships.user_id')
+                ->orderByRaw('case when memberships.accepted_at is null then 0 else 1 end')
+                ->orderByRaw('case when memberships.accepted_at is null then memberships.invited_name else users.name end')
+                ->select('memberships.*')
                 ->paginate(25)
                 ->withQueryString(),
             'search' => $search,
@@ -44,59 +55,124 @@ class UserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
         $identity = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'password' => ['required', Password::defaults()],
-            'phone' => ['nullable', 'string', 'max:30'],
+            'email' => ['required', 'email', 'max:150'],
         ]);
+        $assignment = $this->assignment($request);
+        $facilityId = $request->user()->facility_id;
 
-        $user = User::query()->create([
-            'name' => $identity['name'],
-            'email' => $identity['email'],
-            'password' => $identity['password'],
-            'phone' => $identity['phone'] ?? null,
-            'facility_id' => $request->user()->facility_id,
-            'is_active' => true,
-            'email_verified_at' => now(),
-            ...$this->assignment($request),
-        ]);
+        $person = User::query()->where('email', $identity['email'])->first();
+        $here = $person?->memberships()->where('facility_id', $facilityId)->first();
 
-        return redirect()->route('admin.users.index')->with('status', "{$user->name} added.");
+        if ($here !== null) {
+            return back()->withInput()->withErrors(['email' => $here->isAccepted()
+                ? "{$here->displayName()} is already a member of this facility."
+                : "{$identity['email']} has already been invited here. Open their row to send the invitation again.",
+            ]);
+        }
+
+        [$person, $membership, $token] = DB::transaction(function () use ($person, $identity, $assignment, $facilityId, $request): array {
+            if ($person === null) {
+                $person = new User(['name' => $identity['name'], 'email' => $identity['email'], 'is_active' => true]);
+                $person->saveQuietly();
+            }
+
+            $membership = $person->memberships()->create([
+                ...$assignment,
+                'facility_id' => $facilityId,
+                'is_active' => true,
+                'invited_name' => $identity['name'],
+            ]);
+
+            return [$person, $membership, $membership->issueInvitation($request->user())];
+        });
+
+        $person->notify(new MembershipInvitation($membership, $token));
+
+        return redirect()->route('admin.users.index')->with('status', "Invitation sent to {$identity['email']}.");
     }
 
-    public function edit(Request $request, User $user): View
+    public function edit(Request $request, Membership $membership): View
     {
-        abort_unless($user->facility_id === $request->user()->facility_id, 404);
+        $this->ensureHere($request, $membership);
 
         return view('admin.users.edit', [
-            'user' => $user,
+            'membership' => $membership->load(['user', 'department']),
             ...$this->accessOptions(),
         ]);
     }
 
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(Request $request, Membership $membership): RedirectResponse
     {
-        abort_unless($user->facility_id === $request->user()->facility_id, 404);
+        $this->ensureHere($request, $membership);
 
         $assignment = $this->assignment($request);
-        $details = $request->validate([
-            'name' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150', Rule::unique('users', 'email')->ignore($user)],
-            'phone' => ['nullable', 'string', 'max:30'],
+        $status = $request->validate([
             'is_active' => ['required', 'boolean'],
         ]);
 
-        if ($user->is($request->user()) && ($assignment['role'] !== Role::Administrator || ! $details['is_active'])) {
+        if ($membership->user_id === $request->user()->id && ($assignment['role'] !== Role::Administrator || ! $status['is_active'])) {
             return back()->with('error', 'You cannot remove your own full access or turn off your own account.');
         }
 
-        $user->update([
-            ...$details,
+        $membership->update([
             ...$assignment,
+            'is_active' => (bool) $status['is_active'],
         ]);
 
-        return redirect()->route('admin.users.index')->with('status', "{$user->name} updated.");
+        return redirect()->route('admin.users.index')->with('status', "{$membership->displayName()} updated.");
+    }
+
+    /**
+     * Email the person a link to choose a new password. The reply never depends on the outcome.
+     */
+    public function sendPasswordLink(Request $request, Membership $membership): RedirectResponse
+    {
+        $this->ensureHere($request, $membership);
+        abort_unless($membership->isAccepted(), 404);
+
+        Password::sendResetLink(['email' => $membership->user->email]);
+
+        return back()->with('status', "Password reset link sent to {$membership->user->email}.");
+    }
+
+    public function resendInvitation(Request $request, Membership $membership): RedirectResponse
+    {
+        $this->ensureHere($request, $membership);
+        abort_if($membership->isAccepted(), 404);
+
+        $membership->user->notify(new MembershipInvitation($membership, $membership->issueInvitation($request->user())));
+
+        return back()->with('status', "Invitation sent again to {$membership->user->email}.");
+    }
+
+    /**
+     * Withdraw an invitation that has not been accepted.
+     */
+    public function cancelInvitation(Request $request, Membership $membership): RedirectResponse
+    {
+        $this->ensureHere($request, $membership);
+        abort_if($membership->isAccepted(), 404);
+
+        $person = $membership->user;
+        $email = $person->email;
+
+        DB::transaction(function () use ($membership, $person): void {
+            $membership->delete();
+
+            if ($person->password === null && ! $person->memberships()->exists()) {
+                $person->deleteQuietly();
+            }
+        });
+
+        return redirect()->route('admin.users.index')->with('status', "Invitation to {$email} withdrawn.");
+    }
+
+    private function ensureHere(Request $request, Membership $membership): void
+    {
+        abort_unless($membership->facility_id === $request->user()->facility_id, 404);
     }
 
     /**

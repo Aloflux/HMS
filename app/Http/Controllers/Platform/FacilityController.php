@@ -15,12 +15,12 @@ use App\Models\ImagingOrder;
 use App\Models\InsuranceScheme;
 use App\Models\Item;
 use App\Models\LabRequest;
+use App\Models\Membership;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\Prescription;
 use App\Models\StockBatch;
 use App\Models\TheatreBooking;
-use App\Models\User;
 use App\Models\Visit;
 use App\Models\Ward;
 use App\Services\FacilityProvisioner;
@@ -49,9 +49,9 @@ class FacilityController extends Controller
         $facilities = Facility::query()
             ->withCount([
                 'patients' => fn ($query) => $query->withoutGlobalScope('facility'),
-                'users as admins_count' => fn ($query) => $query->where('role', Role::Administrator),
-                'users as active_admins_count' => fn ($query) => $query->where('role', Role::Administrator)->where('is_active', true),
-                'users as staff_count',
+                'memberships as admins_count' => fn ($query) => $query->where('role', Role::Administrator)->whereNotNull('accepted_at'),
+                'memberships as active_admins_count' => fn ($query) => $query->where('role', Role::Administrator)->where('is_active', true)->whereNotNull('accepted_at'),
+                'memberships as staff_count' => fn ($query) => $query->whereNotNull('accepted_at'),
             ])
             ->when($search !== '', fn ($query) => $query->where(fn ($query) => $query
                 ->whereLike('name', "%{$search}%")
@@ -89,7 +89,7 @@ class FacilityController extends Controller
         $scoped = fn (string $model): Builder => $model::query()->withoutGlobalScope('facility')->where('facility_id', $facility->id);
         $since30d = now()->subDays(30);
 
-        $staff = $facility->users()->get(['id', 'name', 'email', 'role', 'is_active', 'last_login_at', 'email_verified_at']);
+        $staff = $facility->memberships()->whereNotNull('accepted_at')->with('user')->get();
         $beds = $scoped(Bed::class)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
         $bedsInService = (int) $beds->except('closed')->sum();
 
@@ -121,7 +121,7 @@ class FacilityController extends Controller
             'facility' => $facility,
             'kinds' => RegisteredUserController::FACILITY_KINDS,
             'owner' => $staff->where('role', Role::Administrator)->sortBy('id')->first(),
-            'admins' => $staff->where('role', Role::Administrator)->sortBy('name')->values(),
+            'admins' => $staff->where('role', Role::Administrator)->sortBy('user.name')->values(),
             'lastActivity' => $lastActivity,
             'patients' => [
                 'total' => $scoped(Patient::class)->count(),
@@ -156,9 +156,9 @@ class FacilityController extends Controller
             'staff' => [
                 'total' => $staff->count(),
                 'active' => $staff->where('is_active', true)->count(),
-                'signedIn7d' => $staff->filter(fn (User $user): bool => $user->last_login_at?->greaterThanOrEqualTo(now()->subDays(7)) ?? false)->count(),
+                'signedIn7d' => $staff->filter(fn (Membership $membership): bool => $membership->last_login_at?->greaterThanOrEqualTo(now()->subDays(7)) ?? false)->count(),
                 'neverSignedIn' => $staff->where('is_active', true)->whereNull('last_login_at')->count(),
-                'byRole' => $staff->where('is_active', true)->groupBy(fn (User $user): string => $user->role->label())->map->count()->sortDesc(),
+                'byRole' => $staff->where('is_active', true)->groupBy(fn (Membership $membership): string => $membership->role->label())->map->count()->sortDesc(),
             ],
             'setup' => [
                 'Departments' => $scoped(Department::class)->where('is_active', true)->count(),

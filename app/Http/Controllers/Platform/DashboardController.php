@@ -7,8 +7,8 @@ use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Controller;
 use App\Models\Bed;
 use App\Models\Facility;
+use App\Models\Membership;
 use App\Models\Patient;
-use App\Models\User;
 use App\Models\Visit;
 use Illuminate\Support\Carbon;
 use Illuminate\View\View;
@@ -27,8 +27,8 @@ class DashboardController extends Controller
     {
         $facilities = Facility::query()
             ->withCount([
-                'users as active_admins_count' => fn ($query) => $query->where('role', Role::Administrator)->where('is_active', true),
-                'users as staff_count',
+                'memberships as active_admins_count' => fn ($query) => $query->where('role', Role::Administrator)->where('is_active', true)->whereNotNull('accepted_at'),
+                'memberships as staff_count' => fn ($query) => $query->whereNotNull('accepted_at'),
             ])
             ->orderBy('name')
             ->get();
@@ -45,13 +45,14 @@ class DashboardController extends Controller
             $facility->setAttribute('beds_occupied', (int) ($bedsOccupied[$facility->id] ?? 0));
         });
 
-        $owners = User::query()
+        $owners = Membership::query()
             ->whereIn('facility_id', $facilities->whereNull('onboarded_at')->pluck('id'))
             ->where('role', Role::Administrator)
+            ->with('user')
             ->orderBy('id')
             ->get()
             ->unique('facility_id')
-            ->keyBy('facility_id');
+            ->mapWithKeys(fn (Membership $membership): array => [$membership->facility_id => $membership->user]);
 
         $weekStart = now()->startOfWeek()->subWeeks(self::TREND_WEEKS - 1);
         $signUps = collect(range(0, self::TREND_WEEKS - 1))->map(function (int $offset) use ($facilities, $weekStart): array {
@@ -70,7 +71,7 @@ class DashboardController extends Controller
                 'active' => $facilities->where('is_active', true)->count(),
                 'settingUp' => $facilities->whereNull('onboarded_at')->count(),
                 'newThisMonth' => $facilities->filter(fn (Facility $facility): bool => $facility->created_at?->greaterThanOrEqualTo(now()->startOfMonth()) ?? false)->count(),
-                'users' => User::query()->whereNotNull('facility_id')->where('is_active', true)->count(),
+                'users' => Membership::query()->usable()->whereHas('user', fn ($query) => $query->where('is_active', true))->distinct()->count('user_id'),
                 'patients' => (int) $patients->sum(),
                 'visitsToday' => Visit::query()->withoutGlobalScope('facility')->where('opened_at', '>=', today())->count(),
                 'visits30d' => (int) $recentVisits->sum(),

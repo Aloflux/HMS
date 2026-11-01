@@ -2,9 +2,9 @@
 
 use App\Enums\Payer;
 use App\Enums\Priority;
-use App\Enums\Role;
 use App\Enums\VisitType;
 use App\Models\Facility;
+use App\Models\Membership;
 use App\Models\Patient;
 use App\Models\User;
 use App\Models\Visit;
@@ -71,7 +71,7 @@ function provisionHospital(): array
 
     FacilityContext::forget();
 
-    $admin = User::query()->where('facility_id', $facility->id)->where('role', Role::Administrator)->first();
+    $admin = $facility->firstAdministrator();
 
     return [$facility, $admin];
 }
@@ -102,4 +102,12 @@ function openCashVisit(Facility $facility, User $actor): Visit
     FacilityContext::forget();
 
     return $visit;
+}
+
+/**
+ * The user's membership at a facility, or at their only facility.
+ */
+function membershipOf(User $user, ?Facility $facility = null): Membership
+{
+    return $user->memberships()->when($facility, fn ($query) => $query->where('facility_id', $facility->id))->firstOrFail();
 }

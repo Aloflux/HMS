@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Enums\BillingType;
 use App\Enums\Payer;
 use App\Enums\Priority;
-use App\Enums\Role;
 use App\Enums\VisitType;
 use App\Models\Facility;
 use App\Models\ImagingStudy;
@@ -55,8 +54,7 @@ class DemoSeeder extends Seeder
             'name' => 'Platform Operator',
             'email' => 'platform@tunzuri.test',
             'password' => 'password',
-            'role' => Role::PlatformAdmin,
-            'facility_id' => null,
+            'is_platform_admin' => true,
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
@@ -435,9 +433,6 @@ class DemoSeeder extends Seeder
 
     private function administrator(Facility $facility): User
     {
-        return User::query()
-            ->where('facility_id', $facility->id)
-            ->where('role', Role::Administrator)
-            ->firstOrFail();
+        return $facility->firstAdministrator() ?? throw new \RuntimeException("{$facility->name} has no administrator.");
     }
 }

@@ -4,7 +4,7 @@
     address carries a secret token are never tracked.
 --}}
 @production
-    @unless (request()->routeIs('password.reset', 'verification.verify'))
+    @unless (request()->routeIs('password.reset', 'verification.verify', 'invitations.*'))
         <script>
             try {
                 if (document.referrer && new URL(document.referrer).origin === location.origin) {

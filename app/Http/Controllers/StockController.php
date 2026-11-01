@@ -77,7 +77,7 @@ class StockController extends Controller
             'groupBy' => $groupBy,
             'filters' => $filters,
             'departments' => Department::query()->orderBy('name')->get(),
-            'employees' => User::query()->where('facility_id', $facilityId)->orderBy('name')->get(),
+            'employees' => User::query()->atFacility($facilityId)->orderBy('name')->get(),
             'items' => Item::query()->orderBy('name')->get(),
             'reasons' => [...StockReason::consumption(), StockReason::Adjustment, StockReason::Return],
         ]);
@@ -111,7 +111,7 @@ class StockController extends Controller
             'end' => ['nullable', 'date', 'after_or_equal:start'],
             'group_by' => ['nullable', Rule::in(['department', 'employee', 'item'])],
             'department_id' => ['nullable', Rule::exists('departments', 'id')->where('facility_id', $facilityId)],
-            'performed_by' => ['nullable', Rule::exists('users', 'id')->where('facility_id', $facilityId)],
+            'performed_by' => ['nullable', Rule::exists('memberships', 'user_id')->where('facility_id', $facilityId)->whereNotNull('accepted_at')],
             'item_id' => ['nullable', Rule::exists('items', 'id')->where('facility_id', $facilityId)],
             'reason' => ['nullable', Rule::in([...array_map(fn (StockReason $reason): string => $reason->value, StockReason::consumption()), StockReason::Adjustment->value, StockReason::Return->value])],
         ]);

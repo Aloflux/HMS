@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Membership;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
@@ -71,25 +73,26 @@ class AuthenticatedSessionController extends Controller
         }
 
         return User::query()
-            ->with('facility:id,name,is_active')
             ->where('is_active', true)
+            ->whereNotNull('password')
             ->where(function (Builder $query): void {
-                $query->whereNull('facility_id')
-                    ->orWhereHas('facility', function (Builder $facility): void {
-                        $facility->where('is_active', true);
-                    });
+                $query->where('is_platform_admin', true)
+                    ->orWhereHas('memberships', fn (Builder $membership) => $membership->usable());
             })
+            ->with(['memberships' => fn ($membership) => $membership->usable()->with('facility:id,name')])
             ->orderBy('name')
             ->get()
             ->filter(fn (User $user): bool => Hash::check($password, $user->password))
-            ->sortBy(fn (User $user): string => mb_strtolower(($user->facility?->name ?? '').' '.$user->name))
+            ->flatMap(fn (User $user): array => $user->is_platform_admin
+                ? [['facility' => 'Tunzuri platform', 'name' => $user->name, 'role' => Role::PlatformAdmin->label(), 'email' => $user->email]]
+                : $user->memberships->map(fn (Membership $membership): array => [
+                    'facility' => $membership->facility->name,
+                    'name' => $user->name,
+                    'role' => $membership->role->label(),
+                    'email' => $user->email,
+                ])->all())
+            ->sortBy(fn (array $account): string => mb_strtolower($account['facility'].' '.$account['name']))
             ->values()
-            ->map(fn (User $user): array => [
-                'facility' => $user->facility?->name ?? 'Tunzuri platform',
-                'name' => $user->name,
-                'role' => $user->role->label(),
-                'email' => $user->email,
-            ])
             ->all();
     }
 }

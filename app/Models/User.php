@@ -10,8 +10,11 @@ use App\Notifications\VerifyEmailAddress;
 use App\Support\MailPressure;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Notification;
@@ -29,14 +32,18 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'email_verified_at',
         'password',
-        'facility_id',
-        'role',
-        'permissions',
+        'is_platform_admin',
         'phone',
-        'department_id',
         'is_active',
         'last_login_at',
     ];
+
+    /**
+     * The membership this person is working in for the current request.
+     */
+    private ?Membership $activeMembership = null;
+
+    private bool $activeMembershipResolved = false;
 
     /**
      * @var list<string>
@@ -51,8 +58,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'role' => Role::class,
-            'permissions' => 'array',
+            'is_platform_admin' => 'boolean',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
         ];
@@ -82,14 +88,106 @@ class User extends Authenticatable implements MustVerifyEmail
         Notification::sendNow($this, $instance);
     }
 
-    public function facility(): BelongsTo
+    public function memberships(): HasMany
     {
-        return $this->belongsTo(Facility::class);
+        return $this->hasMany(Membership::class);
     }
 
-    public function department(): BelongsTo
+    /**
+     * People with an accepted membership at a facility, whether or not it is switched on.
+     *
+     * @param  Builder<User>  $query
+     */
+    public function scopeAtFacility(Builder $query, int $facilityId): void
     {
-        return $this->belongsTo(Department::class);
+        $query->whereHas('memberships', fn (Builder $membership) => $membership->where('facility_id', $facilityId)->whereNotNull('accepted_at'));
+    }
+
+    /**
+     * Work in this membership for the rest of the request.
+     */
+    public function useMembership(?Membership $membership): void
+    {
+        $this->activeMembership = $membership;
+        $this->activeMembershipResolved = true;
+    }
+
+    /**
+     * The membership in use. Unless one was chosen, a person with a single usable membership works in it.
+     * Finding none is not remembered, so a membership created later is picked up.
+     */
+    public function activeMembership(): ?Membership
+    {
+        if (! $this->activeMembershipResolved) {
+            $usable = $this->usableMemberships();
+
+            if ($usable->count() === 1) {
+                $this->useMembership($usable->first());
+            }
+        }
+
+        return $this->activeMembership;
+    }
+
+    public function refresh(): static
+    {
+        $this->activeMembership = null;
+        $this->activeMembershipResolved = false;
+
+        return parent::refresh();
+    }
+
+    /**
+     * @return Collection<int, Membership>
+     */
+    public function usableMemberships(): Collection
+    {
+        if ($this->is_platform_admin) {
+            return new Collection;
+        }
+
+        return $this->memberships()
+            ->usable()
+            ->with(['facility', 'department'])
+            ->get()
+            ->sortBy(fn (Membership $membership): string => mb_strtolower($membership->facility->name))
+            ->values();
+    }
+
+    /**
+     * The facility of the membership in use.
+     */
+    protected function facilityId(): Attribute
+    {
+        return Attribute::get(fn (): ?int => $this->activeMembership()?->facility_id);
+    }
+
+    protected function facility(): Attribute
+    {
+        return Attribute::get(fn (): ?Facility => $this->activeMembership()?->facility);
+    }
+
+    /**
+     * Platform operators hold their role on the account; everyone else holds one per facility.
+     */
+    protected function role(): Attribute
+    {
+        return Attribute::get(fn (): ?Role => $this->is_platform_admin ? Role::PlatformAdmin : $this->activeMembership()?->role);
+    }
+
+    protected function permissions(): Attribute
+    {
+        return Attribute::get(fn (): ?array => $this->activeMembership()?->permissions);
+    }
+
+    protected function departmentId(): Attribute
+    {
+        return Attribute::get(fn (): ?int => $this->activeMembership()?->department_id);
+    }
+
+    protected function department(): Attribute
+    {
+        return Attribute::get(fn (): ?Department => $this->activeMembership()?->department);
     }
 
     public function permits(string $permission): bool
@@ -98,7 +196,7 @@ class User extends Authenticatable implements MustVerifyEmail
             return $permission === 'platform.manage';
         }
 
-        if ($permission === 'platform.manage') {
+        if ($permission === 'platform.manage' || $this->role === null) {
             return false;
         }
 
@@ -115,31 +213,15 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function accessSummary(): string
     {
-        $access = $this->accessAreas();
-
-        return $this->department?->name ? $this->department->name.' · '.$access : $access;
+        return $this->role === Role::PlatformAdmin ? $this->role->covers() : ($this->activeMembership()?->accessSummary() ?? 'No access');
     }
 
     /**
-     * The work areas this account can open, without its department.
+     * The work areas this person can open where they are working, without their department.
      */
     public function accessAreas(): string
     {
-        if ($this->role === Role::Administrator) {
-            return 'Full access';
-        }
-
-        if ($this->role === Role::PlatformAdmin) {
-            return $this->role->covers();
-        }
-
-        $keys = $this->selectedAreaKeys();
-        $labels = array_column(array_filter(
-            RolePermissions::areas(),
-            fn (array $area): bool => in_array($area['key'], $keys, true),
-        ), 'label');
-
-        return $labels === [] ? 'No areas assigned' : implode(', ', $labels);
+        return $this->role === Role::PlatformAdmin ? $this->role->covers() : ($this->activeMembership()?->accessAreas() ?? 'No access');
     }
 
     /**
@@ -147,15 +229,7 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function selectedAreaKeys(): array
     {
-        if ($this->role === Role::Administrator || $this->role === Role::PlatformAdmin) {
-            return [];
-        }
-
-        $permissions = is_array($this->permissions)
-            ? $this->permissions
-            : RolePermissions::for($this->role);
-
-        return RolePermissions::areasMatching($permissions);
+        return $this->activeMembership()?->selectedAreaKeys() ?? [];
     }
 
     public function homeRoute(): string

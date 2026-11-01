@@ -19,6 +19,7 @@ use App\Models\StockLocation;
 use App\Models\User;
 use App\Models\Visit;
 use App\Models\Waiver;
+use App\Notifications\MembershipInvitation;
 use App\Services\CashierService;
 use App\Services\EncounterService;
 use App\Services\PatientRegistrar;
@@ -27,6 +28,7 @@ use App\Support\FacilityContext;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\Icd10Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
 
 test('sample accounts are the database users that still use the shared password', function (string $environment) {
     $this->app->detectEnvironment(fn () => $environment);
@@ -470,11 +472,12 @@ test('the patient directory can show only current inpatients', function () {
 test('an administrator can open only the laboratory for a new user', function () {
     [$facility, $admin] = provisionHospital();
 
+    Notification::fake();
+
     $this->actingAs($admin)
         ->post(route('admin.users.store'), [
             'name' => 'Lab Tech',
             'email' => 'labtech@example.com',
-            'password' => 'password',
             'account' => 'staff',
             'areas' => ['laboratory'],
             'department_id' => $facility->departments()->where('kind', 'laboratory')->value('id'),
@@ -482,6 +485,17 @@ test('an administrator can open only the laboratory for a new user', function ()
         ->assertRedirect();
 
     $user = User::query()->where('email', 'labtech@example.com')->first();
+    Notification::assertSentTo($user, MembershipInvitation::class, function (MembershipInvitation $invitation): bool {
+        $this->post('/logout');
+        $this->post(route('invitations.accept', $invitation->token), [
+            'name' => 'Lab Tech',
+            'password' => 'a-strong-password',
+            'password_confirmation' => 'a-strong-password',
+        ])->assertRedirect(route('dashboard'));
+
+        return true;
+    });
+    $user = $user->fresh();
 
     expect($user)->not->toBeNull()
         ->and($user->role)->toBe(Role::Staff)
@@ -498,9 +512,7 @@ test('an administrator cannot remove their own full access', function () {
     [$facility, $admin] = provisionHospital();
 
     $this->actingAs($admin)
-        ->patch(route('admin.users.update', $admin), [
-            'name' => $admin->name,
-            'email' => $admin->email,
+        ->patch(route('admin.users.update', membershipOf($admin)), [
             'account' => 'staff',
             'areas' => ['reports'],
             'is_active' => '1',
@@ -622,7 +634,7 @@ test('a closed visit cannot take new orders', function () {
 test('the seeder creates only a platform administrator and one facility administrator', function () {
     $this->seed(DatabaseSeeder::class);
 
-    expect(User::query()->orderBy('email')->pluck('role', 'email')->map->value->all())->toBe([
+    expect(User::query()->orderBy('email')->get()->mapWithKeys(fn (User $user): array => [$user->email => $user->role->value])->all())->toBe([
         'admin@stmarys.tunzuri.test' => 'administrator',
         'platform@tunzuri.test' => 'platform_admin',
     ]);
@@ -666,14 +678,14 @@ test('the platform administrator can reset an administrator password and turn th
     User::factory()->create(['facility_id' => $facility->id, 'role' => Role::Administrator]);
 
     $this->actingAs($operator)
-        ->patch(route('platform.facilities.admins.update', [$facility, $admin]), [
+        ->patch(route('platform.facilities.admins.update', [$facility, membershipOf($admin)]), [
             'is_active' => '0',
             'password' => 'a-new-strong-password',
         ])
         ->assertSessionHas('status');
 
     $admin->refresh();
-    expect($admin->is_active)->toBeFalse();
+    expect(membershipOf($admin)->is_active)->toBeFalse();
     expect(Hash::check('a-new-strong-password', $admin->password))->toBeTrue();
 });
 
@@ -682,10 +694,10 @@ test('a facility always keeps one active administrator', function () {
     $operator = User::factory()->create(['role' => Role::PlatformAdmin, 'facility_id' => null]);
 
     $this->actingAs($operator)
-        ->patch(route('platform.facilities.admins.update', [$facility, $admin]), ['is_active' => '0'])
+        ->patch(route('platform.facilities.admins.update', [$facility, membershipOf($admin)]), ['is_active' => '0'])
         ->assertSessionHas('error');
 
-    expect($admin->fresh()->is_active)->toBeTrue();
+    expect(membershipOf($admin)->is_active)->toBeTrue();
 });
 
 test('the platform administrator cannot change facility staff or another facility admin', function () {
@@ -695,14 +707,14 @@ test('the platform administrator cannot change facility staff or another facilit
     $staff = User::factory()->create(['facility_id' => $facility->id, 'role' => Role::Staff, 'permissions' => ['lab.view']]);
 
     $this->actingAs($operator)
-        ->patch(route('platform.facilities.admins.update', [$facility, $staff]), ['is_active' => '0'])
+        ->patch(route('platform.facilities.admins.update', [$facility, membershipOf($staff)]), ['is_active' => '0'])
         ->assertNotFound();
     $this->actingAs($operator)
-        ->patch(route('platform.facilities.admins.update', [$facility, $otherAdmin]), ['is_active' => '0'])
+        ->patch(route('platform.facilities.admins.update', [$facility, membershipOf($otherAdmin)]), ['is_active' => '0'])
         ->assertNotFound();
 
-    expect($staff->fresh()->is_active)->toBeTrue();
-    expect($otherAdmin->fresh()->is_active)->toBeTrue();
+    expect(membershipOf($staff)->is_active)->toBeTrue();
+    expect(membershipOf($otherAdmin)->is_active)->toBeTrue();
 });
 
 test('a facility administrator cannot manage other facilities administrators', function () {
@@ -727,18 +739,16 @@ test('administrators see users as a list and edit each one on its own page', fun
         ->get(route('admin.users.index'))
         ->assertOk()
         ->assertSee('Grace Nurse')
-        ->assertSee(route('admin.users.edit', $nurse), false)
+        ->assertSee(route('admin.users.edit', membershipOf($nurse)), false)
         ->assertDontSee('name="areas[]"', false)
         ->assertDontSee($otherAdmin->email);
 
-    $this->actingAs($admin)->get(route('admin.users.edit', $nurse))->assertOk()->assertSee('name="areas[]"', false);
-    $this->actingAs($admin)->get(route('admin.users.edit', $otherAdmin))->assertNotFound();
+    $this->actingAs($admin)->get(route('admin.users.edit', membershipOf($nurse)))->assertOk()->assertSee('name="areas[]"', false);
+    $this->actingAs($admin)->get(route('admin.users.edit', membershipOf($otherAdmin)))->assertNotFound();
 
     $this->actingAs($admin)
-        ->patch(route('admin.users.update', $nurse), [
+        ->patch(route('admin.users.update', membershipOf($nurse)), [
             'name' => 'Grace Achan',
-            'email' => $nurse->email,
-            'phone' => '0772555666',
             'account' => 'staff',
             'areas' => ['clinical'],
             'is_active' => '1',
@@ -746,8 +756,7 @@ test('administrators see users as a list and edit each one on its own page', fun
         ->assertRedirect(route('admin.users.index'));
 
     $nurse->refresh();
-    expect($nurse->name)->toBe('Grace Achan')
-        ->and($nurse->phone)->toBe('0772555666')
+    expect($nurse->name)->toBe('Grace Nurse')
         ->and($nurse->permits('consultations.manage'))->toBeTrue()
         ->and($nurse->permits('lab.manage'))->toBeFalse();
 });
@@ -756,15 +765,13 @@ test('an administrator cannot turn off their own account', function () {
     [, $admin] = provisionHospital();
 
     $this->actingAs($admin)
-        ->patch(route('admin.users.update', $admin), [
-            'name' => $admin->name,
-            'email' => $admin->email,
+        ->patch(route('admin.users.update', membershipOf($admin)), [
             'account' => 'administrator',
             'is_active' => '0',
         ])
         ->assertSessionHas('error');
 
-    expect($admin->fresh()->is_active)->toBeTrue();
+    expect(membershipOf($admin)->is_active)->toBeTrue();
 });
 
 test('the visit page explains empty catalogues instead of showing empty order forms', function () {

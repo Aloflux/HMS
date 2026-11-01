@@ -23,7 +23,7 @@
             </div>
             <div>
                 <x-input-label for="password" value="Temporary password" />
-                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" required />
+                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" placeholder="Not needed for an existing account" />
                 <x-input-error :messages="$errors->get('password')" class="mt-1" />
             </div>
         </div>
@@ -43,8 +43,8 @@
                 @forelse ($admins as $admin)
                     <tr>
                         <td class="px-5 py-3 align-top">
-                            <span class="block font-medium">{{ $admin->name }}</span>
-                            <span class="block text-slate-500">{{ $admin->email }}</span>
+                            <span class="block font-medium">{{ $admin->user->name }}</span>
+                            <span class="block text-slate-500">{{ $admin->user->email }}</span>
                         </td>
                         <td class="px-5 py-3 align-top text-slate-600">{{ $admin->last_login_at?->diffForHumans() ?? 'Never' }}</td>
                         <td class="px-5 py-3 align-top">
@@ -55,7 +55,7 @@
                                     <option value="1" @selected($admin->is_active)>Active</option>
                                     <option value="0" @selected(! $admin->is_active)>Inactive</option>
                                 </select>
-                                <x-text-input name="password" type="password" placeholder="New password (optional)" autocomplete="new-password" aria-label="New password for {{ $admin->name }}" class="w-56 text-sm" />
+                                <x-text-input name="password" type="password" placeholder="New password (optional)" autocomplete="new-password" aria-label="New password for {{ $admin->user->name }}" class="w-56 text-sm" />
                                 <button class="text-sm font-semibold text-brand-700">Save</button>
                             </form>
                         </td>

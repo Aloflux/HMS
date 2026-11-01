@@ -296,10 +296,10 @@
                             'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-xs font-bold',
                             'bg-brand-50 text-brand-800' => $admin->is_active,
                             'bg-slate-100 text-slate-400' => ! $admin->is_active,
-                        ])>{{ $initials($admin->name) }}</span>
+                        ])>{{ $initials($admin->user->name) }}</span>
                         <span class="min-w-0 flex-1">
                             <span class="flex flex-wrap items-center gap-2">
-                                <span class="truncate text-sm font-semibold text-slate-900">{{ $admin->name }}</span>
+                                <span class="truncate text-sm font-semibold text-slate-900">{{ $admin->user->name }}</span>
                                 @if ($owner?->is($admin))
                                     <span class="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-brand-800">Owner</span>
                                 @endif
@@ -307,7 +307,7 @@
                                     <span class="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600">Inactive</span>
                                 @endif
                             </span>
-                            <span class="block truncate text-xs text-slate-500">{{ $admin->email }} · {{ $admin->hasVerifiedEmail() ? 'verified' : 'not verified' }}</span>
+                            <span class="block truncate text-xs text-slate-500">{{ $admin->user->email }} · {{ $admin->user->hasVerifiedEmail() ? 'verified' : 'not verified' }}</span>
                         </span>
                         <span class="shrink-0 text-xs text-slate-400">{{ $admin->last_login_at?->diffForHumans() ?? 'Never signed in' }}</span>
                     </li>

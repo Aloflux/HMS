@@ -120,15 +120,20 @@ class FacilityProvisioner
                 }
             }
 
-            User::query()->create([
+            $owner = User::query()->create([
                 'name' => $admin['name'],
                 'email' => $admin['email'],
                 'password' => $admin['password'],
                 'phone' => $admin['phone'] ?? null,
-                'facility_id' => $facility->id,
-                'role' => Role::Administrator,
                 'email_verified_at' => $selfService ? null : now(),
                 'is_active' => true,
+            ]);
+
+            $owner->memberships()->create([
+                'facility_id' => $facility->id,
+                'role' => Role::Administrator,
+                'is_active' => true,
+                'accepted_at' => now(),
             ]);
 
             return $facility;

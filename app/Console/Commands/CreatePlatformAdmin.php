@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Validator;
@@ -52,7 +51,7 @@ class CreatePlatformAdmin extends Command
 
         $existing = User::query()->where('email', $email)->first();
 
-        if ($existing !== null && $existing->role !== Role::PlatformAdmin) {
+        if ($existing !== null && ! $existing->is_platform_admin) {
             $this->components->error("{$email} already belongs to a facility account. Use a different email for the platform administrator.");
 
             return self::FAILURE;
@@ -85,8 +84,7 @@ class CreatePlatformAdmin extends Command
             'name' => $name,
             'email' => $email,
             'password' => $this->askForPassword(),
-            'role' => Role::PlatformAdmin,
-            'facility_id' => null,
+            'is_platform_admin' => true,
             'is_active' => true,
             'email_verified_at' => now(),
         ]);

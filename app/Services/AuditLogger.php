@@ -34,7 +34,7 @@ class AuditLogger
      */
     private static function sanitize(array $changes): array
     {
-        $hidden = ['password', 'remember_token'];
+        $hidden = ['password', 'remember_token', 'invitation_token'];
 
         $walk = function (mixed $value) use (&$walk, $hidden): mixed {
             if (! is_array($value)) {

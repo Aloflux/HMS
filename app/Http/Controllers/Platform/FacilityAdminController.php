@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Facility;
+use App\Models\Membership;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,55 +21,74 @@ class FacilityAdminController extends Controller
     {
         return view('platform.facilities.admins', [
             'facility' => $facility,
-            'admins' => $facility->users()->where('role', Role::Administrator)->orderBy('name')->get(),
-            'staffCount' => $facility->users()->where('role', '!=', Role::Administrator)->count(),
+            'admins' => $facility->memberships()->where('role', Role::Administrator)->with('user')->get()->sortBy('user.name')->values(),
+            'staffCount' => $facility->memberships()->where('role', '!=', Role::Administrator)->count(),
         ]);
     }
 
+    /**
+     * Operators may see every facility, so an existing account is linked directly instead of invited.
+     */
     public function store(Request $request, Facility $facility): RedirectResponse
     {
+        $request->merge(['email' => mb_strtolower(trim((string) $request->input('email')))]);
+        $existing = User::query()->where('email', $request->input('email'))->first();
+
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
-            'email' => ['required', 'email', 'max:150', 'unique:users,email'],
-            'password' => ['required', Password::defaults()],
+            'email' => ['required', 'email', 'max:150'],
+            'password' => [$existing ? 'nullable' : 'required', Password::defaults()],
         ]);
 
-        User::query()->create([
-            ...$data,
-            'facility_id' => $facility->id,
-            'role' => Role::Administrator,
+        if ($existing?->is_platform_admin) {
+            return back()->withErrors(['email' => 'That email belongs to a platform administrator.'])->withInput();
+        }
+
+        $user = $existing ?? User::query()->create([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
 
-        return back()->with('status', "{$data['name']} can now administer {$facility->name}.");
+        Membership::query()->updateOrCreate(
+            ['facility_id' => $facility->id, 'user_id' => $user->id],
+            ['role' => Role::Administrator, 'permissions' => null, 'is_active' => true, 'accepted_at' => now(), 'invitation_token' => null],
+        );
+
+        return back()->with('status', $existing
+            ? "{$user->name} already had a Tunzuri account and can now administer {$facility->name} with it."
+            : "{$user->name} can now administer {$facility->name}.");
     }
 
-    public function update(Request $request, Facility $facility, User $user): RedirectResponse
+    public function update(Request $request, Facility $facility, Membership $membership): RedirectResponse
     {
-        abort_unless($user->facility_id === $facility->id && $user->role === Role::Administrator, 404);
+        abort_unless($membership->facility_id === $facility->id && $membership->role === Role::Administrator, 404);
 
         $data = $request->validate([
             'is_active' => ['required', 'boolean'],
             'password' => ['nullable', Password::defaults()],
         ]);
 
-        $deactivating = $user->is_active && ! $data['is_active'];
-        $otherActiveAdmins = $facility->users()
+        $deactivating = $membership->is_active && ! $data['is_active'];
+        $otherActiveAdmins = $facility->memberships()
             ->where('role', Role::Administrator)
             ->where('is_active', true)
-            ->whereKeyNot($user->id)
+            ->whereNotNull('accepted_at')
+            ->whereKeyNot($membership->id)
             ->exists();
 
         if ($deactivating && ! $otherActiveAdmins) {
             return back()->with('error', "{$facility->name} needs at least one active administrator. Add another before turning this one off.");
         }
 
-        $user->update(array_filter([
-            'is_active' => (bool) $data['is_active'],
-            'password' => $data['password'] ?? null,
-        ], fn (mixed $value): bool => $value !== null));
+        $membership->update(['is_active' => (bool) $data['is_active']]);
 
-        return back()->with('status', filled($data['password'] ?? null) ? "{$user->name}'s password was reset." : "{$user->name} updated.");
+        if (filled($data['password'] ?? null)) {
+            $membership->user->update(['password' => $data['password']]);
+        }
+
+        return back()->with('status', filled($data['password'] ?? null) ? "{$membership->user->name}'s password was reset." : "{$membership->user->name} updated.");
     }
 }

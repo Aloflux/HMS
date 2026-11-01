@@ -52,7 +52,9 @@ class LoginRequest extends FormRequest
 
         $user = Auth::user();
 
-        if (! $user->is_active || ($user->facility && ! $user->facility->is_active)) {
+        $hasInvitation = $user->memberships()->whereNull('accepted_at')->exists();
+
+        if (! $user->is_active || (! $user->is_platform_admin && $user->usableMemberships()->isEmpty() && ! $hasInvitation)) {
             Auth::logout();
 
             throw ValidationException::withMessages([

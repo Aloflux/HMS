@@ -3,7 +3,7 @@
         <div>
             <a href="{{ route('admin.users.index') }}" class="text-sm text-brand-700">Users</a>
             <x-page-title>Add user</x-page-title>
-            <p class="mt-1 text-sm text-slate-500">The administrator has every screen. Everyone else gets only the areas you tick, or the areas that come with their department.</p>
+            <p class="mt-1 text-sm text-slate-500">We email them an invitation. They choose their own password and appear as active once they accept. The administrator has every screen; everyone else gets only the areas you tick, or the areas that come with their department.</p>
         </div>
     </x-slot>
 
@@ -32,16 +32,6 @@
                 <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email')" required />
                 <x-input-error :messages="$errors->get('email')" class="mt-1" />
             </div>
-            <div>
-                <x-input-label for="password" value="Temporary password" />
-                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" required />
-                <x-input-error :messages="$errors->get('password')" class="mt-1" />
-            </div>
-            <div>
-                <x-input-label for="phone" value="Phone" />
-                <x-text-input id="phone" name="phone" class="mt-1 block w-full" :value="old('phone')" />
-                <x-input-error :messages="$errors->get('phone')" class="mt-1" />
-            </div>
         </div>
 
         <div class="mt-6">
@@ -49,7 +39,7 @@
         </div>
 
         <div class="mt-6 flex items-center gap-4">
-            <x-primary-button>Add user</x-primary-button>
+            <x-primary-button>Send invitation</x-primary-button>
             <a href="{{ route('admin.users.index') }}" class="text-sm text-slate-600">Cancel</a>
         </div>
     </form>

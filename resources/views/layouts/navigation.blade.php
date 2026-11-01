@@ -41,6 +41,9 @@
                 <span class="block text-[10px] font-semibold uppercase tracking-widest text-slate-400">Active facility</span>
                 <span class="block truncate text-sm font-semibold text-slate-800">{{ $currentFacility->name }}</span>
             </span>
+            @if ($canSwitchFacility ?? false)
+                <a href="{{ route('facilities.choose') }}" class="ms-auto shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-brand-700 hover:bg-brand-50">Switch</a>
+            @endif
         </div>
     @endif
 

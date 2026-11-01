@@ -9,8 +9,10 @@ use App\Http\Controllers\Admin\WardController as AdminWardController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FacilityChoiceController;
 use App\Http\Controllers\InsuranceController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\InvitationController;
 use App\Http\Controllers\LabController;
 use App\Http\Controllers\MaternityController;
 use App\Http\Controllers\OnboardingController;
@@ -36,6 +38,14 @@ Route::get('/', function () {
     }
 
     return view('welcome');
+});
+
+Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
+Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.accept');
+
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/facilities/choose', [FacilityChoiceController::class, 'show'])->name('facilities.choose');
+    Route::post('/facilities/{membership}/switch', [FacilityChoiceController::class, 'store'])->name('facilities.switch');
 });
 
 Route::middleware(['auth', 'verified'])->prefix('onboarding')->group(function () {
@@ -221,8 +231,11 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
         Route::get('/users', [AdminUserController::class, 'index'])->name('admin.users.index');
         Route::get('/users/create', [AdminUserController::class, 'create'])->name('admin.users.create');
         Route::post('/users', [AdminUserController::class, 'store'])->name('admin.users.store');
-        Route::get('/users/{user}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
-        Route::patch('/users/{user}', [AdminUserController::class, 'update'])->name('admin.users.update');
+        Route::get('/users/{membership}/edit', [AdminUserController::class, 'edit'])->name('admin.users.edit');
+        Route::patch('/users/{membership}', [AdminUserController::class, 'update'])->name('admin.users.update');
+        Route::post('/users/{membership}/password-link', [AdminUserController::class, 'sendPasswordLink'])->name('admin.users.password-link');
+        Route::post('/users/{membership}/invitation', [AdminUserController::class, 'resendInvitation'])->name('admin.users.invitation.resend');
+        Route::delete('/users/{membership}/invitation', [AdminUserController::class, 'cancelInvitation'])->name('admin.users.invitation.cancel');
         Route::get('/departments', [DepartmentController::class, 'index'])->name('admin.departments.index');
         Route::post('/departments', [DepartmentController::class, 'store'])->name('admin.departments.store');
         Route::get('/wards', [AdminWardController::class, 'index'])->name('admin.wards.index');
@@ -250,7 +263,7 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
         Route::patch('/facilities/{facility}', [FacilityController::class, 'update'])->name('platform.facilities.update');
         Route::get('/facilities/{facility}/admins', [FacilityAdminController::class, 'index'])->name('platform.facilities.admins.index');
         Route::post('/facilities/{facility}/admins', [FacilityAdminController::class, 'store'])->name('platform.facilities.admins.store');
-        Route::patch('/facilities/{facility}/admins/{user}', [FacilityAdminController::class, 'update'])->name('platform.facilities.admins.update');
+        Route::patch('/facilities/{facility}/admins/{membership}', [FacilityAdminController::class, 'update'])->name('platform.facilities.admins.update');
     });
 });
 

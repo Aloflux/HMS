@@ -31,7 +31,7 @@ class DepartmentController extends Controller
     public function index(): View
     {
         return view('admin.departments.index', [
-            'departments' => Department::query()->withCount('users')->orderBy('name')->get(),
+            'departments' => Department::query()->withCount(['memberships as users_count' => fn ($query) => $query->whereNotNull('accepted_at')])->orderBy('name')->get(),
             'kinds' => self::KINDS,
         ]);
     }
