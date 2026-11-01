@@ -18,13 +18,6 @@ class SetFacilityContext
      */
     public const SESSION_KEY = 'membership_id';
 
-    /**
-     * Routes a person with several facilities can open before choosing one.
-     *
-     * @var list<string>
-     */
-    private const BEFORE_CHOOSING = ['facilities.choose', 'facilities.switch', 'logout', 'verification.*', 'invitations.*'];
-
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
@@ -34,23 +27,13 @@ class SetFacilityContext
         }
 
         if ($user && ! $user->is_platform_admin) {
-            $usable = $user->usableMemberships();
-            $membership = $usable->firstWhere('id', $request->session()->get(self::SESSION_KEY))
-                ?? ($usable->count() === 1 ? $usable->first() : null);
+            $membership = $user->usableMemberships()->firstWhere('id', $request->session()->get(self::SESSION_KEY));
 
-            if ($usable->isEmpty() && ! $request->routeIs('logout', 'invitations.*')) {
-                return $this->signOut($request, 'You do not have access to an active facility.');
-            }
-
-            if ($membership !== null && $request->session()->get(self::SESSION_KEY) !== $membership->id) {
-                self::enter($request, $membership);
+            if ($membership === null && ! $request->routeIs('logout', 'invitations.*')) {
+                return $this->signOut($request, 'Sign in with your facility code to continue.');
             }
 
             $user->useMembership($membership);
-
-            if ($membership === null && $usable->isNotEmpty() && ! $request->routeIs(...self::BEFORE_CHOOSING)) {
-                return redirect()->route('facilities.choose');
-            }
         }
 
         FacilityContext::set(
@@ -59,7 +42,6 @@ class SetFacilityContext
         );
 
         view()->share('currentFacility', $user?->facility);
-        view()->share('canSwitchFacility', isset($usable) && $usable->count() > 1);
         view()->share('navigation', Navigation::sections($user));
 
         return $next($request);
@@ -72,6 +54,8 @@ class SetFacilityContext
 
     /**
      * Start working in a membership for the rest of the session, recording the sign-in at that facility only.
+     * Call it only after that facility's password has been checked. A session works in one facility; reaching
+     * another means signing out and signing in with its code.
      */
     public static function enter(Request $request, Membership $membership): void
     {

@@ -5,6 +5,51 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 /**
+ * A facility code field that names the facility as the code is typed, so people who work at several
+ * facilities can see where they are signing in before they give a password.
+ */
+Alpine.data('facilityLookup', ({ url, code = '', facility = null } = {}) => ({
+    code,
+    facility,
+    checked: facility !== null || code === '',
+    timer: null,
+
+    init() {
+        if (this.code.trim() !== '' && this.facility === null) {
+            this.lookup();
+        }
+    },
+
+    lookup() {
+        clearTimeout(this.timer);
+        this.facility = null;
+        this.checked = false;
+
+        const typed = this.code.trim();
+
+        if (typed === '') {
+            this.checked = true;
+
+            return;
+        }
+
+        this.timer = setTimeout(async () => {
+            try {
+                const response = await fetch(`${url}?code=${encodeURIComponent(typed)}`, { headers: { Accept: 'application/json' } });
+                const body = await response.json();
+
+                if (this.code.trim() === typed) {
+                    this.facility = body.found ? body : null;
+                    this.checked = true;
+                }
+            } catch (error) {
+                this.checked = true;
+            }
+        }, 250);
+    },
+}));
+
+/**
  * A dropdown you can type into. Options are {value, label, hint?, group?, keywords?}; keywords are searched but not shown.
  * The chosen value sits in a hidden input; the text box always shows the chosen label.
  */
@@ -153,10 +198,15 @@ document.addEventListener('click', (event) => {
         other.setAttribute('aria-pressed', other === button ? 'true' : 'false');
     });
 
+    const code = document.getElementById('facility_code');
     const email = document.getElementById('email');
     const password = document.getElementById('password');
     const emailValue = button.getAttribute('data-demo-email') ?? '';
     const passwordValue = button.getAttribute('data-demo-password') ?? '';
+
+    if (code) {
+        writeField(code, button.getAttribute('data-demo-code') ?? '');
+    }
 
     if (email) {
         email.setAttribute('autocomplete', 'off');

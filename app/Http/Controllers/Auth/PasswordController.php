@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
 class PasswordController extends Controller
@@ -20,10 +19,10 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        $request->user()->changeAuthPassword($validated['password']);
 
-        return back()->with('status', 'Password updated.');
+        return back()->with('status', $request->user()->is_platform_admin
+            ? 'Password updated.'
+            : 'Password updated for '.$request->user()->facility->name.'. Your other facilities keep theirs.');
     }
 }

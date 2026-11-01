@@ -4,13 +4,14 @@
             <x-icon name="bx-key" class="text-2xl text-brand-700" />
             Choose a new password
         </h1>
-        <p class="mt-1 text-sm text-slate-600">This replaces the password for the account on the link.</p>
+        <p class="mt-1 text-sm text-slate-600">{{ $request->query('facility') ? 'This replaces your password for facility '.$request->query('facility').' only.' : 'This replaces the password for the account on the link.' }}</p>
     </div>
 
     <form method="POST" action="{{ route('password.store') }}">
         @csrf
 
         <input type="hidden" name="token" value="{{ $request->route('token') }}">
+        <input type="hidden" name="facility" value="{{ $request->query('facility') }}">
 
         <div>
             <x-input-label for="email" :value="__('Email')" />

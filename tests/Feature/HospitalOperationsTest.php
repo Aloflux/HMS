@@ -528,6 +528,7 @@ test('an inactive account cannot sign in', function () {
     $user = User::factory()->create(['is_active' => false]);
 
     $this->post('/login', [
+        'facility_code' => membershipOf($user)->facility->code,
         'email' => $user->email,
         'password' => 'password',
     ]);
@@ -703,7 +704,7 @@ test('the platform administrator can reset an administrator password and turn th
 
     $admin->refresh();
     expect(membershipOf($admin)->is_active)->toBeFalse();
-    expect(Hash::check('a-new-strong-password', $admin->password))->toBeTrue();
+    expect(Hash::check('a-new-strong-password', membershipOf($admin)->password))->toBeTrue();
 });
 
 test('a facility always keeps one active administrator', function () {

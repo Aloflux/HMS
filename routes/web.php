@@ -9,7 +9,6 @@ use App\Http\Controllers\Admin\WardController as AdminWardController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\CashierController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\FacilityChoiceController;
 use App\Http\Controllers\InsuranceController;
 use App\Http\Controllers\InventoryController;
 use App\Http\Controllers\InvitationController;
@@ -42,11 +41,6 @@ Route::get('/', function () {
 
 Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
 Route::post('/invitations/{token}', [InvitationController::class, 'accept'])->middleware('throttle:10,1')->name('invitations.accept');
-
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/facilities/choose', [FacilityChoiceController::class, 'show'])->name('facilities.choose');
-    Route::post('/facilities/{membership}/switch', [FacilityChoiceController::class, 'store'])->name('facilities.switch');
-});
 
 Route::middleware(['auth', 'verified'])->prefix('onboarding')->group(function () {
     Route::get('/{step?}', [OnboardingController::class, 'show'])

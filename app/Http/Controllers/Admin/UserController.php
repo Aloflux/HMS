@@ -13,7 +13,6 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Password;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -126,14 +125,14 @@ class UserController extends Controller
     }
 
     /**
-     * Email the person a link to choose a new password. The reply never depends on the outcome.
+     * Email the person a link to choose a new password for this facility. The reply never depends on the outcome.
      */
     public function sendPasswordLink(Request $request, Membership $membership): RedirectResponse
     {
         $this->ensureHere($request, $membership);
         abort_unless($membership->isAccepted(), 404);
 
-        Password::sendResetLink(['email' => $membership->user->email]);
+        $membership->sendPasswordReset();
 
         return back()->with('status', "Password reset link sent to {$membership->user->email}.");
     }
@@ -162,7 +161,7 @@ class UserController extends Controller
         DB::transaction(function () use ($membership, $person): void {
             $membership->delete();
 
-            if ($person->password === null && ! $person->memberships()->exists()) {
+            if (! $person->is_platform_admin && ! $person->memberships()->exists()) {
                 $person->deleteQuietly();
             }
         });

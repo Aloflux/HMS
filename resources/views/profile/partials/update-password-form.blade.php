@@ -5,9 +5,9 @@
     <div>
         <h2 class="flex items-center gap-2 font-bold text-slate-900">
             <x-icon name="bx-lock-alt" class="text-lg text-brand-700" />
-            Password
+            {{ $currentFacility ? 'Password for '.$currentFacility->name : 'Password' }}
         </h2>
-        <p class="mt-1 text-sm text-slate-500">Use a long password that you do not reuse at another station.</p>
+        <p class="mt-1 text-sm text-slate-500">{{ $currentFacility ? 'Each facility you work at has its own password. This changes the one for '.$currentFacility->name.' only.' : 'Use a long password that you do not reuse elsewhere.' }}</p>
     </div>
 
     <div>

@@ -14,43 +14,32 @@
         @endif
         <p class="mt-2 text-sm text-slate-600">You have been invited to work here with this access: {{ $membership->accessAreas() }}.</p>
 
-        @if ($state === 'new')
-            <form method="POST" action="{{ route('invitations.accept', $token) }}" class="mt-6 grid gap-4">
-                @csrf
-                <div>
-                    <x-input-label value="Email" />
-                    <p class="mt-1 text-sm font-medium text-slate-900">{{ $membership->user->email }}</p>
-                </div>
+        <form method="POST" action="{{ route('invitations.accept', $token) }}" class="mt-6 grid gap-4">
+            @csrf
+            <div>
+                <x-input-label value="Email" />
+                <p class="mt-1 text-sm font-medium text-slate-900">{{ $membership->user->email }}</p>
+            </div>
+            @if ($state === 'new')
                 <div>
                     <x-input-label for="name" value="Your name" />
                     <x-text-input id="name" name="name" class="mt-1 block w-full" :value="old('name', $membership->invited_name)" required autofocus />
                     <x-input-error :messages="$errors->get('name')" class="mt-1" />
                 </div>
-                <div>
-                    <x-input-label for="password" value="Choose a password" />
-                    <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" required />
-                    <x-input-error :messages="$errors->get('password')" class="mt-1" />
-                </div>
-                <div>
-                    <x-input-label for="password_confirmation" value="Confirm password" />
-                    <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" required />
-                </div>
-                <x-primary-button class="justify-center">Accept and sign in</x-primary-button>
-            </form>
-        @elseif ($state === 'sign-in')
-            <p class="mt-4 text-sm text-slate-600">Sign in with your Tunzuri account ({{ $membership->user->email }}) to accept. You will come back here afterwards.</p>
-            <a href="{{ route('login') }}" class="mt-6 inline-flex items-center justify-center rounded-md bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white shadow-brand hover:bg-brand-800">Sign in to accept</a>
-        @elseif ($state === 'other-account')
-            <p class="mt-4 text-sm text-slate-600">This invitation is for {{ $membership->user->email }}, but you are signed in with a different account. Sign out, then open the link again.</p>
-            <form method="POST" action="{{ route('logout') }}" class="mt-6">
-                @csrf
-                <x-primary-button>Sign out</x-primary-button>
-            </form>
-        @else
-            <form method="POST" action="{{ route('invitations.accept', $token) }}" class="mt-6">
-                @csrf
-                <x-primary-button>Accept invitation</x-primary-button>
-            </form>
-        @endif
+            @else
+                <p class="rounded-md bg-slate-50 px-3 py-2.5 text-sm text-slate-600">You already use Tunzuri. Choose a separate password for {{ $membership->facility->name }}; your other facilities keep theirs.</p>
+            @endif
+            <div>
+                <x-input-label for="password" value="Password for {{ $membership->facility->name }}" />
+                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" required :autofocus="$state !== 'new'" />
+                <x-input-error :messages="$errors->get('password')" class="mt-1" />
+            </div>
+            <div>
+                <x-input-label for="password_confirmation" value="Confirm password" />
+                <x-text-input id="password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" required />
+            </div>
+            <p class="text-xs text-slate-500">You sign in with facility code <span class="font-semibold text-slate-700">{{ $membership->facility->code }}</span>, your email and this password.</p>
+            <x-primary-button class="justify-center">Accept and sign in</x-primary-button>
+        </form>
     @endif
 </x-guest-layout>

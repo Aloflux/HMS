@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SetFacilityContext;
 use App\Models\Facility;
 use App\Models\User;
 use App\Services\FacilityProvisioner;
@@ -72,6 +73,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($owner);
         $request->session()->regenerate();
+        SetFacilityContext::enter($request, $owner->memberships()->firstOrFail());
 
         return redirect()->route('verification.notice');
     }

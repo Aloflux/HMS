@@ -27,7 +27,8 @@ class FacilityAdminController extends Controller
     }
 
     /**
-     * Operators may see every facility, so an existing account is linked directly instead of invited.
+     * Operators may see every facility, so an existing account is linked directly instead of invited,
+     * with a password for this facility that the operator sets.
      */
     public function store(Request $request, Facility $facility): RedirectResponse
     {
@@ -37,7 +38,7 @@ class FacilityAdminController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:150'],
             'email' => ['required', 'email', 'max:150'],
-            'password' => [$existing ? 'nullable' : 'required', Password::defaults()],
+            'password' => ['required', Password::defaults()],
         ]);
 
         if ($existing?->is_platform_admin) {
@@ -47,19 +48,18 @@ class FacilityAdminController extends Controller
         $user = $existing ?? User::query()->create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
             'is_active' => true,
             'email_verified_at' => now(),
         ]);
 
         Membership::query()->updateOrCreate(
             ['facility_id' => $facility->id, 'user_id' => $user->id],
-            ['role' => Role::Administrator, 'permissions' => null, 'is_active' => true, 'accepted_at' => now(), 'invitation_token' => null],
+            ['role' => Role::Administrator, 'permissions' => null, 'password' => $data['password'], 'is_active' => true, 'accepted_at' => now(), 'invitation_token' => null],
         );
 
         return back()->with('status', $existing
-            ? "{$user->name} already had a Tunzuri account and can now administer {$facility->name} with it."
-            : "{$user->name} can now administer {$facility->name}.");
+            ? "{$user->name} already had a Tunzuri account. They can now administer {$facility->name} with code {$facility->code} and the password you set."
+            : "{$user->name} can now administer {$facility->name} with code {$facility->code}.");
     }
 
     public function update(Request $request, Facility $facility, Membership $membership): RedirectResponse
@@ -86,7 +86,7 @@ class FacilityAdminController extends Controller
         $membership->update(['is_active' => (bool) $data['is_active']]);
 
         if (filled($data['password'] ?? null)) {
-            $membership->user->update(['password' => $data['password']]);
+            $membership->update(['password' => $data['password']]);
         }
 
         return back()->with('status', filled($data['password'] ?? null) ? "{$membership->user->name}'s password was reset." : "{$membership->user->name} updated.");

@@ -37,6 +37,7 @@ class MembershipInvitation extends Notification
             ->line("{$inviter} has invited you to work at {$place} on ".config('app.name').'.')
             ->line('Access: '.$this->membership->accessAreas().'.')
             ->action("Join {$facility->name}", route('invitations.show', $this->token))
+            ->line("You will choose a password for {$facility->name} and sign in with facility code {$facility->code}.")
             ->line('The link works for '.Membership::INVITATION_DAYS.' days. If you were not expecting it, you can ignore this email.');
     }
 }

@@ -23,6 +23,10 @@ Route::middleware('guest')->group(function () {
 
     Route::post('login', [AuthenticatedSessionController::class, 'store']);
 
+    Route::get('login/facility', [AuthenticatedSessionController::class, 'facility'])
+        ->middleware('throttle:30,1')
+        ->name('login.facility');
+
     Route::get('forgot-password', [PasswordResetLinkController::class, 'create'])
         ->name('password.request');
 

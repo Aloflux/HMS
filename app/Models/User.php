@@ -155,16 +155,16 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * The facility of the membership in use.
+     * The facility of the membership in use. These accessors are never cached, because the membership can change mid-request.
      */
     protected function facilityId(): Attribute
     {
-        return Attribute::get(fn (): ?int => $this->activeMembership()?->facility_id);
+        return Attribute::get(fn (): ?int => $this->activeMembership()?->facility_id)->withoutObjectCaching();
     }
 
     protected function facility(): Attribute
     {
-        return Attribute::get(fn (): ?Facility => $this->activeMembership()?->facility);
+        return Attribute::get(fn (): ?Facility => $this->activeMembership()?->facility)->withoutObjectCaching();
     }
 
     /**
@@ -172,22 +172,45 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     protected function role(): Attribute
     {
-        return Attribute::get(fn (): ?Role => $this->is_platform_admin ? Role::PlatformAdmin : $this->activeMembership()?->role);
+        return Attribute::get(fn (): ?Role => $this->is_platform_admin ? Role::PlatformAdmin : $this->activeMembership()?->role)->withoutObjectCaching();
     }
 
     protected function permissions(): Attribute
     {
-        return Attribute::get(fn (): ?array => $this->activeMembership()?->permissions);
+        return Attribute::get(fn (): ?array => $this->activeMembership()?->permissions)->withoutObjectCaching();
     }
 
     protected function departmentId(): Attribute
     {
-        return Attribute::get(fn (): ?int => $this->activeMembership()?->department_id);
+        return Attribute::get(fn (): ?int => $this->activeMembership()?->department_id)->withoutObjectCaching();
     }
 
     protected function department(): Attribute
     {
-        return Attribute::get(fn (): ?Department => $this->activeMembership()?->department);
+        return Attribute::get(fn (): ?Department => $this->activeMembership()?->department)->withoutObjectCaching();
+    }
+
+    /**
+     * The password that proves who is signed in: the facility's password for staff, the account's for platform operators.
+     * Framework checks such as the current_password rule use it, so they always ask for the facility being worked in.
+     */
+    public function getAuthPassword(): ?string
+    {
+        return $this->is_platform_admin ? $this->password : $this->activeMembership()?->password;
+    }
+
+    /**
+     * Change the password that getAuthPassword() checks.
+     */
+    public function changeAuthPassword(string $password): void
+    {
+        if ($this->is_platform_admin) {
+            $this->update(['password' => $password]);
+
+            return;
+        }
+
+        $this->activeMembership()?->update(['password' => $password]);
     }
 
     public function permits(string $permission): bool

@@ -7,6 +7,7 @@ use App\Models\Membership;
 use App\Models\User;
 use App\Notifications\MembershipInvitation;
 use Database\Seeders\DatabaseSeeder;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -88,7 +89,7 @@ test('a new person accepts by choosing a password and starts work with the acces
     $token = inviteAndCaptureToken($admin, 'new.tech@example.test');
     $this->post('/logout');
 
-    $this->get(route('invitations.show', $token))->assertOk()->assertSee('Choose a password');
+    $this->get(route('invitations.show', $token))->assertOk()->assertSee('Your name')->assertSee('Password for');
     $this->post(route('invitations.accept', $token), [
         'name' => 'New Tech',
         'password' => 'a-strong-password',
@@ -105,38 +106,52 @@ test('a new person accepts by choosing a password and starts work with the acces
     $this->get(route('invitations.show', $token))->assertSee('This invitation cannot be used');
 });
 
-test('someone with an account elsewhere signs in to accept, then chooses and switches facility', function () {
+test('someone who works elsewhere accepts with a new password for this facility, and each password opens only its facility', function () {
     [$facilityA, $adminA] = provisionHospital();
     [$facilityB, $adminB] = provisionHospital();
-    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Administrator, 'email' => 'both@example.test']);
+    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Administrator, 'email' => 'both@example.test', 'name' => 'Both Places']);
     $visitAtB = openCashVisit($facilityB, $adminB);
     $token = inviteAndCaptureToken($adminA, 'both@example.test');
     $this->post('/logout');
 
-    $this->get(route('invitations.show', $token))->assertSee('Sign in to accept');
-    $this->post(route('login'), ['email' => 'both@example.test', 'password' => 'password'])
-        ->assertRedirect(route('invitations.show', $token));
-    $this->post(route('invitations.accept', $token))->assertRedirect(route('dashboard'));
-
-    $this->get(route('dashboard'))->assertOk();
+    $this->get(route('invitations.show', $token))->assertSee('Choose a separate password')->assertDontSee('Your name');
+    $this->post(route('invitations.accept', $token), [
+        'password' => 'password-for-a',
+        'password_confirmation' => 'password-for-a',
+    ])->assertRedirect(route('dashboard'));
+    $this->assertAuthenticatedAs($person);
+    expect($person->fresh()->name)->toBe('Both Places');
     $this->get(route('visits.show', $visitAtB))->assertNotFound();
-
     $this->post('/logout');
-    $this->post(route('login'), ['email' => 'both@example.test', 'password' => 'password']);
-    $this->get(route('dashboard'))->assertRedirect(route('facilities.choose'));
-    $this->get(route('facilities.choose'))->assertOk()->assertSee($facilityA->name)->assertSee($facilityB->name);
 
-    $this->post(route('facilities.switch', membershipOf($person, $facilityB)))->assertRedirect(route('dashboard'));
+    $this->post(route('login'), ['facility_code' => $facilityB->code, 'email' => 'both@example.test', 'password' => 'password-for-a']);
+    $this->assertGuest();
+
+    $this->post(route('login'), ['facility_code' => $facilityA->code, 'email' => 'both@example.test', 'password' => 'password-for-a']);
+    $this->get(route('dashboard'))->assertOk()->assertSee($facilityA->name);
+
+    $this->get(route('visits.show', $visitAtB))->assertNotFound();
+    $this->post('/logout');
+
+    $this->post(route('login'), ['facility_code' => $facilityB->code, 'email' => 'both@example.test', 'password' => 'password']);
+    $this->get(route('dashboard'))->assertOk()->assertSee($facilityB->name);
     $this->get(route('visits.show', $visitAtB))->assertOk();
 });
 
-test('nobody can switch into a facility they do not work at', function () {
-    [, $adminA] = provisionHospital();
-    [, $adminB] = provisionHospital();
+test('there is no way to switch facility from inside the app', function () {
+    [$facilityA, $adminA] = provisionHospital();
+    [$facilityB] = provisionHospital();
+    Membership::factory()->create(['user_id' => $adminA->id, 'facility_id' => $facilityB->id]);
 
-    $this->actingAs($adminA)
-        ->post(route('facilities.switch', membershipOf($adminB)))
-        ->assertNotFound();
+    $this->actingAs($adminA)->withSession([SetFacilityContext::SESSION_KEY => membershipOf($adminA, $facilityA)->id])
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertSee('Code '.$facilityA->code)
+        ->assertDontSee('Switch');
+
+    $this->get('/facilities/choose')->assertNotFound();
+    $this->post('/facilities/'.membershipOf($adminA, $facilityB)->id.'/switch', ['password' => 'password'])->assertNotFound();
+    $this->get(route('dashboard'))->assertSee('Code '.$facilityA->code)->assertDontSee('Code '.$facilityB->code);
 });
 
 test('turning someone off at one facility leaves their other facilities working', function () {
@@ -148,11 +163,13 @@ test('turning someone off at one facility leaves their other facilities working'
     $this->actingAs($adminA)
         ->patch(route('admin.users.update', membershipOf($person, $facilityA)), ['account' => 'staff', 'areas' => ['reports'], 'is_active' => '0'])
         ->assertRedirect(route('admin.users.index'));
-
     $this->post('/logout');
-    $this->post(route('login'), ['email' => $person->email, 'password' => 'password']);
-    $this->get(route('dashboard'))->assertOk();
-    expect(session(SetFacilityContext::SESSION_KEY))->toBe(membershipOf($person, $facilityB)->id);
+
+    $this->post(route('login'), ['facility_code' => $facilityA->code, 'email' => $person->email, 'password' => 'password']);
+    $this->assertGuest();
+
+    $this->post(route('login'), ['facility_code' => $facilityB->code, 'email' => $person->email, 'password' => 'password']);
+    $this->get(route('dashboard'))->assertOk()->assertSee($facilityB->name);
 });
 
 test('an administrator only sees when someone last signed in at their own facility', function () {
@@ -213,7 +230,7 @@ test('administrators can no longer change a member\'s name, email or password', 
     $nurse->refresh();
     expect($nurse->name)->toBe('Grace Nurse')
         ->and($nurse->email)->not->toBe('taken.over@example.test')
-        ->and(Hash::check('password', $nurse->password))->toBeTrue();
+        ->and(Hash::check('password', membershipOf($nurse)->password))->toBeTrue();
 
     $this->actingAs($admin)
         ->post(route('admin.users.password-link', membershipOf($nurse)))
@@ -240,12 +257,19 @@ test('the seeded people show each multi-facility case', function () {
     $this->seed(DatabaseSeeder::class);
     $stMarysAdmin = User::query()->where('email', 'admin@stmarys.tunzuri.test')->firstOrFail();
 
-    $this->post(route('login'), ['email' => 'grace.atim@tunzuri.test', 'password' => 'password']);
-    $this->get(route('dashboard'))->assertRedirect(route('facilities.choose'));
+    $this->post(route('login'), ['facility_code' => 'GFH', 'email' => 'grace.atim@tunzuri.test', 'password' => 'password']);
+    $this->assertGuest();
+    $this->post(route('login'), ['facility_code' => 'GFH', 'email' => 'grace.atim@tunzuri.test', 'password' => 'gulu-password']);
+    $this->get(route('dashboard'))->assertOk()->assertSee('Gulu Family Health Clinic');
+    $this->post('/logout');
+    $this->post(route('login'), ['facility_code' => 'SMH', 'email' => 'grace.atim@tunzuri.test', 'password' => 'password']);
+    $this->get(route('dashboard'))->assertOk()->assertSee("St. Mary's Community Hospital");
     $this->post('/logout');
 
-    $this->post(route('login'), ['email' => 'brian.mugisha@tunzuri.test', 'password' => 'password']);
-    $this->get(route('dashboard'))->assertOk()->assertSee('Gulu Family Health Clinic');
+    $this->post(route('login'), ['facility_code' => 'SMH', 'email' => 'brian.mugisha@tunzuri.test', 'password' => 'password']);
+    $this->assertGuest();
+    $this->post(route('login'), ['facility_code' => 'GFH', 'email' => 'brian.mugisha@tunzuri.test', 'password' => 'password']);
+    $this->assertAuthenticated();
     $this->post('/logout');
 
     $this->actingAs($stMarysAdmin)
@@ -253,4 +277,22 @@ test('the seeded people show each multi-facility case', function () {
         ->assertSee('Agnes L.')
         ->assertDontSee('Agnes Lamunu')
         ->assertSee('Invited');
+});
+
+test('a session without a facility signs the person out instead of opening one', function () {
+    [, $admin] = provisionHospital();
+    Auth::login($admin);
+
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
+    $this->assertGuest();
+});
+
+test('a facility switched off mid-session ends the session', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->actingAs($admin)->get(route('dashboard'))->assertOk();
+    membershipOf($admin)->update(['is_active' => false]);
+
+    $this->get(route('dashboard'))->assertRedirect(route('login'));
+    $this->assertGuest();
 });

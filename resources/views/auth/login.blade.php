@@ -48,9 +48,11 @@
                 <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-4">
                     @csrf
 
+                    <x-facility-code-field :code="$facilityCode" :facility="$facility" :autofocus="$facilityCode === ''" />
+
                     <div>
                         <x-input-label for="email" :value="__('Email')" />
-                        <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
+                        <x-text-input id="email" class="mt-1 block w-full" type="email" name="email" :value="old('email')" required :autofocus="$facilityCode !== ''" autocomplete="username" />
                         <x-input-error :messages="$errors->get('email')" class="mt-2" />
                     </div>
 
@@ -64,6 +66,12 @@
                             </a>
                         @endif
                     </div>
+
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-600">
+                        <input type="hidden" name="remember_facility" value="0">
+                        <input type="checkbox" name="remember_facility" value="1" class="rounded border-slate-300 text-brand-700" @checked(old('remember_facility', '1') === '1')>
+                        Remember the facility code on this device
+                    </label>
 
                     <button type="submit" class="inline-flex items-center justify-center gap-2 rounded-md bg-brand-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-800 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 shadow-brand">
                         <x-icon name="bx-log-in" class="text-lg" />
@@ -94,13 +102,14 @@
                                             type="button"
                                             class="flex items-center gap-3 border-t border-slate-100 px-4 py-3 text-start transition first:border-t-0 hover:bg-brand-50 aria-pressed:bg-brand-50"
                                             data-demo-email="{{ $account['email'] }}"
+                                            data-demo-code="{{ $account['code'] }}"
                                             data-demo-password="{{ $demoPassword }}"
                                             aria-pressed="false"
                                         >
                                             <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-xs font-semibold text-brand-800">{{ $initials }}</span>
                                             <span class="min-w-0 flex-1">
                                                 <span class="block truncate text-sm font-semibold text-slate-900">{{ $account['name'] }}</span>
-                                                <span class="block truncate text-xs text-slate-500">{{ $account['role'] }}</span>
+                                                <span class="block truncate text-xs text-slate-500">{{ $account['role'] }}{{ $account['code'] !== '' ? ' · code '.$account['code'] : '' }}</span>
                                                 <span class="block truncate text-xs text-brand-700">{{ $account['email'] }}</span>
                                             </span>
                                             <x-icon name="bx-chevron-right" class="shrink-0 text-xl text-slate-300" />

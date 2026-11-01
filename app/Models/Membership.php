@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Authorization\RolePermissions;
 use App\Enums\Role;
 use App\Models\Concerns\RecordsAudit;
+use App\Notifications\MembershipPasswordReset;
 use Database\Factories\MembershipFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -26,6 +27,11 @@ class Membership extends Model
     public const INVITATION_DAYS = 7;
 
     /**
+     * Minutes a password reset link stays valid.
+     */
+    public const PASSWORD_RESET_MINUTES = 60;
+
+    /**
      * @var list<string>
      */
     protected $fillable = [
@@ -34,6 +40,7 @@ class Membership extends Model
         'role',
         'permissions',
         'department_id',
+        'password',
         'is_active',
         'last_login_at',
         'invited_name',
@@ -47,7 +54,9 @@ class Membership extends Model
      * @var list<string>
      */
     protected $hidden = [
+        'password',
         'invitation_token',
+        'password_reset_token',
     ];
 
     protected function casts(): array
@@ -55,10 +64,12 @@ class Membership extends Model
         return [
             'role' => Role::class,
             'permissions' => 'array',
+            'password' => 'hashed',
             'is_active' => 'boolean',
             'last_login_at' => 'datetime',
             'invited_at' => 'datetime',
             'accepted_at' => 'datetime',
+            'password_reset_sent_at' => 'datetime',
         ];
     }
 
@@ -96,6 +107,53 @@ class Membership extends Model
         ])->save();
 
         return $token;
+    }
+
+    /**
+     * Start a password reset for this facility only and return its token.
+     */
+    public function issuePasswordReset(): string
+    {
+        $token = Str::random(48);
+
+        $this->forceFill([
+            'password_reset_token' => hash('sha256', $token),
+            'password_reset_sent_at' => now(),
+        ])->saveQuietly();
+
+        return $token;
+    }
+
+    /**
+     * Email a link to reset this facility's password. A repeat within a minute is ignored.
+     */
+    public function sendPasswordReset(): void
+    {
+        if ($this->password_reset_sent_at?->gt(now()->subMinute())) {
+            return;
+        }
+
+        $this->user->notify(new MembershipPasswordReset($this, $this->issuePasswordReset()));
+    }
+
+    public static function findByPasswordResetToken(string $token): ?self
+    {
+        $membership = self::query()->where('password_reset_token', hash('sha256', $token))->first();
+
+        return $membership?->password_reset_sent_at?->gte(now()->subMinutes(self::PASSWORD_RESET_MINUTES)) ? $membership : null;
+    }
+
+    /**
+     * The usable membership at the facility with this code for this email, if there is one.
+     */
+    public static function findForSignIn(string $facilityCode, string $email): ?self
+    {
+        return self::query()
+            ->usable()
+            ->whereHas('facility', fn (Builder $facility) => $facility->where('code', mb_strtoupper(trim($facilityCode))))
+            ->whereHas('user', fn (Builder $user) => $user->where('email', mb_strtolower(trim($email)))->where('is_active', true))
+            ->with(['user', 'facility'])
+            ->first();
     }
 
     public static function findByInvitationToken(string $token): ?self

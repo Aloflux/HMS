@@ -16,7 +16,8 @@ class UserFactory extends Factory
 {
     /**
      * Attributes that describe the person's place at a facility rather than the person.
-     * Passing them to the factory gives the new user a membership with these values.
+     * Passing them to the factory gives the new user a membership with these values,
+     * and the password becomes that facility's password unless the user is a platform operator.
      *
      * @var list<string>
      */
@@ -63,8 +64,11 @@ class UserFactory extends Factory
                     return;
                 }
 
+                $password = $raw['password'] ?? null;
+                $user->password = null;
+
                 if (($membership['facility_id'] ?? null) !== null) {
-                    self::$pendingMemberships[spl_object_id($user)] = [...$membership, 'role' => $role ?? Role::Administrator];
+                    self::$pendingMemberships[spl_object_id($user)] = [...$membership, 'role' => $role ?? Role::Administrator, 'password' => $password];
                 }
             })
             ->afterCreating(function (User $user): void {

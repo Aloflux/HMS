@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\Membership;
 use App\Models\User;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
@@ -33,9 +34,14 @@ class NewPasswordController extends Controller
     {
         $request->validate([
             'token' => ['required'],
+            'facility' => ['nullable', 'string', 'max:12'],
             'email' => ['required', 'email'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
+
+        if (filled($request->input('facility'))) {
+            return $this->resetFacilityPassword($request);
+        }
 
         // Here we will attempt to reset the user's password. If it is successful we
         // will update the password on an actual user model and persist it to the
@@ -59,5 +65,33 @@ class NewPasswordController extends Controller
                     ? redirect()->route('login')->with('status', __($status))
                     : back()->withInput($request->only('email'))
                         ->withErrors(['email' => __($status)]);
+    }
+
+    /**
+     * Change one facility's password from a link sent for it.
+     */
+    private function resetFacilityPassword(Request $request): RedirectResponse
+    {
+        $membership = Membership::findByPasswordResetToken((string) $request->input('token'));
+
+        $matches = $membership !== null
+            && mb_strtoupper(trim((string) $request->input('facility'))) === $membership->facility->code
+            && mb_strtolower(trim((string) $request->input('email'))) === $membership->user->email;
+
+        if (! $matches) {
+            return back()->withInput($request->only('email'))->withErrors(['email' => __(Password::INVALID_TOKEN)]);
+        }
+
+        $membership->forceFill([
+            'password' => $request->input('password'),
+            'password_reset_token' => null,
+            'password_reset_sent_at' => null,
+        ])->save();
+
+        event(new PasswordReset($membership->user));
+
+        return redirect()->route('login')
+            ->withCookie(cookie(AuthenticatedSessionController::FACILITY_COOKIE, $membership->facility->code, 60 * 24 * 365))
+            ->with('status', "Your password for {$membership->facility->name} has been changed. Sign in with facility code {$membership->facility->code}.");
     }
 }

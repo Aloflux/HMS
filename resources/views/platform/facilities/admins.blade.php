@@ -23,7 +23,7 @@
             </div>
             <div>
                 <x-input-label for="password" value="Temporary password" />
-                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" placeholder="Not needed for an existing account" />
+                <x-text-input id="password" name="password" type="password" class="mt-1 block w-full" placeholder="For this facility only" />
                 <x-input-error :messages="$errors->get('password')" class="mt-1" />
             </div>
         </div>

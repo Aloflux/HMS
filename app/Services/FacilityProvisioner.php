@@ -123,7 +123,6 @@ class FacilityProvisioner
             $owner = User::query()->create([
                 'name' => $admin['name'],
                 'email' => $admin['email'],
-                'password' => $admin['password'],
                 'phone' => $admin['phone'] ?? null,
                 'email_verified_at' => $selfService ? null : now(),
                 'is_active' => true,
@@ -131,6 +130,7 @@ class FacilityProvisioner
 
             $owner->memberships()->create([
                 'facility_id' => $facility->id,
+                'password' => $admin['password'],
                 'role' => Role::Administrator,
                 'is_active' => true,
                 'accepted_at' => now(),
