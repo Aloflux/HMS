@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AuditController;
 use App\Http\Controllers\Admin\CatalogueController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\FacilitySettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\WardController as AdminWardController;
 use App\Http\Controllers\AppointmentController;
@@ -237,12 +238,15 @@ Route::middleware(['auth', 'verified', 'onboarded'])->group(function () {
         Route::post('/catalogue/lab-tests', [CatalogueController::class, 'storeLabTest'])->name('admin.lab-tests.store');
         Route::post('/catalogue/studies', [CatalogueController::class, 'storeStudy'])->name('admin.studies.store');
         Route::get('/audit', [AuditController::class, 'index'])->name('admin.audit.index');
+        Route::get('/facility', [FacilitySettingsController::class, 'edit'])->name('admin.facility.edit');
+        Route::patch('/facility', [FacilitySettingsController::class, 'update'])->name('admin.facility.update');
     });
 
     Route::middleware('permission:platform.manage')->prefix('platform')->group(function () {
         Route::get('/', PlatformDashboardController::class)->name('platform.dashboard');
         Route::get('/facilities', [FacilityController::class, 'index'])->name('platform.facilities.index');
         Route::post('/facilities', [FacilityController::class, 'store'])->name('platform.facilities.store');
+        Route::get('/facilities/{facility}', [FacilityController::class, 'show'])->name('platform.facilities.show');
         Route::patch('/facilities/{facility}', [FacilityController::class, 'update'])->name('platform.facilities.update');
         Route::get('/facilities/{facility}/admins', [FacilityAdminController::class, 'index'])->name('platform.facilities.admins.index');
         Route::post('/facilities/{facility}/admins', [FacilityAdminController::class, 'store'])->name('platform.facilities.admins.store');

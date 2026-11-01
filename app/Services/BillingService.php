@@ -20,7 +20,7 @@ class BillingService
                 'facility_id' => $visit->facility_id,
                 'patient_id' => $visit->patient_id,
                 'status' => 'open',
-                'currency' => 'UGX',
+                'currency' => $visit->facility?->currency ?? config('hms.currency'),
             ],
         );
     }

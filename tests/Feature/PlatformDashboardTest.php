@@ -101,3 +101,39 @@ test('the operator can deactivate and reactivate a facility', function () {
 
     expect($facility->fresh()->is_active)->toBeTrue();
 });
+
+test('the facility detail page shows activity, staff and setup without patient details', function () {
+    [$facility, $admin] = provisionHospital();
+    openCashVisit($facility, $admin);
+
+    $this->actingAs(platformOperator())
+        ->get(route('platform.facilities.show', $facility))
+        ->assertOk()
+        ->assertSee($facility->name)
+        ->assertSee($admin->email)
+        ->assertSee('Visits per week')
+        ->assertSee('Stock health')
+        ->assertViewHas('patients', fn (array $patients): bool => $patients['total'] === 1)
+        ->assertViewHas('visits', fn (array $visits): bool => $visits['today'] === 1 && $visits['trend']->last()['count'] === 1)
+        ->assertDontSee('Okello');
+});
+
+test('the facility detail page only counts that facility', function () {
+    [$facility] = provisionHospital();
+    [$other, $otherAdmin] = provisionHospital();
+    openCashVisit($other, $otherAdmin);
+
+    $this->actingAs(platformOperator())
+        ->get(route('platform.facilities.show', $facility))
+        ->assertOk()
+        ->assertViewHas('patients', fn (array $patients): bool => $patients['total'] === 0)
+        ->assertViewHas('visits', fn (array $visits): bool => $visits['last30d'] === 0);
+});
+
+test('facility staff cannot open the facility detail page', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->actingAs($admin)
+        ->get(route('platform.facilities.show', $facility))
+        ->assertForbidden();
+});

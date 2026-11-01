@@ -106,6 +106,10 @@
                         <x-text-input id="moh_code" name="moh_code" class="mt-1 block w-full" :value="old('moh_code', $facility->moh_code)" />
                     </div>
                     <div>
+                        <x-input-label for="currency" value="Collection currency" />
+                        <x-search-select id="currency" name="currency" class="mt-1" :options="\App\Support\Money::currencyOptions()" :selected="old('currency', $facility->currency)" placeholder="Search currencies" required />
+                    </div>
+                    <div>
                         <x-input-label value="Tunzuri code" />
                         <p class="mt-1 flex h-[42px] items-center rounded-md bg-slate-50 px-3 text-sm font-semibold text-slate-700">{{ $facility->code }}</p>
                     </div>

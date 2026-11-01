@@ -25,7 +25,7 @@
             </div>
             <div class="text-end text-sm">
                 <span class="block text-slate-500">Cash balance</span>
-                <span class="text-xl font-semibold">{{ \App\Support\Money::format($visit->bill?->cashBalance() ?? 0) }}</span>
+                <span class="text-xl font-semibold">{{ \App\Support\Money::format($visit->bill?->cashBalance() ?? 0, $visit->bill?->currency) }}</span>
             </div>
         </div>
     </x-slot>
@@ -310,7 +310,7 @@
                     @forelse ($visit->bill?->lines ?? [] as $line)
                         <li class="flex justify-between gap-3 py-2">
                             <span class="{{ $line->waived ? 'text-slate-400 line-through' : '' }}">{{ $line->description }} × {{ $line->quantity }}</span>
-                            <span>{{ \App\Support\Money::format($line->amount) }}</span>
+                            <span>{{ \App\Support\Money::format($line->amount, $visit->bill->currency) }}</span>
                         </li>
                     @empty
                         <li class="py-2 text-slate-500">No charges yet.</li>
@@ -318,11 +318,11 @@
                 </ul>
                 @if ($visit->bill)
                     <dl class="mt-3 grid gap-1 border-t border-slate-100 pt-3 text-sm">
-                        <div class="flex justify-between"><dt class="text-slate-500">Paid</dt><dd>{{ \App\Support\Money::format((int) $visit->bill->payments->where('status', 'confirmed')->sum('amount')) }}</dd></div>
+                        <div class="flex justify-between"><dt class="text-slate-500">Paid</dt><dd>{{ \App\Support\Money::format((int) $visit->bill->payments->where('status', 'confirmed')->sum('amount'), $visit->bill->currency) }}</dd></div>
                         @if ((int) $visit->bill->waived_amount > 0)
-                            <div class="flex justify-between"><dt class="text-slate-500">Waived</dt><dd>{{ \App\Support\Money::format((int) $visit->bill->waived_amount) }}</dd></div>
+                            <div class="flex justify-between"><dt class="text-slate-500">Waived</dt><dd>{{ \App\Support\Money::format((int) $visit->bill->waived_amount, $visit->bill->currency) }}</dd></div>
                         @endif
-                        <div class="flex justify-between font-semibold"><dt>Cash balance</dt><dd>{{ \App\Support\Money::format($visit->bill->cashBalance()) }}</dd></div>
+                        <div class="flex justify-between font-semibold"><dt>Cash balance</dt><dd>{{ \App\Support\Money::format($visit->bill->cashBalance(), $visit->bill->currency) }}</dd></div>
                     </dl>
                 @endif
                 @if ($canComplete)

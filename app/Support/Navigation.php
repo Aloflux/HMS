@@ -33,6 +33,7 @@ class Navigation
             ['label' => 'Departments', 'route' => 'admin.departments.index', 'permission' => 'admin.manage', 'pattern' => 'admin.departments.*', 'icon' => 'bx-sitemap', 'group' => 'Administration'],
             ['label' => 'Wards & beds', 'route' => 'admin.wards.index', 'permission' => 'admin.manage', 'pattern' => 'admin.wards.*', 'icon' => 'bx-building-house', 'group' => 'Administration'],
             ['label' => 'Price list', 'route' => 'admin.catalogue.index', 'permission' => 'admin.manage', 'pattern' => 'admin.catalogue.*', 'icon' => 'bx-purchase-tag', 'group' => 'Administration'],
+            ['label' => 'Facility settings', 'route' => 'admin.facility.edit', 'permission' => 'admin.manage', 'pattern' => 'admin.facility.*', 'icon' => 'bx-cog', 'group' => 'Administration'],
             ['label' => 'Audit trail', 'route' => 'admin.audit.index', 'permission' => 'admin.manage', 'pattern' => 'admin.audit.*', 'icon' => 'bx-history', 'group' => 'Administration'],
         ];
     }

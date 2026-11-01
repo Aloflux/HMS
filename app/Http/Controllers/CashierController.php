@@ -7,6 +7,7 @@ use App\Models\Bill;
 use App\Models\CashierShift;
 use App\Models\Waiver;
 use App\Services\CashierService;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -63,7 +64,7 @@ class CashierController extends Controller
 
         $closed = $this->cashier->closeShift($shift, (int) $data['cash_counted']);
 
-        return back()->with('status', 'Shift closed. Variance UGX '.number_format($closed->variance).'.');
+        return back()->with('status', 'Shift closed. Variance '.Money::format($closed->variance).'.');
     }
 
     public function pay(Request $request, Bill $bill): RedirectResponse

@@ -20,6 +20,7 @@ class Facility extends Model
         'code',
         'kind',
         'country',
+        'currency',
         'district',
         'address',
         'phone',

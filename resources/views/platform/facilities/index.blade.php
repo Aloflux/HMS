@@ -77,7 +77,7 @@
                                         'bg-slate-100 text-slate-400' => ! $facility->is_active,
                                     ])>{{ $initials($facility->name) }}</span>
                                     <span class="min-w-0">
-                                        <span class="block font-semibold text-slate-900">{{ $facility->name }}</span>
+                                        <a href="{{ route('platform.facilities.show', $facility) }}" class="block font-semibold text-slate-900 hover:text-brand-700">{{ $facility->name }}</a>
                                         <span class="block text-xs text-slate-400">{{ $facility->code }} · {{ $kinds[$facility->kind] ?? $facility->kind }} · {{ $facility->district }}</span>
                                     </span>
                                 </div>
@@ -107,6 +107,10 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="flex items-center justify-end gap-2">
+                                    <a href="{{ route('platform.facilities.show', $facility) }}" class="inline-flex h-9 items-center gap-1.5 rounded-md bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200">
+                                        <x-icon name="bx-bar-chart-alt-2" class="text-base" />
+                                        Details
+                                    </a>
                                     <a href="{{ route('platform.facilities.admins.index', $facility) }}" class="inline-flex h-9 items-center gap-1.5 rounded-md bg-slate-100 px-3 text-xs font-semibold text-slate-700 hover:bg-slate-200">
                                         <x-icon name="bx-user-check" class="text-base" />
                                         Admins

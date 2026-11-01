@@ -122,9 +122,12 @@ test('the owner can complete the setup wizard and go live', function () {
         'address' => 'Plot 4, Market Street',
         'phone' => '0772000111',
         'email' => 'info@hope.test',
+        'currency' => 'KES',
     ])->assertRedirect(route('onboarding.show', 'wards'));
 
-    expect($facility->fresh()->address)->toBe('Plot 4, Market Street');
+    expect($facility->fresh())
+        ->address->toBe('Plot 4, Market Street')
+        ->currency->toBe('KES');
 
     [$female, $male] = Ward::query()->where('facility_id', $facility->id)->orderBy('id')->get()->all();
 

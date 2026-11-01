@@ -11,7 +11,7 @@
                 <form method="POST" action="{{ route('cashier.close', $shift) }}" class="flex flex-wrap items-end gap-3">
                     @csrf
                     <div>
-                        <x-input-label for="cash_counted" value="Cash counted in the drawer (UGX)" />
+                        <x-input-label for="cash_counted" :value="'Cash counted in the drawer ('.\App\Support\Money::currency().')'" />
                         <x-text-input id="cash_counted" name="cash_counted" type="number" min="0" class="mt-1 block" required />
                     </div>
                     <x-secondary-button type="submit">Close shift</x-secondary-button>
@@ -22,7 +22,7 @@
                 @csrf
                 <div>
                     <h2 class="font-bold text-slate-900">Open a shift to take payments</h2>
-                    <x-input-label for="opening_float" value="Opening float (UGX)" class="mt-2" />
+                    <x-input-label for="opening_float" :value="'Opening float ('.\App\Support\Money::currency().')'" class="mt-2" />
                     <x-text-input id="opening_float" name="opening_float" type="number" min="0" value="0" class="mt-1 block" required />
                 </div>
                 <x-primary-button>Open shift</x-primary-button>
@@ -58,7 +58,7 @@
                             </select>
                         </div>
                         <div>
-                            <x-input-label :for="'amount-'.$bill->id" value="Amount (UGX)" />
+                            <x-input-label :for="'amount-'.$bill->id" :value="'Amount ('.\App\Support\Money::currency().')'" />
                             <x-text-input :id="'amount-'.$bill->id" name="amount" type="number" min="1" :max="$balance" :value="$balance" class="mt-1 block w-full" required />
                         </div>
                         <div x-show="method !== 'cash'" x-cloak>
@@ -76,7 +76,7 @@
                     <form method="POST" action="{{ route('cashier.waivers', $bill) }}" class="mt-3 grid gap-3 md:grid-cols-4 md:items-end" x-show="waiver" x-cloak>
                         @csrf
                         <div>
-                            <x-input-label :for="'waiver-amount-'.$bill->id" value="Amount to waive (UGX)" />
+                            <x-input-label :for="'waiver-amount-'.$bill->id" :value="'Amount to waive ('.\App\Support\Money::currency().')'" />
                             <x-text-input :id="'waiver-amount-'.$bill->id" name="amount" type="number" min="1" :max="$balance" class="mt-1 block w-full" required />
                         </div>
                         <div class="md:col-span-2">

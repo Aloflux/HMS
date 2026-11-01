@@ -32,7 +32,7 @@
                     </select>
                 </div>
                 <div>
-                    <x-input-label for="scheme-limit" value="Cover limit per visit (UGX)" />
+                    <x-input-label for="scheme-limit" :value="'Cover limit per visit ('.\App\Support\Money::currency().')'" />
                     <x-text-input id="scheme-limit" name="cover_limit" type="number" min="0" class="mt-1 block w-full" :value="old('cover_limit')" placeholder="Leave blank for no limit" />
                 </div>
                 <label class="flex items-center gap-2 text-sm sm:col-span-2">
@@ -59,7 +59,7 @@
                         <x-text-input id="preauth-service" name="description" class="mt-1 block w-full" required />
                     </div>
                     <div>
-                        <x-input-label for="preauth-amount" value="Amount (UGX)" />
+                        <x-input-label for="preauth-amount" :value="'Amount ('.\App\Support\Money::currency().')'" />
                         <x-text-input id="preauth-amount" name="amount" type="number" min="1" class="mt-1 block w-full" required />
                     </div>
                     <div><x-primary-button>Request</x-primary-button></div>
@@ -134,7 +134,7 @@
                         <form method="POST" action="{{ route('insurance.claims.remit', $claim) }}" class="mt-3 grid gap-3 md:grid-cols-3">
                             @csrf
                             <div>
-                                <x-input-label :for="'remit-amount-'.$claim->id" value="Amount received (UGX)" />
+                                <x-input-label :for="'remit-amount-'.$claim->id" :value="'Amount received ('.\App\Support\Money::currency().')'" />
                                 <x-text-input :id="'remit-amount-'.$claim->id" name="amount" type="number" min="1" class="mt-1 block w-full" required />
                             </div>
                             <div>

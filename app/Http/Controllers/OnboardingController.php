@@ -9,6 +9,7 @@ use App\Models\Facility;
 use App\Models\Ward;
 use App\Notifications\FacilityReady;
 use App\Services\WardManager;
+use App\Support\Money;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -51,6 +52,7 @@ class OnboardingController extends Controller
             'phone' => ['nullable', 'string', 'max:30'],
             'email' => ['nullable', 'email', 'max:150'],
             'moh_code' => ['nullable', 'string', 'max:30'],
+            'currency' => ['required', Rule::in(array_keys(Money::CURRENCIES))],
         ]);
 
         $facility->update($data);

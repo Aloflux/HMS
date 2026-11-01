@@ -5,7 +5,7 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 /**
- * A dropdown you can type into. Options are {value, label, hint?, group?}.
+ * A dropdown you can type into. Options are {value, label, hint?, group?, keywords?}; keywords are searched but not shown.
  * The chosen value sits in a hidden input; the text box always shows the chosen label.
  */
 Alpine.data('searchSelect', ({ options = [], value = '', emptyLabel = null } = {}) => ({
@@ -39,7 +39,7 @@ Alpine.data('searchSelect', ({ options = [], value = '', emptyLabel = null } = {
 
         return this.options
             .filter((option) => {
-                const text = [option.label, option.hint, option.group].filter(Boolean).join(' ').toLowerCase();
+                const text = [option.label, option.hint, option.group, option.keywords].filter(Boolean).join(' ').toLowerCase();
 
                 return terms.every((term) => text.includes(term));
             })

@@ -225,7 +225,7 @@
                     <li class="flex items-center gap-3 px-5 py-3">
                         <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-50 text-xs font-bold text-brand-800">{{ $initials($facility->name) }}</span>
                         <span class="min-w-0 flex-1">
-                            <span class="block truncate text-sm font-semibold text-slate-900">{{ $facility->name }}</span>
+                            <a href="{{ route('platform.facilities.show', $facility) }}" class="block truncate text-sm font-semibold text-slate-900 hover:text-brand-700">{{ $facility->name }}</a>
                             <span class="block truncate text-xs text-slate-500">{{ $facility->code }} · {{ $kinds[$facility->kind] ?? $facility->kind }} · {{ $facility->district }}</span>
                         </span>
                         <span class="shrink-0 text-xs text-slate-400">{{ $facility->created_at?->format('d M Y') }}</span>
@@ -261,7 +261,7 @@
                         @php($facilityOccupancy = $facility->beds_in_service > 0 ? (int) round($facility->beds_occupied / $facility->beds_in_service * 100) : 0)
                         <tr class="hover:bg-slate-50/60">
                             <td class="px-5 py-3">
-                                <a href="{{ route('platform.facilities.admins.index', $facility) }}" class="flex items-center gap-3">
+                                <a href="{{ route('platform.facilities.show', $facility) }}" class="flex items-center gap-3">
                                     <span class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-brand-50 text-xs font-bold text-brand-800">{{ $initials($facility->name) }}</span>
                                     <span>
                                         <span class="block font-semibold text-slate-900">{{ $facility->name }}</span>

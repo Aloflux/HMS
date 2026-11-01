@@ -8,6 +8,7 @@ use App\Models\CashierShift;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\Waiver;
+use App\Support\Money;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -78,7 +79,7 @@ class CashierService
 
             if ($amount > $balance) {
                 throw ValidationException::withMessages([
-                    'amount' => 'The amount is more than the UGX '.number_format($balance).' still owed.',
+                    'amount' => 'The amount is more than the '.Money::format($balance).' still owed.',
                 ]);
             }
 
@@ -101,7 +102,7 @@ class CashierService
             $this->sms->queue(
                 $bill->patient,
                 'payment',
-                'Payment of UGX '.number_format($amount).' received for visit '.$visit->visit_number.'.',
+                'Payment of '.Money::format($amount).' received for visit '.$visit->visit_number.'.',
             );
 
             return $payment;
@@ -179,7 +180,7 @@ class CashierService
 
             if ($waiver->amount > $balance) {
                 throw ValidationException::withMessages([
-                    'waiver' => 'The bill now owes only UGX '.number_format($balance).', less than this waiver. Request a new waiver for the current balance.',
+                    'waiver' => 'The bill now owes only '.Money::format($balance).', less than this waiver. Request a new waiver for the current balance.',
                 ]);
             }
 

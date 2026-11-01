@@ -19,6 +19,7 @@ class FacilityFactory extends Factory
             'code' => strtoupper(fake()->unique()->bothify('??##')),
             'kind' => 'clinic',
             'country' => 'UG',
+            'currency' => 'UGX',
             'district' => 'Kampala',
             'bed_capacity' => 40,
             'is_active' => true,

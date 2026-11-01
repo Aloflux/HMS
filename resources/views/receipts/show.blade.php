@@ -15,13 +15,13 @@
         <p class="text-sm">{{ $payment->bill->visit->visit_number }}</p>
         <ul class="mt-4 divide-y divide-slate-100 text-sm">
             @foreach ($payment->bill->lines as $line)
-                <li class="flex justify-between py-2"><span>{{ $line->description }}</span><span>{{ \App\Support\Money::format($line->amount) }}</span></li>
+                <li class="flex justify-between py-2"><span>{{ $line->description }}</span><span>{{ \App\Support\Money::format($line->amount, $payment->bill->currency) }}</span></li>
             @endforeach
         </ul>
-        <p class="mt-4 font-semibold">{{ $payment->method->label() }} {{ \App\Support\Money::format($payment->amount) }}</p>
+        <p class="mt-4 font-semibold">{{ $payment->method->label() }} {{ \App\Support\Money::format($payment->amount, $payment->bill->currency) }}</p>
         @if ($payment->reference)
             <p class="text-sm">Reference {{ $payment->reference }}</p>
         @endif
-        <p class="mt-2 text-sm">Balance {{ \App\Support\Money::format($payment->bill->cashBalance()) }}</p>
+        <p class="mt-2 text-sm">Balance {{ \App\Support\Money::format($payment->bill->cashBalance(), $payment->bill->currency) }}</p>
     </article>
 </x-app-layout>

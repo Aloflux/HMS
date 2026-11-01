@@ -36,7 +36,7 @@
     <p class="mt-1 text-xs text-slate-500" x-show="meta.pack_size > 1" x-text="'1 ' + meta.pack_unit + ' = ' + meta.pack_size.toLocaleString() + ' ' + meta.units"></p>
 </div>
 <div>
-    <label for="{{ $prefix }}-price" class="block text-sm font-medium text-slate-700" x-text="'Price to patient per ' + meta.unit + ' (UGX)'">Price to patient (UGX)</label>
+    <label for="{{ $prefix }}-price" class="block text-sm font-medium text-slate-700" x-text="'Price to patient per ' + meta.unit + ' ({{ \App\Support\Money::currency() }})'">Price to patient ({{ \App\Support\Money::currency() }})</label>
     <x-text-input :id="$prefix.'-price'" name="cash_price" type="number" min="0" class="mt-1 block w-full" :value="old('cash_price', $item?->cash_price ?? 0)" required />
 </div>
 <div>

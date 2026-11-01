@@ -12,7 +12,8 @@
 ])
 
 {{--
-    A searchable dropdown for long lists. Each option is ['value' => ..., 'label' => ..., 'hint' => ?, 'group' => ?].
+    A searchable dropdown for long lists. Each option is ['value' => ..., 'label' => ..., 'hint' => ?, 'group' => ?, 'keywords' => ?].
+    Keywords are matched when typing but never shown.
     Use `model` to keep the value in a parent Alpine property, and `x-name` / `x-id` for names built in an x-for loop.
 --}}
 @php
@@ -21,6 +22,7 @@
         'label' => (string) $option['label'],
         'hint' => isset($option['hint']) ? (string) $option['hint'] : null,
         'group' => isset($option['group']) ? (string) $option['group'] : null,
+        'keywords' => isset($option['keywords']) ? (string) $option['keywords'] : null,
     ])->values()->all();
 @endphp
 

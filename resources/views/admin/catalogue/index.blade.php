@@ -14,7 +14,7 @@
                 <div><x-input-label for="service-code" value="Code" /><x-text-input id="service-code" name="code" class="mt-1 block w-full" required /></div>
                 <div><x-input-label for="service-name" value="Name" /><x-text-input id="service-name" name="name" class="mt-1 block w-full" required /></div>
                 <div><x-input-label for="service-category" value="Category" /><x-text-input id="service-category" name="category" class="mt-1 block w-full" placeholder="laboratory, imaging, procedure" required /></div>
-                <div><x-input-label for="service-price" value="Cash price (UGX)" /><x-text-input id="service-price" name="cash_price" type="number" min="0" class="mt-1 block w-full" required /></div>
+                <div><x-input-label for="service-price" :value="'Cash price ('.\App\Support\Money::currency().')'" /><x-text-input id="service-price" name="cash_price" type="number" min="0" class="mt-1 block w-full" required /></div>
                 <div class="sm:col-span-2"><x-primary-button>Add service</x-primary-button></div>
             </form>
             <ul class="mt-4 max-h-64 divide-y divide-slate-100 overflow-y-auto border-t border-slate-100 text-sm">
