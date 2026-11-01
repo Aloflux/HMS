@@ -28,6 +28,12 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        if (Facility::query()->where('code', 'SMH')->exists()) {
+            $this->command?->warn("St. Mary's is already seeded. Skipping DemoSeeder.");
+
+            return;
+        }
+
         $provisioner = app(FacilityProvisioner::class);
 
         $stMarys = $provisioner->provision([

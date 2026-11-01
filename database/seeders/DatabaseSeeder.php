@@ -11,6 +11,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             Icd10Seeder::class,
             DemoSeeder::class,
+            MultiFacilitySeeder::class,
         ]);
     }
 }

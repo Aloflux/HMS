@@ -6,6 +6,7 @@ use App\Models\AuditLog;
 use App\Models\Membership;
 use App\Models\User;
 use App\Notifications\MembershipInvitation;
+use Database\Seeders\DatabaseSeeder;
 use Illuminate\Support\Facades\Notification;
 
 /**
@@ -233,4 +234,23 @@ test('each invitation says which facility it is from', function () {
             && $mail->actionText === "Join {$facility->name}"
             && str_contains(implode(' ', $mail->introLines), "{$facility->name} ({$facility->district})");
     });
+});
+
+test('the seeded people show each multi-facility case', function () {
+    $this->seed(DatabaseSeeder::class);
+    $stMarysAdmin = User::query()->where('email', 'admin@stmarys.tunzuri.test')->firstOrFail();
+
+    $this->post(route('login'), ['email' => 'grace.atim@tunzuri.test', 'password' => 'password']);
+    $this->get(route('dashboard'))->assertRedirect(route('facilities.choose'));
+    $this->post('/logout');
+
+    $this->post(route('login'), ['email' => 'brian.mugisha@tunzuri.test', 'password' => 'password']);
+    $this->get(route('dashboard'))->assertOk()->assertSee('Gulu Family Health Clinic');
+    $this->post('/logout');
+
+    $this->actingAs($stMarysAdmin)
+        ->get(route('admin.users.index'))
+        ->assertSee('Agnes L.')
+        ->assertDontSee('Agnes Lamunu')
+        ->assertSee('Invited');
 });

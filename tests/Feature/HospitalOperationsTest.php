@@ -11,6 +11,7 @@ use App\Models\BillLine;
 use App\Models\Item;
 use App\Models\LabRequestItem;
 use App\Models\LabTest;
+use App\Models\Membership;
 use App\Models\Patient;
 use App\Models\Payment;
 use App\Models\Service;
@@ -631,13 +632,29 @@ test('a closed visit cannot take new orders', function () {
     expect($bill->fresh()->status)->toBe('paid');
 });
 
-test('the seeder creates only a platform administrator and one facility administrator', function () {
+test('the seeder creates the platform operator and the demo staff with their facilities', function () {
     $this->seed(DatabaseSeeder::class);
 
-    expect(User::query()->orderBy('email')->get()->mapWithKeys(fn (User $user): array => [$user->email => $user->role->value])->all())->toBe([
-        'admin@stmarys.tunzuri.test' => 'administrator',
-        'platform@tunzuri.test' => 'platform_admin',
-    ]);
+    expect(User::query()->where('is_platform_admin', true)->pluck('email')->all())->toBe(['platform@tunzuri.test']);
+    expect(Membership::query()->with(['user', 'facility'])->get()
+        ->map(fn (Membership $membership): string => implode(' ', [
+            $membership->user->email,
+            $membership->facility->code,
+            $membership->role->value,
+            $membership->isAccepted() ? ($membership->is_active ? 'active' : 'inactive') : 'invited',
+        ]))
+        ->sort()
+        ->values()
+        ->all())->toBe([
+            'admin@gulufamily.tunzuri.test GFH administrator active',
+            'admin@stmarys.tunzuri.test SMH administrator active',
+            'agnes.lamunu@tunzuri.test GFH staff active',
+            'agnes.lamunu@tunzuri.test SMH staff invited',
+            'brian.mugisha@tunzuri.test GFH staff active',
+            'brian.mugisha@tunzuri.test SMH staff inactive',
+            'grace.atim@tunzuri.test GFH administrator active',
+            'grace.atim@tunzuri.test SMH staff active',
+        ]);
     expect(Patient::query()->count())->toBeGreaterThan(0);
 });
 
