@@ -1,7 +1,7 @@
 ---
 title: Tunzuri User Manual
 subtitle: Hospital management system — a guide for facility staff and administrators
-date: October 2026
+date: November 2026
 ---
 
 # About this manual
@@ -13,20 +13,50 @@ This manual is for the people who use Tunzuri every day: receptionists, nurses, 
 **Conventions used in this manual**
 
 - **Bold text** is a button, field or menu item as it appears on screen.
-- Amounts are in Uganda shillings (UGX).
+- Amounts are shown in your facility's currency, chosen by your administrator. Examples use Uganda shillings (UGX).
 - "Your administrator" means the person who runs Tunzuri for your facility.
 
 # Getting started
 
 ## Signing in
 
-1. Open your facility's Tunzuri address in a web browser (Chrome, Edge, Firefox or Safari).
-2. Enter your email address and password, then select **Log in**.
-3. If you were given a temporary password, change it straight away (see *Your profile and password* below).
+Every facility on Tunzuri has its own **facility code**, for example *SMH*. The code is in your invitation email, and your administrator can tell you it.
 
-If you forget your password, select **Forgot your password?** on the sign-in page and follow the link sent to your email.
+1. Open Tunzuri in a web browser (Chrome, Edge, Firefox or Safari).
+2. Type your **Facility code**. As soon as the code is recognised, the facility's name and district appear under it. Check that it is the facility you mean to work in. If you see *No active facility has this code*, check the code with your administrator.
+3. Enter your **Email** and the **Password** for that facility, then select **Log in**.
 
-For safety, Tunzuri signs you out automatically after 15 minutes without activity. Anything you have not saved is lost, so save forms before stepping away.
+Leave **Remember the facility code on this device** ticked on a computer you use every day, and the code is filled in for you next time.
+
+**Administrators** belong to one facility only, so they can leave the facility code blank and sign in with their email and password. Typing the code also works.
+
+If any detail is wrong (the code, the email or the password), Tunzuri shows the same message: *These credentials do not match our records*. Check all three.
+
+For safety, Tunzuri signs you out automatically after 15 minutes without activity. Anything you have not saved is lost, so save forms before stepping away. You are also signed out straight away if your access to the facility is switched off.
+
+## Joining a facility from an invitation
+
+You join a facility when its administrator invites you. The email comes from *"Facility name" via Tunzuri* and gives the facility code.
+
+1. Select **Join** in the email. The link works for 7 days.
+2. If you are new to Tunzuri, enter your name.
+3. Choose a **password for this facility** and confirm it, then select **Accept and sign in**.
+
+If the link has expired, ask the administrator to send the invitation again.
+
+## Working at more than one facility
+
+You use the same email at every facility you work at, but **each facility has its own password**. A password for one facility never opens another.
+
+You work in one facility at a time. The menu shows the facility's name and code, so you always know where you are. To work at another facility, select **Sign out**, then sign in with that facility's code and its password. Being switched off at one facility does not affect the others.
+
+## Forgotten password
+
+1. On the sign-in page, select **Forgot your password?**
+2. Enter the **Facility code** and your **Email**. Administrators can leave the code blank.
+3. Follow the link in the email within 60 minutes and choose a new password.
+
+The new password is for that facility only. Your other facilities keep theirs. For safety, the page always says the email was sent, even if the details did not match an account.
 
 ## Finding your way around
 
@@ -37,7 +67,9 @@ The menu on the left shows only the areas you have access to. They are grouped a
 | Main | Dashboard, Patients, Appointments |
 | Clinical | Queues, Laboratory, Radiology, Wards, Maternity, Theatre |
 | Operations | Pharmacy, Cashier, Insurance, Inventory, Stock levels, Stock usage, Reports |
-| Administration | Users, Departments, Wards & beds, Price list, Audit trail |
+| Administration | Users, Departments, Wards & beds, Price list, Facility settings, Audit trail |
+
+The facility you are working in, with its code and district, is shown at the top of the menu.
 
 If you need a screen you cannot see, ask your administrator to give you that area.
 
@@ -45,7 +77,9 @@ If you need a screen you cannot see, ask your administrator to give you that are
 
 ## Your profile and password
 
-Select your name (at the top right, or at the bottom of the menu) to open your profile. Here you can update your name and email, and change your password. Use a password of at least eight characters that you do not use anywhere else.
+Select your name (at the top right, or at the bottom of the menu) to open your profile. Here you can update your name and email, and change your password.
+
+Your name and email are yours: they are the same at every facility, and only you can change them. The password you change here is the one for the facility you are signed in to. Use a password of at least eight characters that you do not use anywhere else.
 
 ## Who can do what
 
@@ -65,7 +99,9 @@ The **administrator** has every screen. Some decisions stay with the administrat
 
 - Approving **stock adjustments** (expired, damaged, lost, or a count that does not match).
 - Approving or rejecting **waivers** at the cashier.
-- Managing users, departments, wards and prices.
+- Managing users, departments, wards, prices and facility settings.
+
+An administrator belongs to **one facility only**. Someone who works at another facility can be given chosen areas, but not administrator access.
 
 Every action in Tunzuri is recorded with the name of the person who did it and the time.
 
@@ -408,14 +444,14 @@ If you already have some on the shelf, fill in **Opening stock** on the same for
 | pack_size | No | Dispensing units in one pack, for example 1000 |
 | category | No | medicine, consumable or reagent (default medicine) |
 | billing_type | No | billable_medicine, billable_consumable or non_billable |
-| cash_price | No | Price per unit in UGX |
+| cash_price | No | Price per unit, in your facility's currency |
 | reorder_level | No | Low-stock level |
 | sku | No | Your own code; made from the name if blank |
 | store | No | Store name exactly as in Tunzuri; default Main store |
 | quantity | No | Opening stock, counted in dispensing units (tablets, not tins). Leave blank to add the item only |
 | batch_number | No | Made up automatically if blank |
 | expiry_date | No | Written as YYYY-MM-DD, for example 2027-06-30 |
-| unit_cost | No | What you paid per dispensing unit, in UGX |
+| unit_cost | No | What you paid per dispensing unit, in your facility's currency |
 
 An item that already exists, matched by name or code, is not created again; only its stock is added. So you can also use an import for a large stock top-up. If any row has a mistake, nothing is saved and Tunzuri lists the rows to fix, for example *Row 3: The unit field is required.* Fix the file and upload it again.
 
@@ -523,16 +559,28 @@ These screens are for the facility administrator.
 
 ## Users
 
-**Users** lists everyone who can sign in. Search by name or email.
+**Users** lists everyone who works at your facility and everyone you have invited. Search by name or email. Each person shows as **Invited**, **Active** or **Inactive**, with when they last signed in **here**.
 
 **Adding a user**
 
-1. Select **Add user**. Enter the name, email, phone and a temporary password.
+1. Select **Add user**. Enter the person's name and email.
 2. Choose **Administrator, full access**, or **Chosen areas**.
 3. For chosen areas, pick the person's **Department**. Tunzuri ticks the areas that department normally uses. Add or remove ticks as needed.
-4. Select **Add user**. Give the person their email and temporary password, and ask them to change it when they first sign in.
+4. Select **Send invitation**. Tunzuri emails them a link and your facility code. They choose their own password when they accept. You never set or see it.
 
-To change someone's access, or to stop them signing in when they leave, open their account, change the details or set them inactive, and select **Save changes**. Deactivate accounts rather than sharing them. Every action is recorded against a person.
+The person appears as **Invited** until they accept. Open their row to **Send invitation again** (a new link, if the first expired) or **Withdraw invitation**.
+
+If the email already belongs to someone at your facility, Tunzuri says so instead of inviting them. Otherwise the invitation is sent, whether or not the person already uses Tunzuri elsewhere. You are never told about anyone's other facilities.
+
+**Changing someone's access**
+
+Open their row to change their access, department or status, then select **Save changes**. Status applies to your facility only: setting someone **Inactive** stops them working here and does not affect any other facility they belong to.
+
+A person's name, email and password belong to them, so you cannot change them. If someone forgets their password, select **Send password reset link**. They get an email to choose a new password for your facility.
+
+Deactivate accounts rather than sharing them. Every action is recorded against a person.
+
+**Administrators.** An administrator belongs to one facility only. If Tunzuri refuses to make someone an administrator, give them chosen areas instead. An invitation as administrator cannot be accepted by someone who already works at another facility. They see the reason when they open it, and they can ask you to invite them with chosen areas instead.
 
 ## Departments
 
@@ -555,23 +603,31 @@ Add departments with a name, code and kind. The kind decides which areas are tic
 - **Lab tests**: priced through a linked service. Add the service first. You can also set the specimen, result unit, reference range, and the reagent used by each test, so reagent stock goes down automatically.
 - **Imaging studies**: priced through a linked service.
 
+## Facility settings
+
+**Facility settings** holds your facility's details and the currency you collect in.
+
+- **Currency**: type to search, for example *shilling*, *KES* or *Kenya*. Prices, bills, receipts and reports are shown in it. Changing the currency does not convert any amounts, so update the **Price list** to match. Bills already raised keep the currency they were raised in. Amounts are whole numbers, without cents.
+- **Facility details**: name, type, district, address, phone, email and MoH facility code. These appear on receipts, reports and patient documents.
+- **Tunzuri code**: your facility code. Staff need it to sign in, and it cannot be changed.
+
 ## Audit trail
 
 **Audit trail** lists every recorded action: who did what, and when. Use it to answer questions about a change to a record, price or user.
 
 # Setting up a new facility
 
-When a facility signs up, its owner confirms their email and goes through a short setup wizard:
+When a facility signs up, Tunzuri emails the owner to confirm their email address. That email also gives the new **facility code**, and the owner then goes through a short setup wizard:
 
-1. **Facility details**: name, type, district, address, phone, email and MoH facility code. These appear on receipts, reports and patient documents.
+1. **Facility details**: name, type, district, address, phone, email, MoH facility code and the **collection currency**. These appear on receipts, reports and patient documents.
 2. **Wards & beds**: two wards are created to start. Rename them, change the number of beds, or add more.
 3. **Ready to go live**: a summary of what the facility starts with. Select **Go live**.
 
-Every new facility starts with standard departments, the six stock stores, two wards and starter prices for registration, consultation and bed days.
+Every new facility starts with standard departments, the six stock stores, two wards and starter prices for registration, consultation and bed days. When the facility goes live, the owner gets an email with the facility code again. The owner is its administrator and signs in with their email and password, without the code.
 
 **Suggested first-week checklist for the administrator**
 
-1. Add your staff under **Users** and give each person their areas.
+1. Invite your staff under **Users** and give each person their areas. The invitation gives them the facility code.
 2. Check **Departments** and **Wards & beds**.
 3. Set your prices under **Price list**: services, lab tests and imaging studies.
 4. Add stock items: load the **Starter list** or import your own list (*Inventory → Items and stock*).
@@ -581,17 +637,26 @@ Every new facility starts with standard departments, the six stock stores, two w
 
 # Platform administrator
 
-The platform administrator runs Tunzuri for all facilities. They never see patient records.
+The platform administrator runs Tunzuri for all facilities. They never see patient records. They sign in with their email and password and leave the facility code blank.
 
 - **Platform overview**: facility counts, new sign-ups, visits, bed occupancy and facilities that need attention.
 - **Facilities**: search and sort facilities; **Provision facility** to create one with its first administrator and a temporary password (it goes live straight away); **Deactivate** or **Activate** a facility.
-- **Administrators** (per facility): add another administrator or switch one off.
+- **Facility details** (select a facility's name or **Details**): patients, visits per week, payments collected, bed occupancy, the visit mix, service activity, stock health, staff activity, administrators, and the facility's profile and setup. Everything is a total or a count, never a patient record.
+- **Administrators** (per facility): add another administrator with a password for that facility, reset an administrator's password, or switch one off. An administrator belongs to one facility only, so Tunzuri refuses an email that already works at another facility.
 
 # Troubleshooting and common questions
 
 **I cannot see a screen I need.** Your account does not have that area. Ask your administrator.
 
-**I was signed out.** Tunzuri signs you out after 15 minutes without activity. Sign in again.
+**I was signed out.** Tunzuri signs you out after 15 minutes without activity, and straight away if your access to the facility was switched off. Sign in again, or ask your administrator.
+
+**"These credentials do not match our records".** Check the facility code first: the facility's name should appear under it. Then check you are using the password for that facility, not another one. Staff must enter the code.
+
+**I work at two facilities. How do I change?** Sign out, then sign in with the other facility's code and its password.
+
+**My invitation link says it cannot be used.** It has expired, been withdrawn or already been accepted. Ask the administrator to send it again. If it says you work at another facility, or that you administer one, see *Who can do what*: an administrator belongs to one facility only.
+
+**I did not get a password reset email.** Check the facility code and email, and look in your spam folder. A second request within a minute is ignored.
 
 **The pharmacy says there is not enough stock, but the main store has plenty.** Dispensing only uses stock on the pharmacy shelf. Select **Request stock** on the Pharmacy screen and ask the storekeeper to issue it.
 
@@ -614,6 +679,8 @@ The platform administrator runs Tunzuri for all facilities. They never see patie
 | Batch | One lot of stock with its own batch number, expiry date and cost |
 | Dispensing unit | The smallest amount handed out (tablet, bottle, ml). All stock is counted in it |
 | Dosage form | The kind of product (tablet, syrup, injection…), which decides how it is handed out |
+| Facility code | The short code that identifies a facility, for example *SMH*. You sign in with it |
+| Invitation | The email that lets a person join a facility and choose their password for it |
 | Purchase pack | How an item is bought (tin, carton, box) and how many dispensing units it holds |
 | Billable / non-billable | Whether using an item charges the patient or is a department cost |
 | Opening balance | Stock already on the shelf when you start using Tunzuri |
