@@ -116,6 +116,10 @@ class UserController extends Controller
             return back()->with('error', 'You cannot remove your own full access or turn off your own account.');
         }
 
+        if ($assignment['role'] === Role::Administrator && ! $membership->user->canHoldRoleAt($membership->facility_id, Role::Administrator)) {
+            return back()->withInput()->withErrors(['account' => 'This person cannot be made an administrator. Give them chosen areas instead.']);
+        }
+
         $membership->update([
             ...$assignment,
             'is_active' => (bool) $status['is_active'],

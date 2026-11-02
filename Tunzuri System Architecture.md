@@ -129,7 +129,7 @@ One email can belong to several facilities through several memberships. The `Use
 - **Facility code first.** Codes are unique platform-wide. As the code is typed, the page shows the facility's name and district, using a rate-limited lookup of public facility names, so a person who works at several facilities sees where they are going.
 - **One password per facility.** The password is checked against the membership at that facility. A password for one facility never opens another.
 - **No in-app switching.** A session works in exactly one facility. Reaching another means signing out and signing in with its code. If the session's membership stops being usable (switched off, or the facility deactivated), the person is signed out.
-- **Platform operators** leave the code blank and use their account password.
+- **No code for administrators and operators.** A facility administrator belongs to exactly one facility, so they can leave the code blank and sign in with email and password. Platform operators also leave it blank and use their account password. Staff always need the code.
 - **No enumeration.** A wrong code, an unknown email and a wrong password all return the same error. A miss still runs a password-hash check, so it takes as long as a wrong password. Attempts are rate-limited per email and IP.
 - **Remembered code.** The facility code is stored in a cookie on the device. "Remember me" logins are not used, because a restored login would have no facility.
 
@@ -152,11 +152,13 @@ A facility administrator must never learn that a person has an account at anothe
 3. In every other case the response is identical: "Invitation sent", an *Invited* row showing the name the administrator typed, the same audit entries and the same email. That holds whether the email is new to Tunzuri or already used elsewhere. An account for a new person is created without an audit entry, so the trail does not differ.
 4. The invitee opens the emailed link, chooses a password for this facility (a new person also gives their name), and is signed in there. Links last 7 days and only a SHA-256 hash of the token is stored.
 
+**Administrators belong to one facility only.** An administrator cannot accept an invitation to another facility, and someone who works elsewhere cannot accept an administrator invitation. In both cases only the invitee sees why; the inviting administrator still sees an ordinary pending invitation. Promoting an existing member who works elsewhere is refused. Platform operators are told the reason directly.
+
 Administrators manage access and status at their own facility only. Name, email and password belong to the person. "Last signed in" counts only sign-ins at that facility. Platform operators are exempt from the rule and can link an existing account directly.
 
 ### 6.5 Passwords, sessions and audit
 
-- **Resets are per facility.** "Forgot password" takes a facility code and email, emails a 60-minute link, and changes only that facility's password. The reply never reveals whether the details matched.
+- **Resets are per facility.** "Forgot password" takes a facility code and email (administrators can leave the code blank), emails a 60-minute link, and changes only that facility's password. The reply never reveals whether the details matched.
 - **Profile and confirmation.** The current-password rule and the password-confirmation screen check the password of the facility in use, through `User::getAuthPassword()`.
 - **Idle timeout.** The front end signs a person out after `HMS_IDLE_TIMEOUT` minutes without activity (15 by default).
 - **Audit trail.** `RecordsAudit` logs creates, updates and deletes for audited models, with user, facility, IP address and user agent. Passwords and tokens are stripped from logged changes.

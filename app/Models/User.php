@@ -104,6 +104,19 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Administrators belong to exactly one facility: an administrator cannot join another facility,
+     * and someone who already works elsewhere cannot become an administrator.
+     */
+    public function canHoldRoleAt(int $facilityId, Role $role): bool
+    {
+        $elsewhere = $this->memberships()->whereNotNull('accepted_at')->where('facility_id', '!=', $facilityId);
+
+        return $role === Role::Administrator
+            ? ! $elsewhere->exists()
+            : ! $elsewhere->where('role', Role::Administrator)->exists();
+    }
+
+    /**
      * Work in this membership for the rest of the request.
      */
     public function useMembership(?Membership $membership): void

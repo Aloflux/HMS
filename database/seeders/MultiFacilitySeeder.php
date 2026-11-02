@@ -15,7 +15,7 @@ use Illuminate\Database\Seeder;
 /**
  * A second facility and people who work at both with one email and a separate password at each:
  * one who works at both (her Gulu password is "gulu-password"), one switched off at one of them,
- * and one invited but not yet joined.
+ * and one invited but not yet joined. All are staff: an administrator belongs to one facility only.
  * Runs after DemoSeeder, which creates St. Mary's. Both skip themselves when their facility already exists, so seeding can be rerun.
  */
 class MultiFacilitySeeder extends Seeder
@@ -48,7 +48,7 @@ class MultiFacilitySeeder extends Seeder
 
         $clinician = $this->person('Dr. Grace Atim', 'grace.atim@tunzuri.test');
         $this->join($clinician, $stMarys, Role::Staff, ['clinical'], 'OPD');
-        $this->join($clinician, $gulu, Role::Administrator, password: 'gulu-password');
+        $this->join($clinician, $gulu, Role::Staff, ['clinical', 'reports'], 'OPD', password: 'gulu-password');
 
         $locum = $this->person('Brian Mugisha', 'brian.mugisha@tunzuri.test');
         $this->join($locum, $stMarys, Role::Staff, ['laboratory'], 'LAB', isActive: false);

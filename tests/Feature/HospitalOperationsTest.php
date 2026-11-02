@@ -653,7 +653,7 @@ test('the seeder creates the platform operator and the demo staff with their fac
             'agnes.lamunu@tunzuri.test SMH staff invited',
             'brian.mugisha@tunzuri.test GFH staff active',
             'brian.mugisha@tunzuri.test SMH staff inactive',
-            'grace.atim@tunzuri.test GFH administrator active',
+            'grace.atim@tunzuri.test GFH staff active',
             'grace.atim@tunzuri.test SMH staff active',
         ]);
     expect(Patient::query()->count())->toBeGreaterThan(0);

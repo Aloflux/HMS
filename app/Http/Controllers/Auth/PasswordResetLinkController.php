@@ -42,6 +42,8 @@ class PasswordResetLinkController extends Controller
         if ($code === '') {
             if (User::query()->where('email', $email)->where('is_platform_admin', true)->exists()) {
                 Password::sendResetLink(['email' => $email]);
+            } else {
+                Membership::findAdministratorForSignIn($email)?->sendPasswordReset();
             }
         } else {
             Membership::findForSignIn($code, $email)?->sendPasswordReset();

@@ -109,7 +109,7 @@ test('a new person accepts by choosing a password and starts work with the acces
 test('someone who works elsewhere accepts with a new password for this facility, and each password opens only its facility', function () {
     [$facilityA, $adminA] = provisionHospital();
     [$facilityB, $adminB] = provisionHospital();
-    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Administrator, 'email' => 'both@example.test', 'name' => 'Both Places']);
+    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view', 'patients.view'], 'email' => 'both@example.test', 'name' => 'Both Places']);
     $visitAtB = openCashVisit($facilityB, $adminB);
     $token = inviteAndCaptureToken($adminA, 'both@example.test');
     $this->post('/logout');
@@ -139,18 +139,19 @@ test('someone who works elsewhere accepts with a new password for this facility,
 });
 
 test('there is no way to switch facility from inside the app', function () {
-    [$facilityA, $adminA] = provisionHospital();
+    [$facilityA] = provisionHospital();
     [$facilityB] = provisionHospital();
-    Membership::factory()->create(['user_id' => $adminA->id, 'facility_id' => $facilityB->id]);
+    $person = User::factory()->create(['facility_id' => $facilityA->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
+    Membership::factory()->create(['user_id' => $person->id, 'facility_id' => $facilityB->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
 
-    $this->actingAs($adminA)->withSession([SetFacilityContext::SESSION_KEY => membershipOf($adminA, $facilityA)->id])
+    $this->actingAs($person)->withSession([SetFacilityContext::SESSION_KEY => membershipOf($person, $facilityA)->id])
         ->get(route('dashboard'))
         ->assertOk()
         ->assertSee('Code '.$facilityA->code)
         ->assertDontSee('Switch');
 
     $this->get('/facilities/choose')->assertNotFound();
-    $this->post('/facilities/'.membershipOf($adminA, $facilityB)->id.'/switch', ['password' => 'password'])->assertNotFound();
+    $this->post('/facilities/'.membershipOf($person, $facilityB)->id.'/switch', ['password' => 'password'])->assertNotFound();
     $this->get(route('dashboard'))->assertSee('Code '.$facilityA->code)->assertDontSee('Code '.$facilityB->code);
 });
 
@@ -295,4 +296,75 @@ test('a facility switched off mid-session ends the session', function () {
 
     $this->get(route('dashboard'))->assertRedirect(route('login'));
     $this->assertGuest();
+});
+
+test('an administrator invite to someone who works elsewhere looks ordinary to the admin but cannot be accepted', function () {
+    [$facilityA, $adminA] = provisionHospital();
+    [$facilityB] = provisionHospital();
+    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view'], 'email' => 'elsewhere@example.test']);
+    Notification::fake();
+
+    $this->actingAs($adminA)
+        ->post(route('admin.users.store'), ['name' => 'Elsewhere', 'email' => 'elsewhere@example.test', 'account' => 'administrator'])
+        ->assertSessionHasNoErrors()
+        ->assertSessionHas('status', 'Invitation sent to elsewhere@example.test.');
+
+    $token = null;
+    Notification::assertSentTo($person, MembershipInvitation::class, function (MembershipInvitation $mail) use (&$token): bool {
+        $token = $mail->token;
+
+        return true;
+    });
+    $this->post('/logout');
+
+    $this->get(route('invitations.show', $token))->assertSee('You already work at another facility')->assertDontSee('Accept and sign in');
+    $this->post(route('invitations.accept', $token), ['password' => 'a-strong-password', 'password_confirmation' => 'a-strong-password'])
+        ->assertRedirect(route('invitations.show', $token));
+
+    expect(membershipOf($person, $facilityA)->isAccepted())->toBeFalse();
+    $this->assertGuest();
+});
+
+test('an administrator cannot accept an invitation to another facility', function () {
+    [, $adminA] = provisionHospital();
+    [, $adminB] = provisionHospital();
+    $token = inviteAndCaptureToken($adminA, $adminB->email);
+    $this->post('/logout');
+
+    $this->get(route('invitations.show', $token))->assertSee('You administer another facility');
+    $this->post(route('invitations.accept', $token), ['password' => 'a-strong-password', 'password_confirmation' => 'a-strong-password'])
+        ->assertRedirect(route('invitations.show', $token));
+
+    expect($adminB->memberships()->whereNotNull('accepted_at')->count())->toBe(1);
+});
+
+test('someone who works at another facility cannot be promoted to administrator', function () {
+    [$facilityA, $adminA] = provisionHospital();
+    [$facilityB] = provisionHospital();
+    $person = User::factory()->create(['facility_id' => $facilityA->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
+    Membership::factory()->create(['user_id' => $person->id, 'facility_id' => $facilityB->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
+    $soleMember = User::factory()->create(['facility_id' => $facilityA->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
+
+    $this->actingAs($adminA)
+        ->patch(route('admin.users.update', membershipOf($person, $facilityA)), ['account' => 'administrator', 'is_active' => '1'])
+        ->assertSessionHasErrors('account');
+    expect(membershipOf($person, $facilityA)->role)->toBe(Role::Staff);
+
+    $this->actingAs($adminA)
+        ->patch(route('admin.users.update', membershipOf($soleMember)), ['account' => 'administrator', 'is_active' => '1'])
+        ->assertSessionHasNoErrors();
+    expect(membershipOf($soleMember)->role)->toBe(Role::Administrator);
+});
+
+test('a platform operator cannot make someone who works elsewhere an administrator', function () {
+    [$facilityA] = provisionHospital();
+    [$facilityB] = provisionHospital();
+    $person = User::factory()->create(['facility_id' => $facilityB->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
+    $operator = User::factory()->platformAdmin()->create();
+
+    $this->actingAs($operator)
+        ->post(route('platform.facilities.admins.store', $facilityA), ['name' => $person->name, 'email' => $person->email, 'password' => 'a-strong-password'])
+        ->assertSessionHasErrors('email');
+
+    expect($person->memberships()->count())->toBe(1);
 });

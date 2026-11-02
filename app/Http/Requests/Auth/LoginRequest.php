@@ -43,7 +43,8 @@ class LoginRequest extends FormRequest
     public ?Membership $membership = null;
 
     /**
-     * Check the password of the facility named by its code. With no code, only platform operators can sign in.
+     * Check the password of the facility named by its code. With no code, platform operators and facility
+     * administrators can sign in, since each has only one place to go.
      * Every mismatch gives the same answer, so the form never reveals who works where.
      *
      * @throws ValidationException
@@ -57,8 +58,10 @@ class LoginRequest extends FormRequest
         $password = (string) $this->input('password');
 
         if ($code === '') {
-            $user = User::query()->where('email', $email)->where('is_platform_admin', true)->where('is_active', true)->first();
-            $hash = $user?->password;
+            $operator = User::query()->where('email', $email)->where('is_platform_admin', true)->where('is_active', true)->first();
+            $this->membership = $operator === null ? Membership::findAdministratorForSignIn($email) : null;
+            $user = $operator ?? $this->membership?->user;
+            $hash = $operator?->password ?? $this->membership?->password;
         } else {
             $this->membership = Membership::findForSignIn($code, $email);
             $user = $this->membership?->user;

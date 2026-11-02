@@ -156,6 +156,20 @@ class Membership extends Model
             ->first();
     }
 
+    /**
+     * The usable administrator membership for this email. Administrators belong to one facility only,
+     * so they can sign in without a facility code.
+     */
+    public static function findAdministratorForSignIn(string $email): ?self
+    {
+        return self::query()
+            ->usable()
+            ->where('role', Role::Administrator)
+            ->whereHas('user', fn (Builder $user) => $user->where('email', mb_strtolower(trim($email)))->where('is_active', true)->where('is_platform_admin', false))
+            ->with(['user', 'facility'])
+            ->first();
+    }
+
     public static function findByInvitationToken(string $token): ?self
     {
         return self::query()

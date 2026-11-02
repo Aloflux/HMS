@@ -50,7 +50,7 @@ test('reset password screen can be rendered', function () {
 
 test('a reset changes only that facility\'s password', function () {
     Notification::fake();
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => Role::Staff, 'permissions' => ['dashboard.view']]);
     $first = membershipOf($user);
     $second = Membership::factory()->create(['user_id' => $user->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view']]);
 
@@ -88,4 +88,13 @@ test('a platform operator resets their account password without a facility code'
 
         return true;
     });
+});
+
+test('a facility administrator resets their password without a facility code', function () {
+    Notification::fake();
+    [, $admin] = provisionHospital();
+
+    $this->post('/forgot-password', ['email' => $admin->email]);
+
+    Notification::assertSentTo($admin, MembershipPasswordReset::class, fn (MembershipPasswordReset $notification): bool => $notification->membership->is(membershipOf($admin)));
 });

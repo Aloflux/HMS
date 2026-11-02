@@ -28,7 +28,7 @@ class FacilityAdminController extends Controller
 
     /**
      * Operators may see every facility, so an existing account is linked directly instead of invited,
-     * with a password for this facility that the operator sets.
+     * with a password for this facility that the operator sets. Administrators belong to one facility only.
      */
     public function store(Request $request, Facility $facility): RedirectResponse
     {
@@ -43,6 +43,10 @@ class FacilityAdminController extends Controller
 
         if ($existing?->is_platform_admin) {
             return back()->withErrors(['email' => 'That email belongs to a platform administrator.'])->withInput();
+        }
+
+        if ($existing !== null && ! $existing->canHoldRoleAt($facility->id, Role::Administrator)) {
+            return back()->withErrors(['email' => "{$existing->name} already works at another facility. An administrator can belong to one facility only."])->withInput();
         }
 
         $user = $existing ?? User::query()->create([

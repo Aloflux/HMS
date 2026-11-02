@@ -57,11 +57,14 @@ test('a facility can sign up and the owner is emailed a verification link', func
     expect($facility->isOnboarded())->toBeFalse();
     expect(Ward::query()->where('facility_id', $facility->id)->count())->toBe(2);
 
-    Notification::assertSentTo($owner, VerifyEmailAddress::class, function (VerifyEmailAddress $notification) use ($owner): bool {
+    Notification::assertSentTo($owner, VerifyEmailAddress::class, function (VerifyEmailAddress $notification) use ($owner, $facility): bool {
         $mail = $notification->toMail($owner);
+        $html = (string) $mail->render();
 
         return str_contains($mail->actionUrl, '/verify-email/'.$owner->id.'/')
-            && str_contains((string) $mail->render(), 'Verify email address');
+            && str_contains($html, 'Verify email address')
+            && preg_match('/<strong[^>]*>'.preg_quote($facility->code, '/').'<\/strong>/', $html) === 1
+            && str_contains($html, 'You sign in with this code');
     });
 });
 

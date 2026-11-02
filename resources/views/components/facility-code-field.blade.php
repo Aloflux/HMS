@@ -16,7 +16,7 @@
         </span>
     </p>
     <p class="mt-1 text-xs text-red-700" x-show="checked && ! facility && code.trim() !== ''" x-cloak>No active facility has this code.</p>
-    <p class="mt-1 text-xs text-slate-500" x-show="code.trim() === ''">Each facility you work at has its own password. Platform operators leave this blank.</p>
+    <p class="mt-1 text-xs text-slate-500" x-show="code.trim() === ''">Staff: each facility you work at has its own code and password. Facility administrators and platform operators can leave this blank.</p>
 
     <x-input-error :messages="$errors->get('facility_code')" class="mt-2" />
 </div>

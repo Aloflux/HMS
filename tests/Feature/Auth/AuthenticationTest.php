@@ -37,7 +37,7 @@ test('users can not authenticate with invalid password', function () {
 });
 
 test('each facility password opens only its own facility', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => Role::Staff, 'permissions' => ['dashboard.view']]);
     $first = membershipOf($user);
     $second = Membership::factory()->create(['user_id' => $user->id, 'role' => Role::Staff, 'permissions' => ['dashboard.view'], 'password' => 'second-facility-password']);
 
@@ -64,7 +64,7 @@ test('a wrong facility code gets the same answer as a wrong password', function 
 });
 
 test('facility staff cannot sign in without a facility code', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['role' => Role::Staff, 'permissions' => ['dashboard.view']]);
 
     $this->post('/login', ['email' => $user->email, 'password' => 'password']);
 
@@ -107,4 +107,23 @@ test('a remembered facility code is named on the sign-in page', function () {
         ->get('/login')
         ->assertOk()
         ->assertSee($facility->name);
+});
+
+test('a facility administrator signs in without a facility code', function () {
+    [$facility, $admin] = provisionHospital();
+
+    $this->post('/login', ['email' => $admin->email, 'password' => 'password'])
+        ->assertRedirect(route('dashboard', absolute: false));
+
+    $this->assertAuthenticatedAs($admin);
+    $this->get(route('dashboard'))->assertOk()->assertSee('Code '.$facility->code);
+});
+
+test('a facility administrator still needs the right password without a code', function () {
+    [, $admin] = provisionHospital();
+
+    $this->post('/login', ['email' => $admin->email, 'password' => 'wrong-password'])
+        ->assertSessionHasErrors(['email' => trans('auth.failed')]);
+
+    $this->assertGuest();
 });

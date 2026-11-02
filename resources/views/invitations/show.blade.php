@@ -14,6 +14,17 @@
         @endif
         <p class="mt-2 text-sm text-slate-600">You have been invited to work here with this access: {{ $membership->accessAreas() }}.</p>
 
+        @if ($state === 'blocked')
+            <div class="mt-6 rounded-md bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                @if ($membership->role === \App\Enums\Role::Administrator)
+                    <p class="font-semibold">You already work at another facility.</p>
+                    <p class="mt-1">A facility administrator can belong to one facility only. Ask {{ $membership->facility->name }} to invite you with staff access instead, or leave your other facility first.</p>
+                @else
+                    <p class="font-semibold">You administer another facility.</p>
+                    <p class="mt-1">A facility administrator can belong to one facility only, so you cannot also join {{ $membership->facility->name }} with this account.</p>
+                @endif
+            </div>
+        @else
         <form method="POST" action="{{ route('invitations.accept', $token) }}" class="mt-6 grid gap-4">
             @csrf
             <div>
@@ -41,5 +52,6 @@
             <p class="text-xs text-slate-500">You sign in with facility code <span class="font-semibold text-slate-700">{{ $membership->facility->code }}</span>, your email and this password.</p>
             <x-primary-button class="justify-center">Accept and sign in</x-primary-button>
         </form>
+        @endif
     @endif
 </x-guest-layout>

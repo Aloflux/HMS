@@ -32,6 +32,6 @@ class FacilityReady extends Notification
             ->line('• Review the price list so registration, consultation and bed-day charges match your facility.')
             ->line('• Adjust wards and beds at any time from Administration → Wards & beds.')
             ->action('Open your dashboard', route('dashboard'))
-            ->line('Your facility code is '.$this->facility->code.'. Keep it handy when you contact support.');
+            ->line("Your facility code is **{$this->facility->code}**. You need it with your email and password every time you sign in, and support will ask for it.");
     }
 }

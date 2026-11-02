@@ -29,7 +29,11 @@ class InvitationController extends Controller
         return view('invitations.show', [
             'membership' => $membership,
             'token' => $token,
-            'state' => $this->isNewPerson($membership) ? 'new' : 'existing',
+            'state' => match (true) {
+                ! $this->allowed($membership) => 'blocked',
+                $this->isNewPerson($membership) => 'new',
+                default => 'existing',
+            },
         ]);
     }
 
@@ -40,6 +44,10 @@ class InvitationController extends Controller
 
         $person = $membership->user;
         $isNewPerson = $this->isNewPerson($membership);
+
+        if (! $this->allowed($membership)) {
+            return redirect()->route('invitations.show', $token);
+        }
 
         $data = $request->validate([
             'name' => [$isNewPerson ? 'required' : 'exclude', 'string', 'max:150'],
@@ -64,6 +72,15 @@ class InvitationController extends Controller
         SetFacilityContext::enter($request, $membership);
 
         return redirect()->route('dashboard')->with('status', "Welcome to {$membership->facility->name}.");
+    }
+
+    /**
+     * Administrators belong to one facility only. Only the invitee learns why an invitation cannot be taken up;
+     * the inviting administrator still sees an ordinary pending invitation.
+     */
+    private function allowed(Membership $membership): bool
+    {
+        return $membership->user->canHoldRoleAt($membership->facility_id, $membership->role);
     }
 
     /**
